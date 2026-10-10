@@ -1,0 +1,18 @@
+import { join } from "node:path";
+import { BinanceApi, BinanceClient } from "@bitstock/binance";
+import { guardConfigFromEnv, JsonlDecisionStore, runGuard, YahooChartSource, type DecisionRecord } from "@bitstock/guard";
+import { NVDAB, USDT } from "./probes.ts";
+
+/** Runs the guard once against live data and stores the decision record. */
+export async function runLiveGuard(env: NodeJS.ProcessEnv, amountUsd: string, wallet: string): Promise<DecisionRecord> {
+  const cfg = guardConfigFromEnv(env);
+  const baseUrl = env["BINANCE_WEB3_BASE_URL"];
+  const api = new BinanceApi(new BinanceClient({ apiKey: env["BINANCE_WEB3_API_KEY"] ?? "", apiSecret: env["BINANCE_WEB3_API_SECRET"] ?? "", ...(baseUrl ? { baseUrl } : {}) }));
+  const record = await runGuard(
+    { api, rpcUrl: env["BSC_RPC_URL"] ?? "", reference: new YahooChartSource(), payToken: USDT, payDecimals: 18 },
+    { token: NVDAB, side: "buy", amountUsd, wallet },
+    cfg,
+  );
+  await new JsonlDecisionStore(join(env["DATA_DIR"] || "./data", "decisions.jsonl")).save(record);
+  return record;
+}
