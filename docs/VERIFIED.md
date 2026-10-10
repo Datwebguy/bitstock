@@ -36,8 +36,9 @@ Hackathon page: the page slug is `tokenized-stocks` on bnbchain.org.
 | Signature | `Base64(HMAC-SHA256(secret, timestamp + METHOD + requestPath + body))`. `requestPath` includes the raw URL-encoded query string, in the order sent. `body` is the raw JSON string for POST, empty for GET. |
 | Envelope | `{ "code": 0, "msg": "success", "data": ..., "timestamp": ..., "success": true }`. `code` 0 is success. |
 | Unauthenticated probe | `GET /build/api/v1/dex/market/rwa/tokens` with no key returns HTTP 401 `{"code":40101,"msg":"API Key is required"}` (observed from the build sandbox, 10 Oct). |
-| Region | The API refuses requests from restricted regions. Host the server somewhere allowed and test with a signed call before building on it. |
-| Rate limit | Not documented in the pages read. A third-party public log recorded `HTTP 429` with code `42900` on the RWA endpoints. UNVERIFIED for this build: cache responses (30 s is enough for status and prices) and back off on 429. |
+| Region | IP checks are enforced on **both the Developer Portal and the API server**. Prohibited: US (and Guam, Northern Mariana Islands, Puerto Rico, US Virgin Islands, American Samoa, US Minor Outlying Islands), Canada, Netherlands, Iran, Cuba, North Korea, Crimea, Donetsk, Luhansk, United Kingdom, and Japan unless three conditions hold (Binance login, KYC country not prohibited, server IP in Japan). Create the key from an allowed location and host the server in one. |
+| API key permissions | Keys are bound to capability domains (Trading, Market, Wallet, Transaction, DeFi, B402). Select the domains needed when creating or editing a key; a missing domain returns HTTP 403, code `40104`. Bitstock needs Market (includes RWA Data), Trading, Transaction and Wallet. B402 is optional. |
+| Rate limits | Documented in the Authentication page: per IP 1,200 requests / 60 s; per API key 1,200 / 60 s; per user 6,000 / 60 s; per endpoint 5 requests/s by default. Exceeding returns HTTP 429, code `42900`, with a `Retry-After` header. Cache reads (30 s is enough for status and prices) and back off on 429. |
 
 ---
 
