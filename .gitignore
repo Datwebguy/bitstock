@@ -1,0 +1,33 @@
+# secrets and local config
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.keystore
+keystore/
+
+# runtime data
+data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+logs/
+
+# dependencies and build output
+node_modules/
+.pnpm-store/
+dist/
+build/
+.next/
+out/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# tooling
+.DS_Store
+.vscode/
+.idea/
+*.log
