@@ -1,0 +1,224 @@
+{
+  "redaction": "The probe wallet's public address was replaced with <probe-wallet> before publishing. Nothing else was changed.",
+  "ranOn": {
+    "host": "Railway asia-southeast1-eqsg3a (egress SG)",
+    "route": "GET /v1/admin/guard?usd=1",
+    "commit": "0d8056b"
+  },
+  "decision": {
+    "id": "19be0b11-75fe-46de-aa20-2a49e488cce2",
+    "at": "2026-10-10T21:19:25.583Z",
+    "rulesVersion": "1",
+    "request": {
+      "token": "0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436",
+      "side": "buy",
+      "amountUsd": "1",
+      "wallet": "<probe-wallet>"
+    },
+    "inputs": [
+      {
+        "name": "market status",
+        "value": {
+          "openState": true,
+          "marketStatus": null,
+          "reasonCode": "TRADING",
+          "reasonMsg": null,
+          "nextOpenTime": null,
+          "nextCloseTime": null
+        },
+        "source": "Binance Web3 API rwa/underlying-market",
+        "asOf": "2026-10-10T21:19:24.955Z",
+        "status": "ok"
+      },
+      {
+        "name": "multiplier state",
+        "value": {
+          "uiMultiplier": "1000778223752807865",
+          "newUIMultiplier": "1000778223752807865",
+          "effectiveAt": "0"
+        },
+        "source": "BSC eth_call uiMultiplier/newUIMultiplier/effectiveAt",
+        "asOf": "2026-10-10T21:19:25.070Z",
+        "status": "ok"
+      },
+      {
+        "name": "quote",
+        "value": [
+          {
+            "quoteId": "6722b891f61b42cea544c43d50ff8e9c",
+            "vendorName": "LiquidMesh",
+            "executionMode": "SWAP",
+            "binanceChainId": "56",
+            "fromTokenAmount": "1000000000000000000",
+            "toTokenAmount": "4334106421723523",
+            "tradeFee": "0.00942537",
+            "estimateGasFee": "250000",
+            "priceImpactPercent": "0.0000000000",
+            "router": "0x55d398326f99059ff775485246999027b3197955--0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+            "fromToken": {
+              "tokenContractAddress": "0x55d398326f99059fF775485246999027B3197955",
+              "tokenSymbol": "USDT",
+              "tokenUnitPrice": "0.9991331523031264",
+              "decimal": "18",
+              "isHoneyPot": false,
+              "taxRate": "0"
+            },
+            "toToken": {
+              "tokenContractAddress": "0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436",
+              "tokenSymbol": "NVDAB",
+              "tokenUnitPrice": "230.73942726844738135440000000",
+              "decimal": "18",
+              "isHoneyPot": false,
+              "taxRate": "0"
+            },
+            "dexRouterList": [
+              {
+                "dexProtocol": {
+                  "dexName": "Kipseli",
+                  "percent": "100.00"
+                },
+                "fromToken": {
+                  "tokenContractAddress": "0x55d398326f99059ff775485246999027b3197955",
+                  "tokenSymbol": "USDT",
+                  "tokenUnitPrice": "0.9991331523031264",
+                  "decimal": "18",
+                  "isHoneyPot": false,
+                  "taxRate": "0"
+                },
+                "fromTokenIndex": "0",
+                "toToken": {
+                  "tokenContractAddress": "0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+                  "tokenSymbol": "NVDAB",
+                  "tokenUnitPrice": "230.73942726844738135440000000",
+                  "decimal": "18",
+                  "isHoneyPot": false,
+                  "taxRate": "0"
+                },
+                "toTokenIndex": "1"
+              }
+            ],
+            "approveTarget": "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5",
+            "isBest": true,
+            "feeAmount": null,
+            "feeToken": null,
+            "actualSwapAmount": null
+          }
+        ],
+        "source": "Binance Web3 API aggregator/quote",
+        "asOf": "2026-10-10T21:19:24.958Z",
+        "status": "ok"
+      },
+      {
+        "name": "underlying ticker",
+        "value": "NVDA",
+        "source": "Binance Web3 API rwa/underlying-profile",
+        "asOf": "2026-10-10T21:19:24.952Z",
+        "status": "ok"
+      },
+      {
+        "name": "independent price",
+        "value": {
+          "pricePerShare": "229.28",
+          "currency": "USD",
+          "priceTime": "2026-10-09T20:00:00.000Z"
+        },
+        "source": "Yahoo Finance chart API (regularMarketPrice)",
+        "asOf": "2026-10-09T20:00:00.000Z",
+        "status": "ok"
+      },
+      {
+        "name": "pay-token allowance",
+        "value": {
+          "spender": "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5",
+          "allowance": "0",
+          "needed": "1000000000000000000"
+        },
+        "source": "BSC eth_call allowance",
+        "asOf": "2026-10-10T21:19:25.307Z",
+        "status": "ok"
+      },
+      {
+        "name": "swap transaction",
+        "value": {
+          "from": "<probe-wallet>",
+          "to": "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5",
+          "value": "0",
+          "dataBytes": 2052
+        },
+        "source": "Binance Web3 API aggregator/swap",
+        "asOf": "2026-10-10T21:19:25.421Z",
+        "status": "ok"
+      },
+      {
+        "name": "simulation",
+        "value": {
+          "status": "FAILED",
+          "failReason": "execution reverted: BEP20: transfer amount exceeds allowance",
+          "balanceChanges": [],
+          "allowanceChanges": []
+        },
+        "source": "Binance Web3 API pre-transaction/simulate",
+        "asOf": "2026-10-10T21:19:25.583Z",
+        "status": "ok"
+      }
+    ],
+    "checks": [
+      {
+        "id": "session",
+        "name": "Market session",
+        "source": "Binance Web3 API rwa/underlying-market",
+        "asOf": "2026-10-10T21:19:24.955Z",
+        "threshold": null,
+        "result": "pass",
+        "rawValue": "openState=true, reasonCode=TRADING, marketStatus=null, reasonMsg=null",
+        "reason": "The market reports this token as trading."
+      },
+      {
+        "id": "multiplier",
+        "name": "Share multiplier",
+        "source": "BSC eth_call uiMultiplier/newUIMultiplier/effectiveAt",
+        "asOf": "2026-10-10T21:19:25.070Z",
+        "threshold": "change within 24 h warns",
+        "result": "pass",
+        "rawValue": "uiMultiplier=1.000778223752807865, newUIMultiplier=1.000778223752807865, effectiveAt=0",
+        "reason": "Each token stands for 1.000778 shares and no change is scheduled."
+      },
+      {
+        "id": "reference",
+        "name": "Independent price",
+        "source": "Yahoo Finance chart API (regularMarketPrice)",
+        "asOf": "2026-10-09T20:00:00.000Z",
+        "result": "warn",
+        "rawValue": "buy price per share 230.3487 USD vs 229.2800 USD, gap 0.466%",
+        "threshold": "last close: never a pass, fail > 10.0%",
+        "reason": "The stock market's last price is from 2026-10-09T20:00:00.000Z; the buy price is +0.46% away from it, and the stock can move before it trades again."
+      },
+      {
+        "id": "execution",
+        "name": "Price and route",
+        "source": "Binance Web3 API aggregator/quote",
+        "asOf": "2026-10-10T21:19:24.958Z",
+        "threshold": "warn > 0.3%, fail > 1.0%",
+        "result": "pass",
+        "rawValue": "LiquidMesh SWAP, priceImpactPercent 0.0000000000, output 4334106421723523",
+        "reason": "A direct swap route is available and this buy would move the price by 0.0000000000%."
+      },
+      {
+        "id": "simulation",
+        "name": "Dry run",
+        "source": "Binance Web3 API pre-transaction/simulate",
+        "asOf": "2026-10-10T21:19:25.583Z",
+        "threshold": "SUCCESS and the stock arrives",
+        "result": "fail",
+        "rawValue": "status=FAILED, failReason=execution reverted: BEP20: transfer amount exceeds allowance",
+        "reason": "The dry run failed because this wallet has not yet approved USDT for the swap. Approve first, then check again."
+      }
+    ],
+    "outcome": "BLOCK",
+    "reason": "The dry run failed because this wallet has not yet approved USDT for the swap. Approve first, then check again.",
+    "limits": null,
+    "recheckAt": null,
+    "txHash": null,
+    "receipt": null
+  }
+}
