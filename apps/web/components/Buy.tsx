@@ -152,7 +152,7 @@ export function BuyFlow({ nvdab, maxUsd }: { nvdab: string; maxUsd: string }) {
               <h3>Tested before you sign</h3>
               <dl className="kv small">
                 <dt>You receive about</dt><dd className="num">{units18(p.simulation.stockArriving) ?? "unavailable"} NVDAB</dd>
-                <dt>Guaranteed at least</dt><dd className="num">{units18(p.minReceiveAmount) ?? "unavailable"} NVDAB</dd>
+                <dt>You receive at least</dt><dd className="num">{units18(p.minReceiveAmount) ?? "unavailable"} NVDAB</dd>
                 <dt>Price may move at most</dt><dd className="num">{p.slippagePercent}%</dd>
                 <dt>Network fee at most</dt><dd className="num">{feeBnb(p.gas, p.gasPrice)} BNB</dd>
                 <dt>Valid for</dt><dd className="num">{left > 0 ? `${left} s` : "expired"}</dd>
