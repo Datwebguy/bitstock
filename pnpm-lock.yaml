@@ -35,10 +35,22 @@ importers:
       '@bitstock/chain':
         specifier: workspace:*
         version: link:../../packages/chain
+      '@bitstock/guard':
+        specifier: workspace:*
+        version: link:../../packages/guard
 
   packages/binance: {}
 
   packages/chain: {}
+
+  packages/guard:
+    dependencies:
+      '@bitstock/binance':
+        specifier: workspace:*
+        version: link:../binance
+      '@bitstock/chain':
+        specifier: workspace:*
+        version: link:../chain
 
 packages:
 
