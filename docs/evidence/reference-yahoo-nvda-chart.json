@@ -1,5 +1,5 @@
 {
-  "savedAt": "2026-10-10T21:12:00Z",
+  "savedAt": "2026-10-10T21:10:57Z",
   "request": {
     "method": "GET",
     "url": "https://query1.finance.yahoo.com/v8/finance/chart/NVDA?interval=1d&range=5d"

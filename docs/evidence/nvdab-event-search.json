@@ -1,5 +1,6 @@
 {
-  "checkedAt": "2026-10-10T22:00:00Z",
+  "checkedAt": "2026-10-10T21:38:00Z",
+  "checkedAtNote": "approximate (between 21:30 and 21:39 UTC); the checks were run by hand and not timestamped individually",
   "question": "Does NVDAB emit UIMultiplierUpdated(uint256,uint256,uint256), topic 0x2205df4534432b2f60654a3fdb48737ffdaf3e9edb1a498bd985bc026b15b055?",
   "historicalLogSearch": {
     "result": "No historical log could be retrieved with free endpoints; none found and none ruled out.",
