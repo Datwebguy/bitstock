@@ -10,12 +10,22 @@ function useMarket() {
   const [err, setErr] = useState(false);
   useEffect(() => {
     let alive = true;
-    const load = () => api<MarketView>("/market").then((v) => alive && (setM(v), setErr(false))).catch(() => alive && setErr(true));
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    const load = (): void => {
+      api<MarketView>("/market")
+        .then((v) => alive && (setM(v), setErr(false)))
+        .catch(() => {
+          if (!alive) return;
+          setErr(true);
+          retry = setTimeout(load, 5000); // one quick retry after a hiccup, then the regular refresh
+        });
+    };
     load();
     const t = setInterval(load, 30_000);
     return () => {
       alive = false;
       clearInterval(t);
+      if (retry) clearTimeout(retry);
     };
   }, []);
   return { m, err };
@@ -41,7 +51,7 @@ function CheckConsole({ m, err }: { m: MarketView | null; err: boolean }) {
     { k: "Market session", v: m ? s.text : "reading…", cls: m ? s.cls : "idle" },
     { k: "Shares per token", v: mult ? `${mult}${pending ? " · change scheduled" : " · no change scheduled"}` : m ? "unavailable" : "reading…", cls: mult ? (pending ? "warn" : "good") : "idle" },
     { k: "Independent price", v: ref ? `$${trimDecimal(ref.pricePerShare, 2)} · ${ref.session === "regular" ? "live" : "last close"}` : m ? "unavailable" : "reading…", cls: ref ? (ref.session === "regular" ? "good" : "warn") : "idle" },
-    { k: "Token vs stock", v: gap ? `${gap.startsWith("-") ? "" : "+"}${gap}%` : m ? "unavailable" : "reading…", cls: gap ? "good" : "idle" },
+    { k: "Token vs stock", v: gap ? `${gap.startsWith("-") ? "" : "+"}${gap}%` : m ? "unavailable" : "reading…", cls: gap ? (ref?.session === "regular" && Math.abs(Number(gap)) <= 0.5 ? "good" : "warn") : "idle" },
     { k: "Your trade, dry-run", v: "runs when you check a buy", cls: "idle" },
   ];
   return (
@@ -131,7 +141,7 @@ export function Landing() {
           <div className="hero-copy">
             <p className="kicker"><LogoMark size={18} /> Tokenized stocks on BNB Smart Chain</p>
             <h1 id="hero-title" className="hero-title">
-              Buy real stocks on chain.
+              Buy tokenized stocks on chain.
               <span className="hl"> Only after the checks pass.</span>
             </h1>
             <p className="hero-sub">Bitstock reads the market, the token, an independent stock price and a dry run of your exact trade, shows you every result, then lets you buy a small amount in your own wallet.</p>
