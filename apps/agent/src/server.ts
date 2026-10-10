@@ -163,6 +163,15 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     return send(res, 200, await runLiveGuard(process.env, usd, wallet));
   }
   if (path === "/v1/admin/sentry" && method === "GET") return send(res, 200, sentryStatus(process.env));
+  if (path === "/v1/admin/decisions" && method === "GET") {
+    const limit = Number(url.searchParams.get("limit") ?? "10");
+    return send(res, 200, ctx.repo.recentDecisions(Number.isFinite(limit) ? limit : 10).map((d) => ({ ...d.record, status: d.status })));
+  }
+  if (/^\/v1\/admin\/decisions\/[0-9a-f-]{36}\/tx$/.test(path) && method === "POST") {
+    const body = (await readJson(req)) as { txHash?: unknown };
+    const r = await attachUserTx(ctx, path.split("/")[4]!, body.txHash);
+    return send(res, r.status, r.ok ? { ok: true, status: ctx.repo.decision(path.split("/")[4]!)?.status } : { error: r.message });
+  }
 
   send(res, 404, { error: "not found" });
 }

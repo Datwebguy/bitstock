@@ -10,6 +10,8 @@ export interface AgentContext {
   repo: Repository;
   api: BinanceApi;
   rpcUrl: string;
+  /** RPC for transaction and receipt lookups; some public nodes refuse these (docs/VERIFIED.md). */
+  txRpcUrl: string;
   reference: ReferencePriceSource;
   cfg: GuardConfig;
   caps: { maxBuyUsd: string };
@@ -37,6 +39,7 @@ export function buildContext(env: NodeJS.ProcessEnv): AgentContext {
     repo: new SqliteRepository(join(env["DATA_DIR"] || "./data", "bitstock.sqlite")),
     api: new BinanceApi(client),
     rpcUrl: env["BSC_RPC_URL"] ?? "",
+    txRpcUrl: env["BSC_TX_RPC_URL"] || env["BSC_RPC_URL"] || "",
     reference: referenceSource(env),
     cfg,
     caps: { maxBuyUsd },

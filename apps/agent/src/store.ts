@@ -36,6 +36,7 @@ export interface Repository {
   submittedDecisions(): StoredDecision[];
   settleTx(id: string, status: "confirmed" | "reverted", receipt: unknown): void;
   countsByOutcome(): Record<string, number>;
+  recentDecisions(limit: number): StoredDecision[];
   createIntent(intent: Intent): void;
   dueIntents(nowIso: string): Intent[];
   updateIntent(id: string, patch: Pick<Intent, "status" | "recheckAt" | "reason" | "lastDecisionId">): void;
@@ -126,6 +127,10 @@ export class SqliteRepository implements Repository {
   countsByOutcome(): Record<string, number> {
     const rows = this.#db.prepare("SELECT outcome, COUNT(*) AS n FROM decisions GROUP BY outcome").all() as Array<{ outcome: string; n: number }>;
     return Object.fromEntries(rows.map((r) => [r.outcome, Number(r.n)]));
+  }
+
+  recentDecisions(limit: number): StoredDecision[] {
+    return (this.#db.prepare("SELECT * FROM decisions ORDER BY at DESC LIMIT ?").all(Math.min(Math.max(limit, 1), 50)) as Array<Record<string, unknown>>).map((r) => this.#row(r)!);
   }
 
   createIntent(i: Intent): void {

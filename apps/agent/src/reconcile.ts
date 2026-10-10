@@ -16,7 +16,7 @@ export async function attachUserTx(ctx: AgentContext, decisionId: string, txHash
   let tx: { from?: string; to?: string; input?: string } | null = null;
   // A just-broadcast transaction can take a moment to appear on the node.
   for (let i = 0; i < 10 && !tx; i++) {
-    tx = (await rpcCall<{ from?: string; to?: string; input?: string } | null>(ctx.rpcUrl, "eth_getTransactionByHash", [txHash])).result;
+    tx = (await rpcCall<{ from?: string; to?: string; input?: string } | null>(ctx.txRpcUrl, "eth_getTransactionByHash", [txHash])).result;
     if (!tx) await new Promise((r) => setTimeout(r, 1500));
   }
   if (!tx) return { ok: false, status: 404, message: "That transaction is not on the chain yet. Try again in a moment." };
@@ -28,7 +28,7 @@ export async function attachUserTx(ctx: AgentContext, decisionId: string, txHash
 }
 
 async function reconcileOne(ctx: AgentContext, id: string, hash: string): Promise<void> {
-  const r = await getReceipt(ctx.rpcUrl, hash);
+  const r = await getReceipt(ctx.txRpcUrl, hash);
   if (r) ctx.repo.settleTx(id, r.status === "success" ? "confirmed" : "reverted", r);
 }
 
