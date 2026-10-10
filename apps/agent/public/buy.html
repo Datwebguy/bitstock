@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bitstock: protected buy</title>
+  <link rel="stylesheet" href="/buy.css">
+  <script src="/buy.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Bitstock</h1>
+      <p class="lede">Checks the market before you buy, and shows every check.</p>
+    </header>
+
+    <section aria-labelledby="w-title" class="card">
+      <h2 id="w-title">1. Your wallet</h2>
+      <p id="wallet-status" role="status">Not connected.</p>
+      <button id="connect" type="button">Connect wallet</button>
+    </section>
+
+    <section aria-labelledby="c-title" class="card">
+      <h2 id="c-title">2. Check a buy of <span id="symbol">NVDAB</span></h2>
+      <label for="amount">Amount in US dollars (paid in USDT)</label>
+      <input id="amount" inputmode="decimal" autocomplete="off" aria-describedby="amount-help">
+      <p id="amount-help" class="help"></p>
+      <button id="check" type="button" disabled>Check now</button>
+      <p id="check-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section aria-labelledby="r-title" class="card" id="result" hidden>
+      <h2 id="r-title">3. What Bitstock found</h2>
+      <p id="outcome" class="outcome"></p>
+      <p id="reason"></p>
+      <ol id="checks" class="checks"></ol>
+      <div id="prepared" hidden>
+        <p id="prepared-summary"></p>
+        <button id="buy" type="button">Buy with my wallet</button>
+        <p id="buy-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <footer>
+      <p>Not investment advice. Tokenized stocks can be paused or blocked by their issuer. Every buy is tested first, and every transaction is public on BscScan.</p>
+    </footer>
+  </main>
+</body>
+</html>

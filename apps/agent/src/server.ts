@@ -1,54 +1,168 @@
+import { readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { resolve } from "node:path";
 import { isAdmin } from "./auth.ts";
 import { variableStatus } from "./config.ts";
+import { buildContext } from "./context.ts";
+import { InputError, makeDecision, processDueIntents, validateRequest } from "./decisions.ts";
 import { egressCountry } from "./egress.ts";
 import { runLiveGuard } from "./guard.ts";
-import { PROBE_NAMES, runProbe } from "./probes.ts";
+import { health } from "./health.ts";
+import { clearKill, engageKill, killState } from "./killswitch.ts";
+import { NVDAB, PROBE_NAMES, runProbe } from "./probes.ts";
+import { RateLimiter } from "./ratelimit.ts";
+import { attachUserTx, reconcileSubmitted } from "./reconcile.ts";
 import { sentryStatus, startSentry } from "./sentry.ts";
 
 const SERVICE = "bitstock-agent";
+const log = (o: Record<string, unknown>) => console.log(JSON.stringify({ at: new Date().toISOString(), ...o }));
+const ctx = buildContext(process.env);
+const decisionLimiter = new RateLimiter(Number(process.env["RATE_LIMIT_PER_MINUTE"] ?? "10"), 60_000);
+const readLimiter = new RateLimiter(120, 60_000);
+const allowedOrigin = process.env["PUBLIC_WEB_ORIGIN"] || null;
+
+const PUBLIC_DIR = resolve(import.meta.dirname, "../public");
+const STATIC: Record<string, { file: string; type: string }> = {
+  "/buy": { file: "buy.html", type: "text/html; charset=utf-8" },
+  "/buy.js": { file: "buy.js", type: "text/javascript; charset=utf-8" },
+  "/buy.css": { file: "buy.css", type: "text/css; charset=utf-8" },
+};
+const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+
+const json = (v: unknown) => JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? x.toString() : x), 2);
 
 function send(res: ServerResponse, status: number, body: unknown): void {
-  res.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" });
-  res.end(JSON.stringify(body, null, 2));
+  res.writeHead(status, { "content-type": "application/json", "cache-control": "no-store", "x-content-type-options": "nosniff" });
+  res.end(json(body));
 }
+
+/**
+ * The client address for rate limiting. The first X-Forwarded-For entry is whatever the client sent,
+ * so it is never trusted; the platform proxy's own header, or the last hop it appended, is used.
+ */
+function clientKey(req: IncomingMessage): string {
+  const real = req.headers["x-real-ip"];
+  if (typeof real === "string" && real) return real;
+  const fwd = req.headers["x-forwarded-for"];
+  const hops = typeof fwd === "string" ? fwd.split(",").map((h) => h.trim()).filter(Boolean) : [];
+  return hops[hops.length - 1] || req.socket.remoteAddress || "unknown";
+}
+
+async function readJson(req: IncomingMessage, maxBytes = 8192): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const c of req) {
+    size += (c as Buffer).length;
+    if (size > maxBytes) throw new InputError("The request is too large.");
+    chunks.push(c as Buffer);
+  }
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
+  } catch {
+    throw new InputError("The request body is not valid JSON.");
+  }
+}
+
+const admin = (req: IncomingMessage) => isAdmin(req.headers.authorization, process.env["ADMIN_TOKEN"]);
 
 async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
   const url = new URL(req.url ?? "/", "http://localhost");
-  if (req.method !== "GET") return send(res, 405, { error: "method not allowed" });
+  const path = url.pathname;
+  const method = req.method ?? "GET";
 
-  if (url.pathname === "/healthz") {
-    const egress = await egressCountry();
+  // Strict CORS: only the configured web origin may call the API from a browser.
+  const origin = req.headers.origin;
+  if (origin && allowedOrigin && origin === allowedOrigin) {
+    res.setHeader("access-control-allow-origin", allowedOrigin);
+    res.setHeader("vary", "Origin");
+    res.setHeader("access-control-allow-headers", "content-type, idempotency-key");
+    res.setHeader("access-control-allow-methods", "GET, POST");
+  }
+  if (method === "OPTIONS") return void res.writeHead(204).end();
+
+  const page = STATIC[path];
+  if (page && method === "GET") {
+    res.writeHead(200, { "content-type": page.type, "content-security-policy": CSP, "x-content-type-options": "nosniff", "referrer-policy": "no-referrer", "cache-control": "no-cache" });
+    return void res.end(readFileSync(resolve(PUBLIC_DIR, page.file)));
+  }
+
+  if (path === "/healthz" && method === "GET") {
     return send(res, 200, {
       service: SERVICE,
       commit: process.env["RAILWAY_GIT_COMMIT_SHA"] ?? null,
       host: { platform: process.env["RAILWAY_PUBLIC_DOMAIN"] ? "railway" : null, region: process.env["RAILWAY_REPLICA_REGION"] ?? null },
-      egress,
+      egress: await egressCountry(),
       variables: variableStatus(process.env),
+      ...(await health(ctx)),
       at: new Date().toISOString(),
     });
   }
 
-  if (url.pathname === "/v1/admin/probe") {
-    if (!isAdmin(req.headers.authorization, process.env["ADMIN_TOKEN"])) return send(res, 401, { error: "unauthorized" });
+  if (path === "/v1/config" && method === "GET") {
+    return send(res, 200, { token: { address: NVDAB, symbol: "NVDAB" }, maxBuyUsd: ctx.caps.maxBuyUsd, chainId: 56, killSwitch: killState(ctx.env, ctx.repo).on });
+  }
+
+  if (path === "/v1/decisions" && method === "POST") {
+    if (!decisionLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many checks from this address. Wait a minute and try again." });
+    const body = await readJson(req);
+    const request = validateRequest(body, ctx.caps.maxBuyUsd);
+    const idem = req.headers["idempotency-key"];
+    const key = typeof idem === "string" && /^[A-Za-z0-9-]{8,64}$/.test(idem) ? idem : null;
+    const record = await makeDecision(ctx, request, key);
+    log({ level: "info", msg: "decision", id: record.id, outcome: record.outcome, rulesVersion: record.rulesVersion });
+    return send(res, 200, record);
+  }
+
+  const m = /^\/v1\/decisions\/([0-9a-f-]{36})(\/tx)?$/.exec(path);
+  if (m) {
+    if (!readLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many requests." });
+    const id = m[1]!;
+    if (!m[2] && method === "GET") {
+      const d = ctx.repo.decision(id);
+      return d ? send(res, 200, { ...d.record, status: d.status }) : send(res, 404, { error: "No such decision." });
+    }
+    if (m[2] && method === "POST") {
+      const body = (await readJson(req)) as { txHash?: unknown };
+      const r = await attachUserTx(ctx, id, body.txHash);
+      if (r.ok) log({ level: "info", msg: "user transaction recorded", decision: id });
+      return send(res, r.status, r.ok ? { ok: true, status: ctx.repo.decision(id)?.status } : { error: r.message });
+    }
+  }
+
+  const im = /^\/v1\/intents\/([0-9a-f-]{36})$/.exec(path);
+  if (im && method === "GET") {
+    const i = ctx.repo.intent(im[1]!);
+    return i ? send(res, 200, i) : send(res, 404, { error: "No such intent." });
+  }
+
+  // ---- admin (bearer token) ----
+  if (path.startsWith("/v1/admin/") && !admin(req)) return send(res, 401, { error: "unauthorized" });
+
+  if (path === "/v1/admin/kill" && method === "POST") {
+    const body = (await readJson(req)) as { reason?: unknown };
+    engageKill(ctx.repo, typeof body.reason === "string" ? body.reason : "engaged by admin");
+    log({ level: "warn", msg: "kill switch engaged" });
+    return send(res, 200, killState(ctx.env, ctx.repo));
+  }
+  if (path === "/v1/admin/kill/clear" && method === "POST") {
+    const body = (await readJson(req)) as { confirm?: unknown };
+    if (!clearKill(ctx.repo, body.confirm)) return send(res, 400, { error: 'Send {"confirm":"clear the kill switch"} to clear it.' });
+    log({ level: "warn", msg: "kill switch cleared" });
+    return send(res, 200, killState(ctx.env, ctx.repo));
+  }
+  if (path === "/v1/admin/probe" && method === "GET") {
     const n = Number(url.searchParams.get("n"));
     if (!Number.isInteger(n) || n < 1 || n > 8) return send(res, 400, { error: "n must be an integer from 1 to 8", probes: PROBE_NAMES });
     return send(res, 200, await runProbe(n, process.env));
   }
-
-  if (url.pathname === "/v1/admin/guard") {
-    if (!isAdmin(req.headers.authorization, process.env["ADMIN_TOKEN"])) return send(res, 401, { error: "unauthorized" });
+  if (path === "/v1/admin/guard" && method === "GET") {
     const usd = url.searchParams.get("usd") ?? "";
     const wallet = process.env["PROBE_WALLET_ADDRESS"] ?? "";
     if (!/^\d{1,4}(\.\d{1,2})?$/.test(usd)) return send(res, 400, { error: "usd must be a dollar amount like 1 or 2.50" });
     if (!wallet) return send(res, 503, { error: "PROBE_WALLET_ADDRESS is not set" });
     return send(res, 200, await runLiveGuard(process.env, usd, wallet));
   }
-
-  if (url.pathname === "/v1/admin/sentry") {
-    if (!isAdmin(req.headers.authorization, process.env["ADMIN_TOKEN"])) return send(res, 401, { error: "unauthorized" });
-    return send(res, 200, sentryStatus(process.env));
-  }
+  if (path === "/v1/admin/sentry" && method === "GET") return send(res, 200, sentryStatus(process.env));
 
   send(res, 404, { error: "not found" });
 }
@@ -56,10 +170,17 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
 const port = Number(process.env["PORT"] ?? 3000);
 createServer((req, res) => {
   handle(req, res).catch((e: unknown) => {
-    console.error(JSON.stringify({ level: "error", msg: e instanceof Error ? e.message : String(e) }));
-    send(res, 500, { error: "internal error" });
+    if (e instanceof InputError) return send(res, 400, { error: e.message });
+    log({ level: "error", msg: e instanceof Error ? e.message : String(e) });
+    send(res, 500, { error: "Something went wrong on the server. Nothing was prepared or sent." });
   });
 }).listen(port, () => {
-  console.log(JSON.stringify({ level: "info", msg: "listening", service: SERVICE, port }));
-  startSentry(process.env, (o) => console.log(JSON.stringify(o)));
+  log({ level: "info", msg: "listening", service: SERVICE, port });
+  startSentry(process.env, log);
+  const tick = () => {
+    void reconcileSubmitted(ctx, log);
+    void processDueIntents(ctx, log);
+  };
+  tick();
+  setInterval(tick, 30_000).unref();
 });
