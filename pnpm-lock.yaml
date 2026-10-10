@@ -38,6 +38,9 @@ importers:
       '@bitstock/chain':
         specifier: workspace:*
         version: link:../../packages/chain
+      '@bitstock/explainer':
+        specifier: workspace:*
+        version: link:../../packages/explainer
       '@bitstock/guard':
         specifier: workspace:*
         version: link:../../packages/guard
@@ -52,6 +55,12 @@ importers:
       '@noble/hashes':
         specifier: 2.4.0
         version: 2.4.0
+
+  packages/explainer:
+    dependencies:
+      '@bitstock/chain':
+        specifier: workspace:*
+        version: link:../chain
 
   packages/guard:
     dependencies:
