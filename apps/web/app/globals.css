@@ -361,7 +361,7 @@ h1.split { font-size: clamp(1.7rem, 5.5vw, 2.6rem); line-height: 1.12; letter-sp
 /* Scroll-lit statement */
 .statement { padding-top: 72px; padding-bottom: 40px; }
 .scroll-lit { max-width: 26ch; margin: 0 auto; font-size: clamp(1.7rem, 6.4vw, 3.3rem); line-height: 1.15; letter-spacing: -0.035em; font-weight: 800; text-align: center; }
-.scroll-lit .lw { color: color-mix(in srgb, var(--text) 18%, transparent); transition: color 0.35s ease; }
+.scroll-lit .lw { color: color-mix(in srgb, var(--text) 52%, var(--bg)); transition: color 0.35s ease; }
 .scroll-lit .lw.lit { color: var(--text); }
 .scroll-lit .lw.lit:nth-child(5n + 3) { color: var(--brand); }
 

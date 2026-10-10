@@ -86,7 +86,8 @@ export function SplitReveal({ text, as: Tag = "h2", className = "" }: { text: st
   }, []);
   const words = text.split(" ");
   return (
-    <Tag ref={ref} className={`split ${className}`} aria-label={text}>
+    <Tag ref={ref} className={`split ${className}`}>
+      <span className="sr-only">{text}</span>
       {words.map((w, i) => (
         <Fragment key={i}>
           <span className="w" aria-hidden="true">
@@ -120,7 +121,8 @@ export function ScrollLit({ text }: { text: string }) {
     return () => cancelAnimationFrame(raf);
   }, []);
   return (
-    <p ref={ref} className="scroll-lit" aria-label={text}>
+    <p ref={ref} className="scroll-lit">
+      <span className="sr-only">{text}</span>
       {text.split(" ").map((w, i) => (
         <span key={i} className="lw" aria-hidden="true">{w} </span>
       ))}
