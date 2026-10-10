@@ -84,7 +84,24 @@ Run by `GET /v1/admin/probe?n=1|2|3` on the Railway service in `asia-southeast1-
 | `/rwa/underlying-market` | `statusInfo` plus `marketData {referencePrice (null), high52W, low52W, volumeShares24H, avgDailyVolume1Y (null), totalShares (null), marketCap, turnoverRate (null), amplitude (null), dividendYield, latestDividend, peRatioTTM, pbRatio}`. Several fields are null, so the app must show "unavailable" for them. |
 | Dividend fields | `latestDividend` = "0.250000" and `dividendYield` = "0.00120000" (units and date not stated by the API). Not yet compared with the multiplier change; that check belongs to the explainer step. |
 
-Not yet verified: quotes, swap build, simulate and the approve order (probes 4 to 6, which need a user wallet address), and the closed-market quote result in `AGENTS.md` section 10.
+#### Trading probes (probes 4 to 6), Saturday 2026-10-10, about 21:05 UTC
+
+Raw: `docs/evidence/b4-trading-quote-usdt-nvdab.railway-sg.json`, `b5-swap-build-and-simulate.railway-sg.json`, `b6-approve-transaction-usdt.railway-sg.json`. USDT is `0x55d398326f99059fF775485246999027B3197955` (18 decimals), NVDAB `0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436`.
+
+| Fact | Live result |
+|---|---|
+| Quote while the US market is closed (Saturday) | **HTTP 200, code 0. One route, `vendorName` LiquidMesh, `executionMode` SWAP, `isBest` true.** No `40369`, and no PcsXRfq/RFQ route was offered. So `AGENTS.md` section 10, first row applies: a SWAP route is available. |
+| $1 quote | `toTokenAmount` 4334315581714481 (0.004334 NVDAB), `priceImpactPercent` 0.0006252806, `estimateGasFee` 250000, `tradeFee` 0.00975883. Implied price 230.717 USDT per token. Path: USDT to ETH to BTCB to USDC to NVDAB over several pools. |
+| $10 quote | `toTokenAmount` 43340475858576217, `priceImpactPercent` 0.0005158263, implied 230.731 USDT per token. Path: one PancakeSwap V3 hop. |
+| Price agreement | The implied $1 price (230.717) is within 0.01% of the token list's `tokenPrice` (230.709). That suggests the list's `tokenPrice` is the per-token price and the `/rwa/price` `tokenPrice` (230.53) is per share. Supported by this one reading only; not settled. |
+| Quote fields | `quoteId`, `vendorName`, `executionMode`, `binanceChainId`, `fromTokenAmount`, `toTokenAmount`, `tradeFee`, `estimateGasFee`, `priceImpactPercent`, `router`, `fromToken`/`toToken` (`tokenContractAddress`, `tokenSymbol`, `tokenUnitPrice`, `decimal`, `isHoneyPot`, `taxRate`), `dexRouterList`, `approveTarget`, `isBest`, `feeAmount`, `feeToken`, `actualSwapAmount`. The last three are `null` without a fee. |
+| Fee parameters | With `feePercent=0.15` and `feeSource=FROM_TOKEN`: $1 gives `feeAmount` 1500000000000000 (0.0015 USDT), `feeToken` USDT, `actualSwapAmount` 998500000000000000; $10 gives 15000000000000000 and 9985000000000000000. Output drops by 0.15% to match. |
+| Approve spender | `approveTarget` in the quote is `0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5` and it is the same address returned by `/approve-transaction` as `dexContractAddress`. |
+| `/approve-transaction` | Returns an array with one item: `data` (ERC-20 `approve(spender, amount)`, selector `0x095ea7b3`), `dexContractAddress`, `gasLimit` "70000", `gasPrice`. The result was identical in all three orders tried: without vendor and before any quote; with `vendor=LiquidMesh`; with `vendor=LiquidMesh` after a quote. Use the simplest. |
+| `/swap` response | Keys `executionMode`, `routerResult`, `tx`, `rfq`. The transaction object sits under `tx` and is also found by shape (`from`, `to`, `data`). `routerResult` repeats the route and has its own `toTokenAmount` (4334179567267663, slightly different from the quote a moment earlier, so the price moves between calls). |
+| Transaction API `simulate` (no USDT allowance yet) | HTTP 200, code 0, but `status` **FAILED**, `failReason` "execution reverted: BEP20: transfer amount exceeds allowance", `balanceChanges` [] and `allowanceChanges` []. The simulator is stateful and honest: without an approval it does not pretend. So the guard must check the USDT allowance first, require the approve step, and only then expect a SUCCESS simulation. A failed simulation for a missing allowance is not the same as a market problem and must say so. A SUCCESS result with `balanceChanges` showing NVDAB arriving has **not** been seen yet. |
+
+Still not verified: a `SUCCESS` simulation with the stock token arriving (needs an approved allowance and a funded wallet), the gas figure from the `gas-limit` endpoint, and `40369` for NVDAB.
 
 ### Trading (GET, signed)
 
@@ -98,8 +115,8 @@ Not yet verified: quotes, swap build, simulate and the approve order (probes 4 t
 - **Routing for bStocks (type 3):** LiquidMesh (SWAP) plus PcsXRfq (RFQ), possibly both returned together. Ondo tokens are always RFQ. xStocks are normal AMM swaps. A given token belongs to one type only.
 - **Only SWAP routes can be dry-run.** Refuse RFQ routes in this build.
 - **Custom fee:** parameter is `feePercent`, a decimal string in `(0, 5]` with at most 2 decimals (e.g. `"0.15"`). There is **no** `feeRate` parameter. RFQ routes ignore fee parameters. Quote and swap must agree on direction and percent or you get `SWAP_QUOTE_MISMATCH (40462)`. The response echoes `feeAmount`, `feeToken`, `actualSwapAmount` when a fee is on.
-- **Market hours error:** for bStocks, `/quote` can return **`40369 BSTOCK_INVALID_TRADING_TIME`** ("underlying stock exchange is currently closed"). For Ondo it is `40367`. **UNVERIFIED whether the NVDAB LiquidMesh SWAP route refuses quotes while the US market is closed.** Prompt 1 tests this on a weekend. The answer decides which path the build takes (see `AGENTS.md` section 8).
-- **Docs ambiguity to test:** the integration flow says call `/approve-transaction` before `/quote` (vendor omitted) for regular swaps, while the equity section says `vendor` is required in approve for equity tokens and `vendorName` only exists after a quote. USDT is the sell token here, so the approve is for USDT, not the stock. Test which order works and record it.
+- **Market hours error:** for bStocks, `/quote` can return **`40369 BSTOCK_INVALID_TRADING_TIME`** ("underlying stock exchange is currently closed"); for Ondo it is `40367`. **Tested live on Saturday 2026-10-10: NVDAB quoted normally with a LiquidMesh SWAP route and no `40369`** (section 3a). The `40369` behaviour is still unobserved for NVDAB; keep handling it.
+- **Approve order (tested live, section 3a):** `/approve-transaction` works both before and after the quote, with or without `vendor=LiquidMesh`, and returns the same calldata and spender in each order.
 - Quote expiry error: `QUOTE_EXPIRED (40401)`.
 
 ### Transaction (signed)
