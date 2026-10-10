@@ -48,12 +48,6 @@ export function div(a: bigint, b: bigint): bigint {
   return (a * ONE) / b;
 }
 
-/** Token amount in smallest units (with `decimals`) to 18-digit fixed point. */
-export function fromUnits(units: bigint, decimals: number): bigint {
-  if (decimals === SCALE) return units;
-  return decimals < SCALE ? units * 10n ** BigInt(SCALE - decimals) : units / 10n ** BigInt(decimals - SCALE);
-}
-
 /** Relative difference (a - b) / b in percent, as fixed point. */
 export function percentDiff(a: bigint, b: bigint): bigint {
   return div((a - b) * 100n, b);

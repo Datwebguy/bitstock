@@ -2,6 +2,7 @@
  * The guard's rules (AGENTS.md section 6). Pure functions of observed inputs: no I/O,
  * no clock reads, no randomness. The same inputs and config always give the same result.
  */
+import { rescale } from "@bitstock/chain";
 import type { GuardConfig } from "./config.ts";
 import { abs, div, formatDecimal, mul, parseDecimal, percentDiff, tryParseDecimal } from "./decimal.ts";
 import type { Check, Outcome, SlippageLimit } from "./types.ts";
@@ -228,8 +229,8 @@ export function quotePricePerToken(route: Route | undefined): bigint | undefined
   const fromDec = Number(route.fromToken?.decimal ?? NaN);
   const toDec = Number(route.toToken?.decimal ?? NaN);
   if (!paid || !got || got <= 0n || unitPrice === undefined || !Number.isInteger(fromDec) || !Number.isInteger(toDec)) return undefined;
-  const paidFixed = paid * 10n ** 18n / 10n ** BigInt(fromDec);
-  const gotFixed = got * 10n ** 18n / 10n ** BigInt(toDec);
+  const paidFixed = rescale(paid, fromDec, 18);
+  const gotFixed = rescale(got, toDec, 18);
   return div(mul(paidFixed, unitPrice), gotFixed);
 }
 

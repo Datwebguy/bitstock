@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { div, formatDecimal, fromUnits, mul, ONE, parseDecimal, percentDiff, tryParseDecimal } from "../src/decimal.ts";
+import { div, formatDecimal, mul, ONE, parseDecimal, percentDiff, tryParseDecimal } from "../src/decimal.ts";
 
 describe("decimal", () => {
   it("parses plain decimals exactly", () => {
@@ -28,9 +28,5 @@ describe("decimal", () => {
   it("computes percent differences", () => {
     expect(formatDecimal(percentDiff(parseDecimal("101"), parseDecimal("100")), 4)).toBe("1.0000");
     expect(formatDecimal(percentDiff(parseDecimal("99"), parseDecimal("100")), 4)).toBe("-1.0000");
-  });
-  it("converts token units of other decimals", () => {
-    expect(fromUnits(1_000000n, 6)).toBe(ONE);
-    expect(fromUnits(10n ** 20n, 20)).toBe(ONE);
   });
 });

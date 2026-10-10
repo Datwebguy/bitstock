@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-10-10T22:00:00Z",
+  "question": "Does NVDAB emit UIMultiplierUpdated(uint256,uint256,uint256), topic 0x2205df4534432b2f60654a3fdb48737ffdaf3e9edb1a498bd985bc026b15b055?",
+  "historicalLogSearch": {
+    "result": "No historical log could be retrieved with free endpoints; none found and none ruled out.",
+    "attempts": [
+      {"endpoint": "https://bsc-rpc.publicnode.com", "eth_getLogs": "recent ranges work (1000 blocks: 84 logs, 5000 blocks: 693 logs, all event types); 50000 blocks and any old range refused: 'Archive requests require a personal token'"},
+      {"endpoint": "https://bsc-dataseed.bnbchain.org", "eth_getLogs": "'limit exceeded' for every range tried, including 100 recent blocks", "eth_call at old block": "missing trie node"},
+      {"endpoint": "https://bsc.blockrazor.xyz", "eth_getLogs": "'log query range must not exceed 25 blocks'", "eth_call at old block": "not supported"},
+      {"endpoint": "https://bsc.drpc.org", "eth_getLogs": "HTTP 429 public rate limit; 'ranges over 10000 blocks are not supported on free plan'"},
+      {"endpoint": "https://1rpc.io/bnb", "result": "usage limit reached"},
+      {"endpoint": "https://rpc.ankr.com/bsc", "result": "API key required"},
+      {"endpoint": "https://bscscan.com/address/<NVDAB>#events", "result": "HTTP 403 to a scripted fetch"}
+    ]
+  },
+  "bytecodeCheck": {
+    "NVDAB": {"address": "0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436", "codeBytes": 283, "containsTopic": false, "eip1967ImplementationSlot": "0x0000000000000000000000000000000000000000", "eip1967BeaconSlot": "0x156d6dce9a4f6139a3406f1f021f1a4880de93a3"},
+    "beacon": {"address": "0x156d6dce9a4f6139a3406f1f021f1a4880de93a3", "codeBytes": 644, "containsTopic": false, "implementation()": "0xcfed6c4679297ea4889f8183bc057b4a86c64e46"},
+    "implementation": {"address": "0xcfed6c4679297ea4889f8183bc057b4a86c64e46", "codeBytes": 10836, "containsTopic": true},
+    "meaning": "NVDAB is a beacon proxy. Its current implementation's bytecode contains the UIMultiplierUpdated topic hash, so the code can emit the event. This does not show that it has emitted one, or which parameters are indexed."
+  }
+}
