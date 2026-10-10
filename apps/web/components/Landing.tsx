@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, trimDecimal, when, type MarketView } from "@/lib/api";
 import { LogoMark } from "./Logo";
+import { Coin, ScrollLit, SplitReveal, TypeCycle, VelocityBand } from "./Motion";
 import { Reveal } from "./Reveal";
 
 function useMarket() {
@@ -128,22 +129,14 @@ export function Landing() {
   return (
     <div className="landing">
       <section className="hero" aria-labelledby="hero-title">
-        <div className="hero-bg" aria-hidden="true">
-          <div className="aurora a1" />
-          <div className="aurora a2" />
-          <div className="aurora a3" />
-          <div className="gridlines" />
-          <div className="candles">
-            {Array.from({ length: 9 }).map((_, i) => <span key={i} className={`candle c${i + 1}`} />)}
-          </div>
-        </div>
         <div className="hero-in">
           <div className="hero-copy">
-            <p className="kicker"><LogoMark size={18} /> Tokenized stocks on BNB Smart Chain</p>
+            <p className="kicker"><span className="roll"><LogoMark size={18} /></span> Tokenized stocks on BNB Smart Chain</p>
             <h1 id="hero-title" className="hero-title">
               Buy tokenized stocks on chain.
               <span className="hl"> Only after the checks pass.</span>
             </h1>
+            <TypeCycle label="Bitstock checks the market session, the share multiplier, an independent price, the route and a dry run." phrases={["Checking the market session…", "Reading the share multiplier…", "Comparing an independent price…", "Measuring your exact trade…", "Dry-running the transaction…", "Showing you every result."]} />
             <p className="hero-sub">Bitstock reads the market, the token, an independent stock price and a dry run of your exact trade, shows you every result, then lets you buy a small amount in your own wallet.</p>
             <div className="hero-cta">
               <Link className="btn btn-primary btn-glow" href="/buy">Try a protected buy</Link>
@@ -158,12 +151,12 @@ export function Landing() {
       <Ticker m={m} />
 
       <section className="band" aria-labelledby="how">
-        <Reveal>
-          <p className="eyebrow center">How it works</p>
-          <h2 id="how" className="section-title">Check. Buy. Understand.</h2>
-        </Reveal>
+        <p className="eyebrow center">How it works</p>
+        <SplitReveal text="Check. Buy. Understand." className="section-title" />
+        <span id="how" className="sr-only">How it works</span>
         <div className="flow">
           <svg className="flow-line" viewBox="0 0 1000 8" preserveAspectRatio="none" aria-hidden="true"><path d="M0 4 H1000" /></svg>
+          <span className="flow-token" aria-hidden="true" />
           {STEPS.map((s, i) => (
             <Reveal key={s.n} className={`flow-step s${i + 1}`}>
               <span className="flow-n">{s.n}</span>
@@ -174,11 +167,16 @@ export function Landing() {
         </div>
       </section>
 
+      <section className="band statement" aria-label="What Bitstock believes">
+        <ScrollLit text="A small buy deserves the same care as a big one. Read the market. Check the token. Compare a price from somewhere else. Test the exact trade. Then, and only then, buy." />
+      </section>
+
+      <VelocityBand words={["CHECK", "BUY", "EXPLAIN", "CHECK", "BUY", "EXPLAIN"]} />
+
       <section className="band" aria-labelledby="five">
-        <Reveal>
-          <p className="eyebrow center">Before every buy</p>
-          <h2 id="five" className="section-title">Five checks, all shown to you</h2>
-        </Reveal>
+        <p className="eyebrow center">Before every buy</p>
+        <SplitReveal text="Five checks, all shown to you" className="section-title" />
+        <span id="five" className="sr-only">Five checks</span>
         <div className="checks-grid">
           {CHECKS.map((c, i) => (
             <Reveal key={c.t} className="check-card">
@@ -213,9 +211,8 @@ export function Landing() {
       </section>
 
       <section className="band" aria-labelledby="faq">
-        <Reveal>
-          <h2 id="faq" className="section-title">Questions</h2>
-        </Reveal>
+        <SplitReveal text="Questions, answered plainly" className="section-title" />
+        <span id="faq" className="sr-only">Questions</span>
         <div className="faq">
           {FAQ.map((f) => (
             <details key={f.q}>
@@ -227,10 +224,9 @@ export function Landing() {
       </section>
 
       <section className="cta-band" aria-labelledby="go">
-        <div className="hero-bg" aria-hidden="true"><div className="aurora a1" /><div className="gridlines" /></div>
         <Reveal className="cta-in">
-          <LogoMark size={44} />
-          <h2 id="go" className="section-title">Start with a dollar.</h2>
+          <Coin />
+          <h2 id="go" className="section-title"><span className="gold">Start with a dollar.</span></h2>
           <p className="muted">Check NVDAB live, then buy a small amount when the checks allow it.</p>
           <div className="hero-cta center">
             <Link className="btn btn-primary btn-glow" href="/buy">Try a protected buy</Link>

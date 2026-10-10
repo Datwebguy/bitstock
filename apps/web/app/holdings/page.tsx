@@ -1,3 +1,4 @@
+import { SplitReveal } from "@/components/Motion";
 import type { Metadata } from "next";
 import { HoldingsView } from "@/components/Holdings";
 
@@ -7,7 +8,7 @@ export default function HoldingsPage() {
   return (
     <>
       <p className="eyebrow">Holdings and explain</p>
-      <h1>What you own, in plain words</h1>
+      <SplitReveal as="h1" text="What you own, in plain words" />
       <p className="lede">Your tokens, the shares they stand for, and what changes them.</p>
       <HoldingsView />
     </>

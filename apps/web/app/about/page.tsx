@@ -1,3 +1,4 @@
+import { SplitReveal } from "@/components/Motion";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "About" };
@@ -6,7 +7,7 @@ export default function AboutPage() {
   return (
     <>
       <p className="eyebrow">About</p>
-      <h1>A careful way to buy small</h1>
+      <SplitReveal as="h1" text="A careful way to buy small" />
       <p className="lede">Bitstock is a market-aware assistant for buying small amounts of tokenized stocks on BNB Smart Chain. It decides whether it is sensible to buy right now, helps you buy within your own limits, and explains what happens to what you own.</p>
       <div className="grid grid-2">
         <section className="card">

@@ -1,3 +1,4 @@
+import { SplitReveal } from "@/components/Motion";
 import type { Metadata } from "next";
 import { CompanyNote, Quiz } from "@/components/Learn";
 
@@ -14,7 +15,7 @@ export default function LearnPage() {
   return (
     <>
       <p className="eyebrow">Learn</p>
-      <h1>How your tokenized stock works</h1>
+      <SplitReveal as="h1" text="How your tokenized stock works" />
       <p className="lede">Plain words about what you hold and how Bitstock decides.</p>
       <div className="grid">
         <CompanyNote />

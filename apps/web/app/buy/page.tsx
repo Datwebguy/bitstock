@@ -1,3 +1,4 @@
+import { SplitReveal } from "@/components/Motion";
 import type { Metadata } from "next";
 import { BuyFlow } from "@/components/Buy";
 
@@ -10,7 +11,7 @@ export default function BuyPage() {
   return (
     <>
       <p className="eyebrow">Protected buy</p>
-      <h1>Check, then buy</h1>
+      <SplitReveal as="h1" text="Check, then buy" />
       <p className="lede">Bitstock runs five checks on live data and dry-runs the exact trade. You see every result, then sign in your own wallet.</p>
       <BuyFlow nvdab={NVDAB} maxUsd={maxUsd} />
     </>
