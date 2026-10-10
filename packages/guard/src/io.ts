@@ -11,7 +11,7 @@ import { buildRecord } from "./record.ts";
 import type { ReferencePriceSource } from "./reference.ts";
 import {
   checkExecution, checkMultiplier, checkReference, checkSession, checkSimulation, chooseRoute, decide, quotePricePerToken,
-  type MarketStatusObs, type MultiplierObs, type QuoteObs, type ReferenceObs, type Route, type SimulationObs, type Sourced,
+  type MarketStatusObs, type MultiplierObs, type QuoteObs, type ReferenceObs, type Route, type SimulationObs, type Sourced, type SwapPin,
 } from "./rules.ts";
 import type { DecisionRecord, GuardInput, GuardRequest } from "./types.ts";
 
@@ -80,6 +80,7 @@ export async function runGuard(deps: GuardDeps, req: GuardRequest, cfg: GuardCon
 
   // 5. simulation: allowance first (the simulator is stateful), then build and dry-run the swap
   let simObs: Sourced<SimulationObs> & { skipped?: string } = { source: `${BINANCE} pre-transaction/simulate`, asOf: null };
+  let pin: SwapPin | undefined;
   if (!route) {
     simObs = { ...simObs, skipped: "there is no swap route to test." };
   } else {
@@ -93,6 +94,7 @@ export async function runGuard(deps: GuardDeps, req: GuardRequest, cfg: GuardCon
     );
     const tx = swap.ok ? findSwapTx(swap.value) : undefined;
     add({ name: "swap transaction", value: tx ? { from: tx.from, to: tx.to, value: tx.value ?? "0", dataBytes: (tx.data.length - 2) / 2 } : null, source: `${BINANCE} aggregator/swap`, asOf: swap.at, status: tx ? "ok" : "unavailable", ...(!swap.ok ? { error: swap.error } : !tx ? { error: "no transaction object in the response" } : {}) });
+    if (tx) pin = { tx: { from: tx.from, to: tx.to, value: String(tx.value ?? "0") }, expectedTo: route.approveTarget };
     if (!tx) {
       simObs = { ...simObs, skipped: swap.ok ? "the swap response had no transaction to test." : `the swap could not be built (${swap.error}).` };
     } else {
@@ -108,7 +110,7 @@ export async function runGuard(deps: GuardDeps, req: GuardRequest, cfg: GuardCon
     checkMultiplier(multObs, now, cfg),
     checkReference(refObs, quotePricePerToken(route), mult.ok ? mult.value.uiMultiplier : undefined, now, cfg),
     checkExecution(quoteObs, cfg),
-    checkSimulation(simObs, req.token, req.wallet),
+    checkSimulation(simObs, req.token, req.wallet, pin),
   ];
   const impact = tryParseDecimal(route?.priceImpactPercent);
   const decision = decide(checks, impact, now, cfg);

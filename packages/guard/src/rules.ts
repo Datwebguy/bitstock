@@ -236,8 +236,24 @@ export function quotePricePerToken(route: Route | undefined): bigint | undefined
 
 // ---------- 5. simulation ----------
 
-export function checkSimulation(sim: Sourced<SimulationObs> & { skipped?: string }, stockToken: string, wallet: string): Check {
+/** The swap transaction as built by the API, and the contract the quote said it would go to. */
+export interface SwapPin {
+  tx: { from: string; to: string; value: string };
+  expectedTo: string | undefined;
+}
+
+export function checkSimulation(sim: Sourced<SimulationObs> & { skipped?: string }, stockToken: string, wallet: string, pin?: SwapPin): Check {
   const base = { id: "simulation" as const, name: "Dry run", source: sim.source, asOf: sim.asOf, threshold: "SUCCESS and the stock arrives" };
+  // Pin the transaction before trusting any dry run of it: it must come from the buyer, go to the
+  // contract the quote named as the spender, and carry no BNB.
+  if (pin) {
+    const raw = `to=${pin.tx.to}, expected=${pin.expectedTo ?? "unknown"}, value=${pin.tx.value}`;
+    if (!pin.expectedTo || pin.tx.to.toLowerCase() !== pin.expectedTo.toLowerCase()) {
+      return { ...base, result: "fail", rawValue: raw, reason: "The swap Binance built does not go to the contract its quote named, so Bitstock will not use it." };
+    }
+    if (pin.tx.from.toLowerCase() !== wallet.toLowerCase()) return { ...base, result: "fail", rawValue: raw, reason: "The swap Binance built is not from this wallet, so Bitstock will not use it." };
+    if (BigInt(pin.tx.value || "0") !== 0n) return { ...base, result: "fail", rawValue: raw, reason: "The swap Binance built would also send BNB, which a USDT purchase never needs." };
+  }
   if (sim.skipped) return { ...base, result: "unavailable", rawValue: null, reason: `The dry run was not run: ${sim.skipped}`, retryAt: null };
   const v = sim.value;
   if (!v) return { ...base, result: "unavailable", rawValue: null, reason: `The dry run could not be performed${sim.error ? ` (${sim.error})` : ""}.`, retryAt: null };

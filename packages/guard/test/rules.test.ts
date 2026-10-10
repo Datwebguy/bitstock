@@ -170,6 +170,24 @@ describe("5. simulation", () => {
     expect(sim({ status: "SUCCESS", balanceChanges: [{ contractAddress: STOCK, owner: "0x2222222222222222222222222222222222222222", change: "5" }] }).result).toBe("fail");
     expect(sim({ status: "SUCCESS", balanceChanges: [{ contractAddress: STOCK, owner: WALLET, change: "-5" }] }).result).toBe("fail");
   });
+  const ROUTER = "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5";
+  const ok = { status: "SUCCESS", balanceChanges: [{ contractAddress: STOCK, owner: WALLET, change: "5" }] };
+  const pinned = (to: string, from = WALLET, value = "0", expectedTo: string | undefined = ROUTER) =>
+    checkSimulation({ source: "t", asOf: null, value: ok }, STOCK, WALLET, { tx: { from, to, value }, expectedTo });
+  it("passes when the swap goes to the contract the quote named, from the buyer, with no BNB", () => {
+    expect(pinned(ROUTER.toLowerCase()).result).toBe("pass");
+  });
+  it("fails a swap to any other contract, even if its dry run succeeds", () => {
+    const c = pinned("0x9999999999999999999999999999999999999999");
+    expect(c.result).toBe("fail");
+    expect(c.reason).toContain("does not go to the contract its quote named");
+    const unknownTarget = checkSimulation({ source: "t", asOf: null, value: ok }, STOCK, WALLET, { tx: { from: WALLET, to: ROUTER, value: "0" }, expectedTo: undefined });
+    expect(unknownTarget.result).toBe("fail");
+  });
+  it("fails a swap from another wallet or carrying BNB", () => {
+    expect(pinned(ROUTER, "0x2222222222222222222222222222222222222222").result).toBe("fail");
+    expect(pinned(ROUTER, WALLET, "1").result).toBe("fail");
+  });
   it("is unavailable when skipped or unreachable", () => {
     expect(checkSimulation({ source: "t", asOf: null, skipped: "no route" }, STOCK, WALLET).result).toBe("unavailable");
     expect(checkSimulation({ source: "t", asOf: null, error: "timeout" }, STOCK, WALLET).result).toBe("unavailable");
