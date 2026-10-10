@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { regionVerdict } from "./lib/regions";
 
 /** A fresh nonce per request for a strict Content-Security-Policy (AGENTS.md section 4, item 13). */
 export function proxy(request: NextRequest) {
@@ -22,7 +23,18 @@ export function proxy(request: NextRequest) {
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
   headers.set("Content-Security-Policy", csp);
-  const res = NextResponse.next({ request: { headers } });
+  // Claims are refused in restricted jurisdictions, using the country the edge network reports.
+  let res: NextResponse;
+  const path = request.nextUrl.pathname;
+  if (path === "/claim" || path.startsWith("/claim/")) {
+    const v = regionVerdict(request.headers.get("x-vercel-ip-country") ?? request.headers.get("cf-ipcountry"), request.headers.get("x-vercel-ip-country-region"));
+    headers.set("x-claim-region", v.blocked ? "blocked" : v.known ? "allowed" : "unknown");
+    res = v.blocked && path !== "/claim/restricted"
+      ? NextResponse.rewrite(new URL("/claim/restricted", request.url), { request: { headers }, status: 451 })
+      : NextResponse.next({ request: { headers } });
+  } else {
+    res = NextResponse.next({ request: { headers } });
+  }
   res.headers.set("Content-Security-Policy", csp);
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
