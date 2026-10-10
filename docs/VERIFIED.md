@@ -50,8 +50,8 @@ Hackathon page: the page slug is `tokenized-stocks` on bnbchain.org.
 | `/api/v1/dex/market/rwa/tokens` | `binanceChainId` (56), `platformId` (`ondo` or `bstock`), `tabId` (sector 1 to 13, e.g. 9 = Magnificent 7, 4 = AI Chips) | per token: `tokenContractAddress`, `platformId`, `assetType` (1 stock, 2 pre-IPO, 3 ETF), `tokenName`, `tokenSymbol`, `tokenLogoUrl`, `decimals`, `underlyingTicker`, `underlyingName`, a **market-status object**, `tokenPrice`, `referencePrice`, `volume24H`, `marketCap`, `peRatioTTM` |
 | `/api/v1/dex/market/rwa/price` | `binanceChainId`, `tokenContractAddresses` (comma-separated, max 100, **required**) | `tokenPrice`, `referencePrice`, `tokenPriceUpdatedAt` |
 | `/api/v1/dex/market/rwa/search` | `keyword`, optional `platformId` | token matches |
-| `/api/v1/dex/market/rwa/underlying-profile` | `binanceChainId`, `tokenContractAddress` | company information. **UNVERIFIED field names.** Probe it and record. |
-| `/api/v1/dex/market/rwa/underlying-market` | `binanceChainId`, `tokenContractAddress` | the market-status object plus market data: `referencePrice`, `high52W`, `low52W`, `avgDailyVolume1Y`, `marketCap`, `turnoverRate`, `amplitude`, `peRatioTTM`, `pbRatio`, `dividendYield`, and a latest-dividend field (exact name UNVERIFIED) |
+| `/api/v1/dex/market/rwa/underlying-profile` | `binanceChainId`, `tokenContractAddress` | company information. Field names verified live 2026-10-10, see section 3a. |
+| `/api/v1/dex/market/rwa/underlying-market` | `binanceChainId`, `tokenContractAddress` | the market-status object plus market data: `referencePrice`, `high52W`, `low52W`, `avgDailyVolume1Y`, `marketCap`, `turnoverRate`, `amplitude`, `peRatioTTM`, `pbRatio`, `dividendYield`, and `latestDividend` (field name verified live 2026-10-10, see section 3a) |
 
 **Market-status object (verified fields):**
 
@@ -66,6 +66,25 @@ Hackathon page: the page slug is `tokenized-stocks` on bnbchain.org.
 The reference pages **do not name the key** of this nested object (they print it as "object"). Locate it by shape: the object that contains `openState`. The same applies to the transaction object in the swap response (find the object with `from`, `to`, `data`).
 
 **Important:** `referencePrice` is documented as "a per-share converted price derived from the on-chain token price, not an official quote from the traditional stock market." It is **not independent**. Do not use `tokenPrice` versus `referencePrice` to measure a weekend gap. It will read about zero by construction. See section 6.
+
+### 3a. Live results from a host in an allowed region (2026-10-10, Saturday, about 20:10 UTC)
+
+Run by `GET /v1/admin/probe?n=1|2|3` on the Railway service in `asia-southeast1-eqsg3a` (egress country SG). The same signed call from the build container (egress US) returned `40304` (`docs/evidence/01-rwa-tokens-bstock.json`). Raw responses: `docs/evidence/b1-rwa-tokens-bstock.railway-sg.json`, `b2-rwa-underlying-nvdab.railway-sg.json`, `b3-rwa-price-nvdab.railway-sg.json`.
+
+| Fact | Live result |
+|---|---|
+| Region refusal | `40304 "Service not available due to compliance restriction"` arrives as HTTP 200 with an envelope code (not a 4xx). From Singapore the same signed call returned HTTP 200, code 0. The key, secret and signing are correct. |
+| `/rwa/tokens?binanceChainId=56&platformId=bstock` | A top-level **array** of 46 tokens. `tokenContractAddress` is returned **lower case**. |
+| Market-status object | Its key is **`statusInfo`** (found by shape as designed). Fields: `openState`, `marketStatus`, `reasonCode`, `reasonMsg`, `nextOpenTime`, `nextCloseTime`. |
+| NVDAB status on a Saturday | `openState: true`, `reasonCode: "TRADING"`, `marketStatus: null`, `reasonMsg: null`, `nextOpenTime: null`, `nextCloseTime: null`. So the API did **not** report the market as closed on a weekend, and `marketStatus` is `null` here although the reference lists lower-case values. The guard must treat a null `marketStatus` as "not known" and must not assume weekends read as closed. Whether this holds for quotes is not tested yet (probe 4). |
+| Token fields in the list | `binanceChainId`, `tokenContractAddress`, `platformId`, `assetType` (1), `tokenName` ("NVIDIA (bStocks)"), `tokenSymbol`, `tokenLogoUrl`, `decimals` (string "18"), `underlyingTicker`, `underlyingName`, `underlyingNameZh`, **`tokenToShareRatio`**, `tags` (["alpha"]), `statusInfo`, `tokenPrice`, `referencePrice`, `volume24H`, `marketCap`, `peRatioTTM`. |
+| `tokenToShareRatio` | **Present in the live response** (list and profile) and equal to the on-chain `uiMultiplier()` read earlier: `1.000778223752807865`. AGENTS.md section 12 says this name is not in the API reference; the live response disagrees, so that row needs the owner's review. Bitstock still reads the multiplier from the chain, and treats this field as a cross-check only. |
+| Price fields disagree in meaning between endpoints | List: `tokenPrice` 230.70940392173479711845, `referencePrice` 230.53 (`tokenPrice` / ratio = 230.53 exactly). `/rwa/price`: `tokenPrice` "230.53000000", `referencePrice` "230.350736", `tokenPriceUpdatedAt` 1791663004630 (2026-10-10T20:10:04.630Z); here `referencePrice` = `tokenPrice` / ratio. So `/rwa/price` `tokenPrice` equals the list's `referencePrice`. Which one is the on-chain token price is **not settled**. Do not use either as a token price until it is compared with a live pool price. |
+| `/rwa/underlying-profile` | `binanceChainId`, `tokenContractAddress`, `platformId`, `underlyingTicker`, `underlyingFullName` ("NVIDIA (bStocks)", which is the token's name), `assetType`, `tokenToShareRatio`, `protections.collateralReport {supported, description, url}`, `companyInfo {ceo, website, industry, conceptsEn, conceptsCn, description, descriptionZh}`. |
+| `/rwa/underlying-market` | `statusInfo` plus `marketData {referencePrice (null), high52W, low52W, volumeShares24H, avgDailyVolume1Y (null), totalShares (null), marketCap, turnoverRate (null), amplitude (null), dividendYield, latestDividend, peRatioTTM, pbRatio}`. Several fields are null, so the app must show "unavailable" for them. |
+| Dividend fields | `latestDividend` = "0.250000" and `dividendYield` = "0.00120000" (units and date not stated by the API). Not yet compared with the multiplier change; that check belongs to the explainer step. |
+
+Not yet verified: quotes, swap build, simulate and the approve order (probes 4 to 6, which need a user wallet address), and the closed-market quote result in `AGENTS.md` section 10.
 
 ### Trading (GET, signed)
 
