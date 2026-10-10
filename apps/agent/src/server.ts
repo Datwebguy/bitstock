@@ -8,6 +8,7 @@ import { InputError, makeDecision, processDueIntents, validateRequest } from "./
 import { egressCountry } from "./egress.ts";
 import { runLiveGuard } from "./guard.ts";
 import { health } from "./health.ts";
+import { holdingsView, marketView } from "./market.ts";
 import { clearKill, engageKill, killState } from "./killswitch.ts";
 import { NVDAB, PROBE_NAMES, runProbe } from "./probes.ts";
 import { RateLimiter } from "./ratelimit.ts";
@@ -100,6 +101,18 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
 
   if (path === "/v1/config" && method === "GET") {
     return send(res, 200, { token: { address: NVDAB, symbol: "NVDAB" }, maxBuyUsd: ctx.caps.maxBuyUsd, chainId: 56, killSwitch: killState(ctx.env, ctx.repo).on });
+  }
+
+  if (path === "/v1/market" && method === "GET") {
+    if (!readLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many requests." });
+    return send(res, 200, await marketView(ctx));
+  }
+
+  if (path === "/v1/holdings" && method === "GET") {
+    if (!readLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many requests." });
+    const wallet = url.searchParams.get("wallet") ?? "";
+    if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) return send(res, 400, { error: "The wallet address is not valid." });
+    return send(res, 200, await holdingsView(ctx, wallet));
   }
 
   if (path === "/v1/decisions" && method === "POST") {
