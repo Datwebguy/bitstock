@@ -26,6 +26,9 @@ Cut order if time runs short, from the bottom: Studio agent, Mode B skill, Learn
 | Project submission form: https://forms.gle/yToDUzaDMwWnq6R6A | [ ] |
 | Developer Experience Report form (own words): https://forms.gle/EUQ39xf54GHjC2ys5 | [ ] |
 | Every team member confirmed not in an excluded jurisdiction | [ ] |
+| Registration form submitted, with the Binance UID of the account that created the Web3 API key (that account's limits are the ones raised; one per team) | [ ] |
+| The **same contact email** on registration, project submission and the Developer Experience Report (the organisers match the three by it) | [ ] |
+| Team size on the forms matches the real team | [ ] |
 | README status table matches reality | [ ] |
 | Repo search: no keys, no banned statements, only the owner in `git log` | [ ] |
 
