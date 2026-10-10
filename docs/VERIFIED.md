@@ -100,18 +100,22 @@ The reference pages **do not name the key** of this nested object (they print it
 
 ---
 
-## 4. NVDAB on-chain facts (read from BSC mainnet, 10 Oct 2026)
+## 4. NVDAB on-chain facts (read from BSC mainnet via `https://bsc-rpc.publicnode.com`, block 126884940, 2026-10-10 19:37 UTC)
+
+Raw results: `docs/evidence/07-onchain-nvdab.json` (reproduce with `node packages/chain/scripts/probe-onchain.ts`). Selectors were computed with the repository's own keccak256, which is tested against published vectors.
 
 | Fact | Value | Source |
 |---|---|---|
 | Address | `0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436` | Matches a third-party public asset list, and the contract answered below |
-| `symbol()` / `name()` | `NVDAB` / `NVIDIA Corp` | `eth_call` |
-| `decimals()` | 18 | `eth_call` |
-| `uiMultiplier()` (selector `0xa60bf13d`) | `1000778223752807865` = **1.0007782237528078** | `eth_call` |
-| `newUIMultiplier()` / `effectiveAt()` | same value / 0 (nothing pending) | `eth_call` |
-| `toUIAmount(1e18)` | same as `uiMultiplier()` | `eth_call` |
-| `totalSupply()` | about 201,305 tokens | `eth_call` |
-| `multiplier()`, `scaledBalanceOf(address)`, `sharesMultiplier()` | **revert**, do not exist | `eth_call` |
+| `symbol()` / `name()` | `NVDAB` / `NVIDIA Corp` | `eth_call`, verified live |
+| `decimals()` | 18 | `eth_call`, verified live |
+| `uiMultiplier()` (selector `0xa60bf13d`) | `1000778223752807865` = **1.000778223752807865** | `eth_call`, verified live |
+| `newUIMultiplier()` (selector `0xdc767007`) / `effectiveAt()` (selector `0x97a4064f`) | same value as `uiMultiplier()` / 0 (nothing pending) | `eth_call`, verified live |
+| `toUIAmount(uint256)` (selector `0x3248d4ff`) with 1e18 | `1000778223752807865`, same as `uiMultiplier()` | `eth_call`, verified live |
+| `totalSupply()` | `201316210011080000000000` raw = about 201,316.21 tokens at this block (the earlier ledger said about 201,305; supply changes, so never hardcode it) | `eth_call`, verified live |
+| `multiplier()` (selector `0x1b3ed722`) | **reverts** ("execution reverted"), does not exist | `eth_call`, verified live |
+| `scaledBalanceOf(address)`, `sharesMultiplier()` | revert, do not exist | Earlier `eth_call`; not re-run in this probe |
+| RPC | `eth_chainId` returns 56; public node latency 45 to 81 ms per call | Same run |
 
 **The function is `uiMultiplier()`, not `multiplier()`.** The standard is **ERC-8056 "Scaled UI Amount"**. "BEP-8056" is not a name that exists. The BNB docs and third-party notes also call the family "BEP-677". Say "ERC-8056 scaled UI amount (BEP-677 in BNB docs)" or just "scaled UI amount".
 

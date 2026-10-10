@@ -29,6 +29,8 @@ importers:
 
   packages/binance: {}
 
+  packages/chain: {}
+
 packages:
 
   '@cacheable/memory@2.2.0':
