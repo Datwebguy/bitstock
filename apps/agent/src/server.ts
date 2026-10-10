@@ -4,6 +4,7 @@ import { variableStatus } from "./config.ts";
 import { egressCountry } from "./egress.ts";
 import { runLiveGuard } from "./guard.ts";
 import { PROBE_NAMES, runProbe } from "./probes.ts";
+import { sentryStatus, startSentry } from "./sentry.ts";
 
 const SERVICE = "bitstock-agent";
 
@@ -44,6 +45,11 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     return send(res, 200, await runLiveGuard(process.env, usd, wallet));
   }
 
+  if (url.pathname === "/v1/admin/sentry") {
+    if (!isAdmin(req.headers.authorization, process.env["ADMIN_TOKEN"])) return send(res, 401, { error: "unauthorized" });
+    return send(res, 200, sentryStatus(process.env));
+  }
+
   send(res, 404, { error: "not found" });
 }
 
@@ -53,4 +59,7 @@ createServer((req, res) => {
     console.error(JSON.stringify({ level: "error", msg: e instanceof Error ? e.message : String(e) }));
     send(res, 500, { error: "internal error" });
   });
-}).listen(port, () => console.log(JSON.stringify({ level: "info", msg: "listening", service: SERVICE, port })));
+}).listen(port, () => {
+  console.log(JSON.stringify({ level: "info", msg: "listening", service: SERVICE, port }));
+  startSentry(process.env, (o) => console.log(JSON.stringify(o)));
+});
