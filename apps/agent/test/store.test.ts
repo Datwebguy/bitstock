@@ -80,8 +80,12 @@ describe("kill switch", () => {
 
 describe("request validation", () => {
   const ok = { token: "0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436", amountUsd: "1", wallet: "0x1111111111111111111111111111111111111111" };
-  it("accepts a supported token, a valid wallet and an amount under the cap", () => {
-    expect(validateRequest(ok, "5")).toEqual(ok);
+  it("accepts a token address, a valid wallet and an amount under the cap, defaulting to the user's own wallet", () => {
+    expect(validateRequest(ok, "5")).toEqual({ ...ok, executor: "own-wallet" });
+    expect(validateRequest({ ...ok, executor: "agentic-wallet" }, "5").executor).toBe("agentic-wallet");
+  });
+  it("refuses an unknown executor", () => {
+    expect(() => validateRequest({ ...ok, executor: "server" }, "5")).toThrow(/executor/);
   });
   it("refuses unsupported tokens, bad wallets, bad amounts and amounts over the cap", () => {
     expect(() => validateRequest({ ...ok, token: "0x55d3" }, "5")).toThrow(InputError);

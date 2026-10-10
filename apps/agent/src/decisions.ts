@@ -16,6 +16,8 @@ export interface DecisionRequest {
   token: string;
   amountUsd: string;
   wallet: string;
+  /** "agentic-wallet" for Mode B: the guard runs, but no transaction is prepared; the wallet's own swap sends it. */
+  executor: "own-wallet" | "agentic-wallet";
 }
 
 export function validateRequest(body: unknown, maxBuyUsd: string): DecisionRequest {
@@ -27,7 +29,9 @@ export function validateRequest(body: unknown, maxBuyUsd: string): DecisionReque
   if (!isAddress(wallet)) throw new InputError("The wallet address is not valid.");
   if (!/^\d{1,4}(\.\d{1,2})?$/.test(amountUsd) || Number(amountUsd) <= 0) throw new InputError("The amount must be a dollar amount such as 1 or 2.50.");
   if (Number(amountUsd) > Number(maxBuyUsd)) throw new InputError(`The most Bitstock will buy at once is $${maxBuyUsd}.`);
-  return { token, amountUsd, wallet };
+  const ex = b["executor"];
+  if (ex !== undefined && ex !== "own-wallet" && ex !== "agentic-wallet") throw new InputError("The executor must be own-wallet or agentic-wallet.");
+  return { token, amountUsd, wallet, executor: ex === "agentic-wallet" ? "agentic-wallet" : "own-wallet" };
 }
 
 export async function makeDecision(ctx: AgentContext, req: DecisionRequest, idemKey: string | null): Promise<DecisionRecord> {
@@ -35,7 +39,7 @@ export async function makeDecision(ctx: AgentContext, req: DecisionRequest, idem
     const existing = ctx.repo.decisionByIdemKey(idemKey);
     if (existing) return existing.record;
   }
-  const guardReq = { token: req.token, side: "buy" as const, amountUsd: req.amountUsd, wallet: req.wallet };
+  const guardReq = { token: req.token, side: "buy" as const, amountUsd: req.amountUsd, wallet: req.wallet, executor: req.executor };
   const kill = killState(ctx.env, ctx.repo);
   let record: DecisionRecord;
   if (kill.on) {
@@ -44,7 +48,7 @@ export async function makeDecision(ctx: AgentContext, req: DecisionRequest, idem
   } else {
     const run = await runGuardWithContext({ api: ctx.api, rpcUrl: ctx.rpcUrl, reference: ctx.reference, payToken: USDT, payDecimals: 18 }, guardReq, ctx.cfg);
     record = run.record;
-    if (record.outcome === "GO" || record.outcome === "LIMIT") {
+    if ((record.outcome === "GO" || record.outcome === "LIMIT") && req.executor === "own-wallet") {
       try {
         record.prepared = await prepareTransaction(ctx.api, ctx.rpcUrl, run, USDT);
       } catch (e) {

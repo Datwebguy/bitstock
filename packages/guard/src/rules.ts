@@ -242,7 +242,7 @@ export interface SwapPin {
   expectedTo: string | undefined;
 }
 
-export function checkSimulation(sim: Sourced<SimulationObs> & { skipped?: string }, stockToken: string, wallet: string, pin?: SwapPin): Check {
+export function checkSimulation(sim: Sourced<SimulationObs> & { skipped?: string }, stockToken: string, wallet: string, pin?: SwapPin, opts: { approvalByWallet?: boolean } = {}): Check {
   const base = { id: "simulation" as const, name: "Test run", source: sim.source, asOf: sim.asOf, threshold: "SUCCESS and the stock arrives" };
   // Pin the transaction before trusting any dry run of it: it must come from the buyer, go to the
   // contract the quote named as the spender, and carry no BNB.
@@ -260,6 +260,11 @@ export function checkSimulation(sim: Sourced<SimulationObs> & { skipped?: string
   if (v.status !== "SUCCESS") {
     const why = v.failReason ?? "no reason given";
     if (/allowance/i.test(why)) {
+      // An Agentic Wallet approves USDT inside its own swap command, so a missing approval is expected
+      // there. The trade could not be tested, which is never a pass: it warns, so at most LIMIT (ADR 0007).
+      if (opts.approvalByWallet) {
+        return { ...base, result: "warn", rawValue: `status=${v.status}, failReason=${why}`, reason: "Bitstock could not test this exact trade from your Agentic Wallet, because the wallet has not yet approved USDT for it. Your wallet approves inside its own swap, so the buy may only go ahead with a tighter limit." };
+      }
       return { ...base, result: "fail", rawValue: `status=${v.status}, failReason=${why}`, reason: "The test run failed because your wallet has not yet allowed this trade to use your USDT. Approve USDT in your wallet first, then check again." };
     }
     return { ...base, result: "fail", rawValue: `status=${v.status}, failReason=${why}`, reason: "The test run of this trade failed, so Bitstock will not send it." };

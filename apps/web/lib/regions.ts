@@ -21,10 +21,10 @@ export function regionVerdict(country: string | null | undefined, region: string
 
 /** The same places in words, for the first-visit confirmation and the terms. */
 export const RESTRICTED_PLACES = [
-  "The United States and its territories",
+  "the United States and its territories",
   "Canada",
-  "The Netherlands",
-  "The United Kingdom",
+  "the Netherlands",
+  "the United Kingdom",
   "Japan",
   "Iran",
   "Cuba",

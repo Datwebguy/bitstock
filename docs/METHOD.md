@@ -29,7 +29,7 @@ Each check returns pass, warn, fail or unavailable, with the value it looked at,
    - If it is older, it is the last close and the stock can move before it trades again: this is **never a pass**; warn up to 10%, fail beyond 10%.
    - If no independent price can be read, the check is unavailable. It still counts as a warning, never a pass (ADR 0003).
 4. **Price and route.** Uses the live quote for the exact amount. Only a direct swap route (`executionMode = SWAP`) is used, because only it can be dry-run; a quote-on-request route alone is refused. Warns above 0.3% price impact, fails above 1%, fails if the quote would deliver nothing. If Binance will not quote because the stock's exchange is closed (`40369`), the check is unavailable and the guard waits.
-5. **Dry run.** Builds the swap and runs it through Binance's simulator. Passes only if the simulation succeeds **and** shows the stock arriving in the buyer's wallet. Fails otherwise. The simulator checks the wallet's real USDT approval, so a wallet that has not approved USDT yet fails with a message saying to approve first.
+5. **Dry run (shown to people as "Test run").** Builds the swap and runs it through Binance's simulator. Passes only if the simulation succeeds **and** shows the stock arriving in the buyer's wallet. Fails otherwise. The simulator checks the wallet's real USDT approval, so a wallet that has not approved USDT yet fails with a message saying to approve first. One exception (ADR 0007): when the buyer is a Binance Agentic Wallet (Mode B), which approves inside its own swap, a failure caused only by the missing approval is a warning, never a pass, so the buy can go ahead only with the tighter LIMIT slippage.
 
 ## The four outcomes
 
@@ -78,3 +78,4 @@ Every default below is a deliberately conservative starting value chosen before 
 | Rules version | Date | Change |
 |---|---|---|
 | 1 | 2026-10-10 | First version. |
+| 1 | 2026-10-11 | Wording only: reasons are written for people (test run, shares per token, price impact rounded, with "less than 0.01%" for tiny figures; the exact figure stays in the record). Agentic Wallet exception to check 5 (ADR 0007); no threshold changed. |

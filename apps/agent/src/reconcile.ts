@@ -5,14 +5,17 @@ const HASH_RE = /^0x[0-9a-fA-F]{64}$/;
 
 /**
  * Attach the user's transaction hash to a decision, only if the chain shows that exact prepared
- * transaction sent from the decision's wallet. Idempotent for the same hash.
+ * transaction sent from the decision's wallet (for an Agentic Wallet, which builds its own swap,
+ * a transaction sent from that wallet after a GO or LIMIT). Idempotent for the same hash.
  */
 export async function attachUserTx(ctx: AgentContext, decisionId: string, txHash: unknown): Promise<{ ok: boolean; status: number; message: string }> {
   if (typeof txHash !== "string" || !HASH_RE.test(txHash)) return { ok: false, status: 400, message: "The transaction hash is not valid." };
   const stored = ctx.repo.decision(decisionId);
   if (!stored) return { ok: false, status: 404, message: "No such decision." };
   const p = stored.record.prepared;
-  if (!p) return { ok: false, status: 409, message: "This decision has no prepared transaction." };
+  const agentic = stored.record.request.executor === "agentic-wallet";
+  if (!p && !agentic) return { ok: false, status: 409, message: "This decision has no prepared transaction." };
+  if (agentic && stored.record.outcome !== "GO" && stored.record.outcome !== "LIMIT") return { ok: false, status: 409, message: "This decision did not allow a buy." };
   let tx: { from?: string; to?: string; input?: string } | null = null;
   // A just-broadcast transaction can take a moment to appear on the node.
   for (let i = 0; i < 10 && !tx; i++) {
@@ -20,8 +23,13 @@ export async function attachUserTx(ctx: AgentContext, decisionId: string, txHash
     if (!tx) await new Promise((r) => setTimeout(r, 1500));
   }
   if (!tx) return { ok: false, status: 404, message: "That transaction is not on the chain yet. Try again in a moment." };
-  const same = tx.from?.toLowerCase() === p.from.toLowerCase() && tx.to?.toLowerCase() === p.to.toLowerCase() && tx.input?.toLowerCase() === p.data.toLowerCase();
-  if (!same) return { ok: false, status: 409, message: "That transaction is not the one Bitstock prepared for this decision." };
+  if (p) {
+    const same = tx.from?.toLowerCase() === p.from.toLowerCase() && tx.to?.toLowerCase() === p.to.toLowerCase() && tx.input?.toLowerCase() === p.data.toLowerCase();
+    if (!same) return { ok: false, status: 409, message: "That transaction is not the one Bitstock prepared for this decision." };
+  } else if (tx.from?.toLowerCase() !== stored.record.request.wallet.toLowerCase()) {
+    // An Agentic Wallet builds its own swap, so only the sender can be matched to the decision.
+    return { ok: false, status: 409, message: "That transaction was not sent from the wallet this decision was checked for." };
+  }
   if (!ctx.repo.attachTx(decisionId, txHash)) return { ok: false, status: 409, message: "A different transaction is already recorded for this decision." };
   await reconcileOne(ctx, decisionId, txHash);
   return { ok: true, status: 200, message: "Recorded." };

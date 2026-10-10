@@ -57,8 +57,7 @@ export function RegionGate() {
       {state === "ask" ? (
         <div className="gate-in">
           <h2 id="gate-title">Before you continue</h2>
-          <p id="gate-desc" className="small">Bitstock is not available to people who live in, or are located in:</p>
-          <ul className="gate-places small">{RESTRICTED_PLACES.map((p) => <li key={p}>{p}</li>)}</ul>
+          <p id="gate-desc" className="small">Bitstock is not available to people who live in, or are located in: {RESTRICTED_PLACES.join(", ")}.</p>
           <p className="small muted">Tokenized stocks can lose value, and the company that issues them can pause or block them. Bitstock is not investment advice.</p>
           <label className="gate-check small">
             <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />

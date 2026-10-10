@@ -169,6 +169,14 @@ describe("5. simulation", () => {
     expect(c.result).toBe("fail");
     expect(c.reason).toContain("Approve USDT");
   });
+  it("warns, never passes, on a missing approval when an Agentic Wallet will approve inside its own swap", () => {
+    const failed = { source: "test", asOf: null, value: { status: "FAILED", failReason: "execution reverted: BEP20: transfer amount exceeds allowance", balanceChanges: [] } };
+    const c = checkSimulation(failed, STOCK, WALLET, undefined, { approvalByWallet: true });
+    expect(c.result).toBe("warn");
+    expect(c.reason).toContain("Agentic Wallet");
+    // Any other failure still fails for an Agentic Wallet.
+    expect(checkSimulation({ ...failed, value: { ...failed.value, failReason: "execution reverted: paused" } }, STOCK, WALLET, undefined, { approvalByWallet: true }).result).toBe("fail");
+  });
   it("fails when SUCCESS shows no stock arriving", () => {
     expect(sim({ status: "SUCCESS", balanceChanges: [] }).result).toBe("fail");
     expect(sim({ status: "SUCCESS", balanceChanges: [{ contractAddress: STOCK, owner: "0x2222222222222222222222222222222222222222", change: "5" }] }).result).toBe("fail");

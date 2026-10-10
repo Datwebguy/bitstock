@@ -33,7 +33,7 @@ export default function AboutPage() {
           <ul className="list small">
             <li><span>Checks and protected buys for every tokenized stock Binance lists</span><span className="pill good">Live</span></li>
             <li><span>Holdings in shares, explained</span><span className="pill good">Live</span></li>
-            <li><span>Scheduled buys through your own Binance Agentic Wallet</span><span className="pill idle">Not built yet</span></li>
+            <li><span>Checked buys and buys at the market open through your own Binance Agentic Wallet, as a wallet skill</span><span className="pill warn">Built, first live run pending</span></li>
             <li><span>Free first slice</span><span className="pill idle">Not built yet</span></li>
           </ul>
         </section>

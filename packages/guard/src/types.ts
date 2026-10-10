@@ -41,6 +41,12 @@ export interface GuardRequest {
   side: "buy";
   amountUsd: string;
   wallet: string;
+  /**
+   * Who will send the buy. "own-wallet" (Mode A, the default): the user signs the transaction
+   * Bitstock prepared. "agentic-wallet" (Mode B): the user's Binance Agentic Wallet swaps through
+   * its own `baw` command, which handles the USDT approval itself (docs/adr/0007).
+   */
+  executor?: "own-wallet" | "agentic-wallet";
 }
 
 export interface DecisionRecord {

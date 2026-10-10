@@ -122,7 +122,7 @@ export async function runGuardWithContext(deps: GuardDeps, req: GuardRequest, cf
     checkMultiplier(multObs, now, cfg),
     checkReference(refObs, quotePricePerToken(route), mult.ok ? mult.value.uiMultiplier : undefined, now, cfg),
     checkExecution(quoteObs, cfg),
-    checkSimulation(simObs, req.token, req.wallet, pin),
+    checkSimulation(simObs, req.token, req.wallet, pin, { approvalByWallet: req.executor === "agentic-wallet" }),
   ];
   const impact = tryParseDecimal(route?.priceImpactPercent);
   const decision = decide(checks, impact, now, cfg);
