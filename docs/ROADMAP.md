@@ -8,15 +8,16 @@ Legend: `[ ]` planned, `[x]` done and verified.
 
 Order matters: the live probes decide how closed-market behaviour is built.
 
-- [ ] Signed Binance Web3 API client with unit-tested signing and shape-based finders
-- [ ] Live probes: RWA status, quote and swap while the market is closed, simulate, approve ordering, on-chain multiplier reads
-- [ ] Guard: five checks, four outcomes, stored decision records, `docs/METHOD.md`
-- [ ] Chain package and multiplier sentry (snapshots, event logs where a log-capable RPC exists)
+- [x] Signed Binance Web3 API client with unit-tested signing and shape-based finders
+- [x] Live probes: RWA status, quote and swap while the market is closed, simulate, approve ordering, on-chain multiplier reads
+- [x] Guard: five checks, four outcomes, stored decision records, `docs/METHOD.md`
+- [x] Chain package and multiplier sentry (snapshots, event logs where a log-capable RPC exists; historical logs not reachable with free RPCs)
 - [ ] Front door: fund, commit, gasless claim with real proof
-- [ ] Web app: Guard HUD, Buy (Mode A), Holdings and Explain, Learn, Claim
+- [x] Web app: Guard HUD, Buy (Mode A), Holdings and Explain, Learn (the Claim page only explains that the gift is not open and refuses restricted regions)
 - [ ] Wallet skill for Mode B with one real Agentic Wallet swap
 - [ ] Studio agent: identity, `guard_check`, `multiplier_status`
-- [ ] Deploy, evidence, README, submission pack, owner-written report
+- [x] Deploy, evidence, README, submission pack
+- [ ] Owner-written Developer Experience Report
 
 ## Phase 1: hardening (first 30 days after the hackathon)
 
