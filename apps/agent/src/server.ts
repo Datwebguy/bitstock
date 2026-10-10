@@ -20,7 +20,8 @@ const log = (o: Record<string, unknown>) => console.log(JSON.stringify({ at: new
 const ctx = buildContext(process.env);
 const decisionLimiter = new RateLimiter(Number(process.env["RATE_LIMIT_PER_MINUTE"] ?? "10"), 60_000);
 const readLimiter = new RateLimiter(120, 60_000);
-const allowedOrigin = process.env["PUBLIC_WEB_ORIGIN"] || null;
+/** Browser origins allowed to call the API (comma-separated): the web app's hosts, nothing else. */
+const allowedOrigins = new Set((process.env["PUBLIC_WEB_ORIGIN"] ?? "").split(",").map((o) => o.trim().replace(/\/+$/, "")).filter(Boolean));
 
 const PUBLIC_DIR = resolve(import.meta.dirname, "../public");
 const STATIC: Record<string, { file: string; type: string }> = {
@@ -73,8 +74,8 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
 
   // Strict CORS: only the configured web origin may call the API from a browser.
   const origin = req.headers.origin;
-  if (origin && allowedOrigin && origin === allowedOrigin) {
-    res.setHeader("access-control-allow-origin", allowedOrigin);
+  if (origin && allowedOrigins.has(origin)) {
+    res.setHeader("access-control-allow-origin", origin);
     res.setHeader("vary", "Origin");
     res.setHeader("access-control-allow-headers", "content-type, idempotency-key");
     res.setHeader("access-control-allow-methods", "GET, POST");
