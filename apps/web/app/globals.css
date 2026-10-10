@@ -9,12 +9,12 @@
   --line: #e4e5e8;
   --text: #181a20;
   --text-2: #474d57;
-  --muted: #707a8a;
-  --good: #03a66d;
+  --muted: #5b6370;
+  --good: #02734b;
   --good-bg: #e6f6ef;
-  --warn: #b26a00;
+  --warn: #8a5000;
   --warn-bg: #fff4dd;
-  --bad: #cf304a;
+  --bad: #ab1f37;
   --bad-bg: #fdebee;
   --focus: #c99400;
   --shadow: 0 1px 2px rgb(24 26 32 / 0.04), 0 8px 24px rgb(24 26 32 / 0.06);
