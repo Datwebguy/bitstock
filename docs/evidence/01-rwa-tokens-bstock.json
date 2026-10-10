@@ -1,0 +1,15 @@
+{
+  "savedAt": "2026-10-10T19:35:12.663Z",
+  "request": {
+    "method": "GET",
+    "path": "/api/v1/dex/market/rwa/tokens",
+    "query": "binanceChainId=56&platformId=bstock"
+  },
+  "httpStatus": 200,
+  "response": {
+    "code": 40304,
+    "msg": "Service not available due to compliance restriction",
+    "success": false,
+    "timestamp": 1791660912616
+  }
+}

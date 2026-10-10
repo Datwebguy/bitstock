@@ -41,6 +41,8 @@ These came from reading the documentation. They are questions, not findings. Eac
 
 <!-- Add lines below as you build. Newest at the bottom. -->
 
+- 2026-10-10 19:35 UTC. First signed call, `GET /build/api/v1/dex/market/rwa/tokens?binanceChainId=56&platformId=bstock`, from the build container (egress country reported by ipinfo.io: US). HTTP 200, envelope `code 40304`, `msg "Service not available due to compliance restriction"`. The signature was accepted (no 40101/40102), so this is the region block, returned as HTTP 200 and not as a 4xx. `40304` is not in the error codes I had from the reference. Evidence: `docs/evidence/01-rwa-tokens-bstock.json`, `docs/evidence/calls.jsonl`.
+
 ## Measurements to keep (real numbers for the report and the submission)
 
 | Measure | Value | When | Evidence |
