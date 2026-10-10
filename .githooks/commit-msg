@@ -1,0 +1,9 @@
+#!/bin/sh
+# Refuses commit messages that carry trailers or AI/tool attribution.
+msg="$1"
+if grep -qi -E '^(co-authored-by|claude-session|signed-off-by|reviewed-by):|generated with|anthropic|claude' "$msg"; then
+  echo "bitstock: commit blocked. The message contains a trailer or an AI/tool attribution." >&2
+  echo "The owner is the only author. Remove it and commit again." >&2
+  exit 1
+fi
+exit 0

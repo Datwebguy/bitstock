@@ -1,0 +1,21 @@
+#!/bin/sh
+# Refuses to push commits whose author, committer or message carry AI/tool attribution
+# or any trailer naming another contributor.
+zero=0000000000000000000000000000000000000000
+bad=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue
+  if [ "$remote_sha" = "$zero" ]; then
+    range="$local_sha --not --remotes"
+  else
+    range="$remote_sha..$local_sha"
+  fi
+  # shellcheck disable=SC2086
+  hits=$(git log --format='%H %an <%ae> | %cn <%ce>%n%B%x00' $range 2>/dev/null | tr '\0' '\n' | grep -i -E 'anthropic|claude|^co-authored-by:|^claude-session:|^signed-off-by:|generated with')
+  if [ -n "$hits" ]; then
+    echo "bitstock: push blocked. Attribution found in commits being pushed:" >&2
+    echo "$hits" >&2
+    bad=1
+  fi
+done
+exit $bad

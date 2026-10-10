@@ -10,7 +10,8 @@ Bitstock is meant to run for years. Write every change as if someone who has nev
 
 ### 0.1 Authorship
 - The repository owner is the **only** author and contributor. Commits use the identity already configured in this repository's **local** git config (`git config --local user.name` / `user.email`). Never change it, never override it with `--author`, and never rely on a global or default identity.
-- Before the first commit of any session run `git config --local user.name && git config --local user.email` and confirm they are the owner's. If they are not, stop and fix the local config.
+- Local git config is stored in `.git/`, **not in the repository**, so every new clone or container starts without it and may fall back to a default tool identity. At the start of every session: set the owner identity in this clone (`git config --local user.name "<owner name>"` and `git config --local user.email "<owner email>"`, taken from the owner), then run `sh scripts/setup-git.sh`. It enables the hooks in `.githooks/`.
+- The hooks refuse to commit without a local identity or with an AI/tool author or committer, refuse messages carrying trailers or AI/tool names, and refuse to push commits that contain any of these. Never bypass them (`--no-verify`, `core.hooksPath` changes, `--author`).
 - No AI names or tool names anywhere: no `Co-Authored-By`, `Signed-off-by` for anyone else, "Generated with", or similar trailer in a commit or pull request, and nothing in README, package metadata, comments, docs, the site or the video.
 - Do not add other people as contributors, collaborators, code owners or authors in any file.
 - After every push, run `git log --format='%an <%ae>%n%b' -n 20` and show that only the owner appears and no trailers exist.

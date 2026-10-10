@@ -1,0 +1,22 @@
+#!/bin/sh
+# Refuses to commit unless a real owner identity is configured.
+# The container default identity (an AI tool's name/email) is rejected.
+ident=$(git var GIT_AUTHOR_IDENT 2>/dev/null)
+cident=$(git var GIT_COMMITTER_IDENT 2>/dev/null)
+lname=$(git config --local user.name)
+lemail=$(git config --local user.email)
+
+if [ -z "$lname" ] || [ -z "$lemail" ]; then
+  echo "bitstock: commit blocked. Set the owner identity in THIS repository first:" >&2
+  echo "  git config --local user.name  \"<owner name>\"" >&2
+  echo "  git config --local user.email \"<owner email>\"" >&2
+  exit 1
+fi
+
+for id in "$ident" "$cident"; do
+  if echo "$id" | grep -qi -E 'anthropic|claude|noreply@anthropic'; then
+    echo "bitstock: commit blocked. The author or committer identity is not the owner's: $id" >&2
+    exit 1
+  fi
+done
+exit 0
