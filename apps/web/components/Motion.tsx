@@ -4,7 +4,7 @@
  * Everything here stops under prefers-reduced-motion. Styles are set through the CSSOM, which the
  * Content-Security-Policy allows, never through inline style attributes.
  */
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { LogoMark } from "./Logo";
 
 const reduced = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -88,9 +88,12 @@ export function SplitReveal({ text, as: Tag = "h2", className = "" }: { text: st
   return (
     <Tag ref={ref} className={`split ${className}`} aria-label={text}>
       {words.map((w, i) => (
-        <span key={i} className="w" aria-hidden="true">
-          <span className={`wi d${Math.min(i + 1, 16)}`}>{w}</span>{" "}
-        </span>
+        <Fragment key={i}>
+          <span className="w" aria-hidden="true">
+            <span className={`wi d${Math.min(i + 1, 16)}`}>{w}</span>
+          </span>
+          {i < words.length - 1 ? " " : null}
+        </Fragment>
       ))}
     </Tag>
   );
