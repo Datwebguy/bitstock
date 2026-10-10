@@ -21,7 +21,7 @@ Cut order if time runs short, from the bottom: Studio agent, Mode B skill, Learn
 | Item | Done |
 |---|---|
 | Public repo, accessible through judging (12 to 23 Oct) | [ ] The work is on the working branch; merge it into `main` and confirm the repository is public |
-| Deployed link that loads without a login | [x] https://bitstock-algo-dao-30577dec.vercel.app and https://web-production-37d6.up.railway.app, every page HTTP 200 without login (checked 10 Oct 23:20 UTC) |
+| Deployed link that loads without a login | [x] https://bitstock-lilac.vercel.app (also https://bitstock-algo-dao-30577dec.vercel.app and https://web-production-37d6.up.railway.app), every page HTTP 200 without login (checked 10 Oct 23:20 UTC) |
 | Demo video, 4 minutes or less, link works | [ ] |
 | Project submission form: https://forms.gle/yToDUzaDMwWnq6R6A | [ ] |
 | Developer Experience Report form (own words): https://forms.gle/EUQ39xf54GHjC2ys5 | [ ] |
@@ -67,7 +67,7 @@ Cut order if time runs short, from the bottom: Studio agent, Mode B skill, Learn
 
 **Eligibility and safety:** restricted jurisdictions are refused at the claim page; there are no hot wallets or relayer in the deployed system, so no funds are held; the agent has a persistent kill switch and a $5 buy cap; tokens can be paused or blocked by the issuer; not investment advice.
 
-**How a judge can try it:** open https://bitstock-algo-dao-30577dec.vercel.app on a phone. The home page and the live check show NVDAB's real status with sources and need no wallet. A protected buy needs a BNB Smart Chain wallet with a little USDT; the page explains each check before anything is signed.
+**How a judge can try it:** open https://bitstock-lilac.vercel.app on a phone. The home page and the live check show NVDAB's real status with sources and need no wallet. A protected buy needs a BNB Smart Chain wallet with a little USDT; the page explains each check before anything is signed.
 
 ## 4. Video script (3:00 maximum; limit is 4:00)
 

@@ -8,7 +8,7 @@ Built for BNB Hack: Tokenized Stocks Edition. BSC mainnet only. Spot only. Not i
 
 | | |
 |---|---|
-| **Web app** | https://bitstock-algo-dao-30577dec.vercel.app (also https://web-production-37d6.up.railway.app) |
+| **Web app** | https://bitstock-lilac.vercel.app (also https://bitstock-algo-dao-30577dec.vercel.app and https://web-production-37d6.up.railway.app) |
 | **Agent API** | https://agent-production-6403.up.railway.app/healthz (Railway, Singapore) |
 | **Try it** | Open the web app on a phone. The live check and the explanations need no wallet. A buy needs a BNB Smart Chain wallet with a little USDT. |
 
