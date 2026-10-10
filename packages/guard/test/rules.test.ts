@@ -103,7 +103,7 @@ describe("3. independent reference", () => {
   it("never passes against a last close, even with zero gap", () => {
     const c = checkReference(ref("230.00", 60 * 40), perToken("230.00"), mult, NOW, cfg);
     expect(c.result).toBe("warn");
-    expect(c.reason).toContain("last price is from");
+    expect(c.reason).toContain("not in its regular session");
   });
   it("fails against a last close beyond 10%", () => {
     expect(checkReference(ref("200.00", 60 * 40), perToken("230.00"), mult, NOW, cfg).result).toBe("fail");

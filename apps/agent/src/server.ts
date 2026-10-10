@@ -31,7 +31,7 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   if (url.pathname === "/v1/admin/probe") {
     if (!isAdmin(req.headers.authorization, process.env["ADMIN_TOKEN"])) return send(res, 401, { error: "unauthorized" });
     const n = Number(url.searchParams.get("n"));
-    if (!Number.isInteger(n) || n < 1 || n > 7) return send(res, 400, { error: "n must be an integer from 1 to 7", probes: PROBE_NAMES });
+    if (!Number.isInteger(n) || n < 1 || n > 8) return send(res, 400, { error: "n must be an integer from 1 to 8", probes: PROBE_NAMES });
     return send(res, 200, await runProbe(n, process.env));
   }
 

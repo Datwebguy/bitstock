@@ -136,6 +136,10 @@ export interface ReferenceObs {
   currency: string;
   /** ISO time of the price (last trade or close). */
   priceTime: string;
+  /** The source's own market session label, when it gives one (Pyth: regular, preMarket, postMarket, overNight, closed). */
+  session?: string;
+  /** Which source actually answered (a fallback chain may try several). */
+  sourceName?: string;
 }
 
 export function checkReference(
@@ -145,7 +149,7 @@ export function checkReference(
   now: Date,
   cfg: GuardConfig,
 ): Check {
-  const base = { id: "reference" as const, name: "Independent price", source: ref.source, asOf: ref.value?.priceTime ?? ref.asOf };
+  const base = { id: "reference" as const, name: "Independent price", source: ref.value?.sourceName ?? ref.source, asOf: ref.value?.priceTime ?? ref.asOf };
   const r = ref.value;
   if (!r) return { ...base, result: "unavailable", rawValue: null, threshold: null, reason: `No independent price is available${ref.error ? ` (${ref.error})` : ""}, so this check cannot pass.` };
   if (r.currency !== "USD") return { ...base, result: "unavailable", rawValue: `${r.pricePerShare} ${r.currency}`, threshold: null, reason: `The independent price is in ${r.currency}, not US dollars, so it cannot be compared.` };
@@ -157,7 +161,9 @@ export function checkReference(
   const perShare = div(quotePricePerToken, multiplier);
   const gap = percentDiff(perShare, refPrice);
   const ageMinutes = (now.getTime() - Date.parse(r.priceTime)) / 60_000;
-  const live = Number.isFinite(ageMinutes) && ageMinutes >= 0 && ageMinutes <= cfg.referenceLiveMaxAgeMinutes;
+  const fresh = Number.isFinite(ageMinutes) && ageMinutes >= 0 && ageMinutes <= cfg.referenceLiveMaxAgeMinutes;
+  // A price counts as live only when it is fresh and, if the source labels sessions, from the regular session.
+  const live = fresh && (r.session === undefined || r.session === "regular");
   const raw = `buy price per share ${formatDecimal(perShare, 4)} USD vs ${formatDecimal(refPrice, 4)} USD, gap ${formatDecimal(gap, 3)}%`;
   const gapText = `${gap >= 0n ? "+" : ""}${formatDecimal(gap, 2)}%`;
   if (live) {
@@ -170,7 +176,8 @@ export function checkReference(
   if (abs(gap) > parseDecimal(cfg.referenceClosedMaxPercent)) {
     return { ...base, result: "fail", rawValue: raw, threshold, reason: `The buy price is ${gapText} away from the last close at ${r.priceTime}, more than the ${cfg.referenceClosedMaxPercent}% allowed.` };
   }
-  return { ...base, result: "warn", rawValue: raw, threshold, reason: `The stock market's last price is from ${r.priceTime}; the buy price is ${gapText} away from it, and the stock can move before it trades again.` };
+  const when = fresh && r.session ? `a ${r.session} price from ${r.priceTime}` : `from ${r.priceTime}`;
+  return { ...base, result: "warn", rawValue: raw, threshold, reason: `The stock is not in its regular session; its latest price is ${when}. The buy price is ${gapText} away from it, and the stock can move before regular trading.` };
 }
 
 // ---------- 4. execution quality ----------

@@ -76,7 +76,7 @@ export async function runGuard(deps: GuardDeps, req: GuardRequest, cfg: GuardCon
   add({ name: "underlying ticker", value: ticker || null, source: `${BINANCE} rwa/underlying-profile`, asOf: profile.at, status: ticker ? "ok" : "unavailable", ...(!profile.ok ? { error: profile.error } : {}) });
   const ref = ticker ? await timed(() => deps.reference.read(ticker)) : ({ ok: false, error: "underlying ticker unavailable", at: new Date().toISOString() } as const);
   const refObs: Sourced<ReferenceObs> = { source: deps.reference.name, asOf: ref.at, ...(ref.ok ? { value: ref.value } : { error: ref.error }) };
-  add({ name: "independent price", value: ref.ok ? ref.value : null, source: deps.reference.name, asOf: ref.ok ? ref.value.priceTime : ref.at, status: ref.ok ? "ok" : "unavailable", ...(!ref.ok ? { error: ref.error } : {}) });
+  add({ name: "independent price", value: ref.ok ? ref.value : null, source: (ref.ok ? ref.value.sourceName : undefined) ?? deps.reference.name, asOf: ref.ok ? ref.value.priceTime : ref.at, status: ref.ok ? "ok" : "unavailable", ...(!ref.ok ? { error: ref.error } : {}) });
 
   // 5. simulation: allowance first (the simulator is stateful), then build and dry-run the swap
   let simObs: Sourced<SimulationObs> & { skipped?: string } = { source: `${BINANCE} pre-transaction/simulate`, asOf: null };

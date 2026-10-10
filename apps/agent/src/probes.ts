@@ -1,5 +1,6 @@
 import { BinanceApi, BinanceClient, findMarketStatus, findSwapTx, type RawResponse } from "@bitstock/binance";
 import { ethCall, rpcCall, selector } from "@bitstock/chain";
+import { PythProSource } from "@bitstock/guard";
 
 /** Contract addresses recorded in docs/VERIFIED.md and docs/RESOURCES.md. */
 export const NVDAB = "0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436";
@@ -50,6 +51,7 @@ export const PROBE_NAMES: Record<number, string> = {
   5: "Swap build and Transaction API simulate, if a SWAP route exists",
   6: "approve-transaction for USDT, both orders",
   7: "On-chain reads of NVDAB",
+  8: "Pyth Pro latest price for NVDA (raw response)",
 };
 
 export async function runProbe(n: number, env: NodeJS.ProcessEnv): Promise<ProbeOutput> {
@@ -151,8 +153,15 @@ export async function runProbe(n: number, env: NodeJS.ProcessEnv): Promise<Probe
       out.result = reads;
       return out;
     }
+    case 8: {
+      const key = env["PYTH_API_KEY"];
+      if (!key) return { ...out, note: "PYTH_API_KEY is not set." };
+      const r = await attempt(() => new PythProSource({ apiKey: key }).latestRaw("NVDA"));
+      out.result = r.ok ? r.value : { error: r.error };
+      return out;
+    }
     default:
-      return { ...out, note: "Probe number must be 1 to 7." };
+      return { ...out, note: "Probe number must be 1 to 8." };
   }
 }
 
