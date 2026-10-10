@@ -204,10 +204,12 @@ export function checkExecution(q: Sourced<QuoteObs>, cfg: GuardConfig): Check {
   if (out <= 0n) return { ...base, result: "fail", rawValue: `toTokenAmount=${route.toTokenAmount}`, reason: "The quote would deliver nothing." };
   const impact = tryParseDecimal(route.priceImpactPercent);
   if (impact === undefined) return { ...base, result: "unavailable", rawValue: `priceImpactPercent=${route.priceImpactPercent}`, reason: "The quote did not include a usable price impact.", retryAt: null };
-  const raw = `${route.vendorName} ${route.executionMode}, price impact ${formatDecimal(impact, 6)}%, output ${route.toTokenAmount}`;
-  if (abs(impact) > parseDecimal(cfg.priceImpactMaxPercent)) return { ...base, result: "fail", rawValue: raw, reason: `This buy would move the price by ${formatDecimal(impact, 3)}%, more than the ${cfg.priceImpactMaxPercent}% allowed.` };
-  if (abs(impact) > parseDecimal(cfg.priceImpactWarnPercent)) return { ...base, result: "warn", rawValue: raw, reason: `This buy would move the price by ${formatDecimal(impact, 3)}%.` };
-  return { ...base, result: "pass", rawValue: raw, reason: `A direct swap route is available and this buy would move the price by only ${formatDecimal(impact, 4)}%.` };
+  // Show the API's own figure: rounding a tiny impact to a few places would print a misleading 0.
+  const shown = route.priceImpactPercent;
+  const raw = `${route.vendorName} ${route.executionMode}, priceImpactPercent ${shown}, output ${route.toTokenAmount}`;
+  if (abs(impact) > parseDecimal(cfg.priceImpactMaxPercent)) return { ...base, result: "fail", rawValue: raw, reason: `This buy would move the price by ${shown}%, more than the ${cfg.priceImpactMaxPercent}% allowed.` };
+  if (abs(impact) > parseDecimal(cfg.priceImpactWarnPercent)) return { ...base, result: "warn", rawValue: raw, reason: `This buy would move the price by ${shown}%.` };
+  return { ...base, result: "pass", rawValue: raw, reason: `A direct swap route is available and this buy would move the price by ${shown}%.` };
 }
 
 /** USD per token implied by a route: amount paid × the pay token's USD price ÷ tokens received. */
