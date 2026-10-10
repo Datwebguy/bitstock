@@ -201,6 +201,18 @@ The RWA `referencePrice` is derived from the token's own price, so it cannot sho
 2. Show its name and timestamp in the Guard HUD.
 3. If it is unavailable, show "reference unavailable" and fall back to conservative limits. Never show a divergence number that was not computed from two independent prices.
 
+### 6a. Chosen source (checked live 2026-10-10, about 21:10 UTC)
+
+**Chosen: Yahoo Finance chart API**, `GET https://query1.finance.yahoo.com/v8/finance/chart/NVDA?interval=1d&range=1d`, fields `meta.regularMarketPrice`, `meta.regularMarketTime`, `meta.currency`, `meta.symbol`, `meta.instrumentType`. Raw response: `docs/evidence/reference-yahoo-nvda-chart.json`. Code: `packages/guard/src/reference.ts`, behind an interface so it can be replaced.
+
+| Fact | Live result |
+|---|---|
+| NVDA last price | 229.28 USD, `regularMarketTime` 1791576000 = 2026-10-09T20:00:00Z (Friday 16:00 New York, the close). HTTP 200, `cache-control: public, max-age=10`. |
+| Why it is independent | It is a stock-market price feed, not derived from the BSC token or the Binance pool. |
+| Limits | Unofficial and undocumented endpoint: no SLA, no stated rate limit, terms of use not reviewed for this use (**the owner should decide whether that is acceptable**). Not real-time (treated as a last close when older than 30 minutes). It may refuse some server IPs; when it does, the check is "unavailable", which is a warning and never a pass. |
+| Candidates rejected | **Pyth Hermes** (`hermes.pyth.network`): the feed list works and has `Equity.US.NVDA/USD`, but every price endpoint returned HTTP 401 "unauthorized" for equity and crypto feeds alike, so it needs credentials we do not have. **Nasdaq quote API** (`api.nasdaq.com/api/quote/NVDA/info`): returned the same price, 229.28, but only a date, and the date was "Oct 8, 2026" while the close it reports was on 9 Oct; a price without a reliable time cannot be shown as the guard requires. **Stooq**: the connection was reset from the build container. |
+| Weekend gap at test time | Binance quote for $1: 230.717 USDT per token, 230.50 USD per token after the quote's USDT price (0.99904), so 230.32 USD per share after the multiplier, against the 229.28 close: about +0.45%. Computed from two independent prices at one moment; it is not a typical or expected figure. |
+
 ---
 
 ## 7. Agentic Wallet: what it is and is not (reference: "Binance Agentic Wallet")
