@@ -2,6 +2,7 @@
 :root {
   --brand: #f0b90b;
   --brand-hi: #fcd535;
+  --gold-ink: #9a6400;
   --on-brand: #181a20;
   --bg: #f7f7f5;
   --bg-elev: #ffffff;
@@ -28,13 +29,13 @@
   :root:not([data-theme="light"]) {
     --bg: #0b0e11; --bg-elev: #181a20; --bg-sunk: #1e2329; --line: #2b3139; --text: #eaecef; --text-2: #b7bdc6; --muted: #848e9c;
     --good: #2ebd85; --good-bg: rgb(46 189 133 / 0.12); --warn: #f7a600; --warn-bg: rgb(247 166 0 / 0.12); --bad: #f6465d; --bad-bg: rgb(246 70 93 / 0.12);
-    --focus: #fcd535; --shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px rgb(0 0 0 / 0.35); color-scheme: dark;
+    --focus: #fcd535; --gold-ink: #f0b90b; --shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px rgb(0 0 0 / 0.35); color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0b0e11; --bg-elev: #181a20; --bg-sunk: #1e2329; --line: #2b3139; --text: #eaecef; --text-2: #b7bdc6; --muted: #848e9c;
   --good: #2ebd85; --good-bg: rgb(46 189 133 / 0.12); --warn: #f7a600; --warn-bg: rgb(247 166 0 / 0.12); --bad: #f6465d; --bad-bg: rgb(246 70 93 / 0.12);
-  --focus: #fcd535; --shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px rgb(0 0 0 / 0.35); color-scheme: dark;
+  --focus: #fcd535; --gold-ink: #f0b90b; --shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 12px 32px rgb(0 0 0 / 0.35); color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -344,7 +345,7 @@ body { background: var(--bg); }
 .wordmark-link:hover .logo-mark, .wordmark-link:focus-visible .logo-mark { transform: rotate(360deg); }
 
 /* Typing line */
-.typer { margin: -4px 0 16px; font-family: var(--mono); font-size: 0.9rem; color: var(--brand); min-height: 1.5em; }
+.typer { margin: -4px 0 16px; font-family: var(--mono); font-size: 0.9rem; color: var(--gold-ink); min-height: 1.5em; }
 .caret { display: inline-block; width: 0.55em; height: 1.05em; margin-left: 2px; vertical-align: -0.15em; background: var(--brand); animation: blink 1s steps(1) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 
@@ -363,14 +364,14 @@ h1.split { font-size: clamp(1.7rem, 5.5vw, 2.6rem); line-height: 1.12; letter-sp
 .scroll-lit { max-width: 26ch; margin: 0 auto; font-size: clamp(1.7rem, 6.4vw, 3.3rem); line-height: 1.15; letter-spacing: -0.035em; font-weight: 800; text-align: center; }
 .scroll-lit .lw { color: color-mix(in srgb, var(--text) 52%, var(--bg)); transition: color 0.35s ease; }
 .scroll-lit .lw.lit { color: var(--text); }
-.scroll-lit .lw.lit:nth-child(5n + 3) { color: var(--brand); }
+.scroll-lit .lw.lit:nth-child(5n + 3) { color: var(--gold-ink); }
 
 /* Velocity band */
 .vband { overflow: hidden; padding: 18px 0; margin: 24px 0; border-block: 1px solid var(--line); background: color-mix(in srgb, var(--bg-elev) 50%, transparent); }
 .vband-track { display: flex; width: max-content; will-change: transform; }
 .vband-track > span { display: inline-flex; align-items: center; gap: 28px; padding-right: 28px; font-size: clamp(3rem, 12vw, 7rem); font-weight: 900; letter-spacing: -0.04em; line-height: 1; }
-.vb-outline { color: transparent; -webkit-text-stroke: 1.5px var(--brand); }
-.vb-solid { color: var(--brand); }
+.vb-outline { color: transparent; -webkit-text-stroke: 1.5px var(--gold-ink); }
+.vb-solid { color: var(--gold-ink); }
 
 /* Token travelling along the flow line */
 .flow-token { display: none; }
