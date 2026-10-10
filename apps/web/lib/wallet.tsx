@@ -60,7 +60,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       if (c !== "0x38") await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x38" }] });
       setChain("0x38");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "The wallet did not connect.");
+      setError(walletMessage(e, "Your wallet did not connect. Try again."));
     } finally {
       setConnecting(false);
     }
@@ -73,6 +73,18 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return <Ctx.Provider value={{ account, onBsc: chain === "0x38", available, connecting, error, connect, send }}>{children}</Ctx.Provider>;
+}
+
+/** Plain words for what a wallet reported; raw wallet errors are not shown to people. */
+export function walletMessage(e: unknown, fallback: string): string {
+  const code = typeof e === "object" && e !== null ? (e as { code?: unknown }).code : undefined;
+  if (code === 4001 || code === "ACTION_REJECTED") return "You cancelled in your wallet. Nothing was sent.";
+  if (code === 4902) return "Add BNB Smart Chain to your wallet, then try again.";
+  if (code === -32002) return "Your wallet is already asking you something. Open it to continue.";
+  const msg = e instanceof Error ? e.message : typeof e === "object" && e !== null && typeof (e as { message?: unknown }).message === "string" ? (e as { message: string }).message : "";
+  if (/insufficient funds/i.test(msg)) return "Your wallet does not have enough BNB for the network fee.";
+  if (/reject|denied|cancel/i.test(msg)) return "You cancelled in your wallet. Nothing was sent.";
+  return fallback;
 }
 
 export function useWallet(): WalletState {

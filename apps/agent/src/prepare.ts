@@ -7,11 +7,14 @@ import { rpcCall } from "@bitstock/chain";
 import { checkSimulation, type GuardRun, type PreparedTx } from "@bitstock/guard";
 
 const PREPARED_TTL_MS = 90_000;
+
+/** A reason written for the buyer. Any other error while preparing is shown as a generic sentence. */
+export class PrepareError extends Error {}
 const GAS_HEADROOM_PERCENT = 125n;
 
 export async function prepareTransaction(api: BinanceApi, rpcUrl: string, run: GuardRun, payToken: string): Promise<PreparedTx> {
   const { record, route, amountUnits } = run;
-  if (!route?.quoteId || !record.limits) throw new Error("there is no checked route to build from");
+  if (!route?.quoteId || !record.limits) throw new PrepareError("there is no checked trade to prepare");
   const req = record.request;
   const swap = await api.swap({
     fromTokenAddress: payToken,
@@ -23,10 +26,10 @@ export async function prepareTransaction(api: BinanceApi, rpcUrl: string, run: G
     ...(route.vendorName ? { vendor: route.vendorName } : {}),
   });
   const tx = findSwapTx(swap);
-  if (!tx) throw new Error("the swap response had no transaction");
+  if (!tx) throw new PrepareError("Binance did not return the trade to sign");
   const sim = (await api.simulate({ from: tx.from, to: tx.to, value: String(tx.value ?? "0"), data: tx.data })) as SimulationResult;
   const check = checkSimulation({ source: "final", asOf: new Date().toISOString(), value: sim }, req.token, req.wallet, { tx: { from: tx.from, to: tx.to, value: String(tx.value ?? "0") }, expectedTo: route.approveTarget });
-  if (check.result !== "pass") throw new Error(`the final transaction failed its dry run: ${check.reason}`);
+  if (check.result !== "pass") throw new PrepareError("the final trade failed its test run, so Bitstock will not send it");
 
   // Gas: never the swap's own figure alone (it can be below what the swap really needs).
   const fromSwap = tx.gas ? BigInt(tx.gas) : 0n;
@@ -34,7 +37,7 @@ export async function prepareTransaction(api: BinanceApi, rpcUrl: string, run: G
     .then((r) => BigInt(r.result))
     .catch(() => null);
   const base = estimated !== null && estimated > fromSwap ? estimated : fromSwap;
-  if (base === 0n) throw new Error("no gas figure was available for the final transaction");
+  if (base === 0n) throw new PrepareError("the network fee for the final trade could not be worked out");
   const gas = (base * GAS_HEADROOM_PERCENT) / 100n;
   const nodePrice = BigInt((await rpcCall<string>(rpcUrl, "eth_gasPrice", [])).result);
   const swapPrice = tx.gasPrice ? BigInt(tx.gasPrice) : 0n;

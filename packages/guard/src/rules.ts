@@ -72,10 +72,10 @@ const PAUSE_REASONS: Record<string, string> = {
 };
 
 export function checkSession(obs: Sourced<MarketStatusObs>): Check {
-  const base = { id: "session" as const, name: "Market session", source: obs.source, asOf: obs.asOf, threshold: null };
+  const base = { id: "session" as const, name: "Stock market", source: obs.source, asOf: obs.asOf, threshold: null };
   const s = obs.value;
   if (!s) {
-    return { ...base, result: "unavailable", rawValue: null, reason: `The market status could not be read${obs.error ? ` (${obs.error})` : ""}, so Bitstock will wait.`, retryAt: null };
+    return { ...base, result: "unavailable", rawValue: obs.error ?? null, reason: "Bitstock could not read whether the stock market is open, so it will wait.", retryAt: null };
   }
   const raw = `openState=${s.openState}, reasonCode=${s.reasonCode ?? "null"}, marketStatus=${s.marketStatus ?? "null"}, reasonMsg=${s.reasonMsg ?? "null"}`;
   const code = s.reasonCode ?? "";
@@ -83,9 +83,9 @@ export function checkSession(obs: Sourced<MarketStatusObs>): Check {
     const why = PAUSE_REASONS[s.reasonMsg ?? ""] ?? (s.reasonMsg ? `"${s.reasonMsg}"` : "a reason the issuer did not state");
     return { ...base, result: "fail", rawValue: raw, reason: `The issuer has paused this token for ${why}.` };
   }
-  if (code === "MARKET_PAUSED") return { ...base, result: "fail", rawValue: raw, reason: "Trading in the underlying market is paused." };
-  if (code === "MARKET_MAINTENANCE") return { ...base, result: "fail", rawValue: raw, reason: "The market is under maintenance." };
-  if (code === "UNSUPPORTED") return { ...base, result: "fail", rawValue: raw, reason: "This token is not supported for trading." };
+  if (code === "MARKET_PAUSED") return { ...base, result: "fail", rawValue: raw, reason: "Trading in this stock is paused." };
+  if (code === "MARKET_MAINTENANCE") return { ...base, result: "fail", rawValue: raw, reason: "Trading is paused for maintenance." };
+  if (code === "UNSUPPORTED") return { ...base, result: "fail", rawValue: raw, reason: "This stock cannot be traded right now." };
   if (code === "ASSET_LIMITED") {
     const why = s.reasonMsg === "earnings" ? " around an earnings release" : s.reasonMsg ? ` (${s.reasonMsg})` : "";
     return { ...base, result: "warn", rawValue: raw, reason: `Trading in this token is limited${why}; prices can move more than usual.` };
@@ -96,12 +96,12 @@ export function checkSession(obs: Sourced<MarketStatusObs>): Check {
       ...base,
       result: "warn",
       rawValue: raw,
-      reason: next ? `Wall Street is closed. It next opens at ${next}.` : "Wall Street is closed and the next opening time was not given.",
+      reason: next ? `The US stock market is closed. It opens again at ${next}.` : "The US stock market is closed, and Binance did not say when it opens again.",
       retryAt: next,
     };
   }
-  if (code === "TRADING") return { ...base, result: "pass", rawValue: raw, reason: "The market reports this token as trading." };
-  return { ...base, result: "warn", rawValue: raw, reason: `The market reports an unrecognised status code (${code || "none"}), so Bitstock treats it with caution.` };
+  if (code === "TRADING") return { ...base, result: "pass", rawValue: raw, reason: "Binance shows this stock as open for trading." };
+  return { ...base, result: "warn", rawValue: raw, reason: "Binance shows a market status Bitstock does not recognise, so it treats it with caution." };
 }
 
 // ---------- 2. multiplier ----------
@@ -114,20 +114,20 @@ export interface MultiplierObs {
 }
 
 export function checkMultiplier(obs: Sourced<MultiplierObs>, now: Date, cfg: GuardConfig): Check {
-  const base = { id: "multiplier" as const, name: "Share multiplier", source: obs.source, asOf: obs.asOf, threshold: `change within ${cfg.multiplierWindowHours} h warns` };
+  const base = { id: "multiplier" as const, name: "Shares per token", source: obs.source, asOf: obs.asOf, threshold: `change within ${cfg.multiplierWindowHours} h warns` };
   const m = obs.value;
-  if (!m) return { ...base, result: "unavailable", rawValue: null, reason: `The token's share multiplier could not be read${obs.error ? ` (${obs.error})` : ""}.`, retryAt: null };
-  if (m.uiMultiplier <= 0n) return { ...base, result: "fail", rawValue: m.uiMultiplier.toString(), reason: "The token reports a share multiplier of zero, which cannot be right." };
+  if (!m) return { ...base, result: "unavailable", rawValue: obs.error ?? null, reason: "Bitstock could not read how many shares each token stands for.", retryAt: null };
+  if (m.uiMultiplier <= 0n) return { ...base, result: "fail", rawValue: m.uiMultiplier.toString(), reason: "The token says it stands for zero shares, which cannot be right." };
   const raw = `uiMultiplier=${formatDecimal(m.uiMultiplier, 18)}, newUIMultiplier=${formatDecimal(m.newUIMultiplier, 18)}, effectiveAt=${m.effectiveAt}`;
   const nowSec = BigInt(Math.floor(now.getTime() / 1000));
   const pending = m.effectiveAt > nowSec && m.newUIMultiplier !== m.uiMultiplier;
-  if (!pending) return { ...base, result: "pass", rawValue: raw, reason: `Each token stands for ${formatDecimal(m.uiMultiplier, 6)} shares and no change is scheduled.` };
+  if (!pending) return { ...base, result: "pass", rawValue: raw, reason: `Each token stands for ${formatDecimal(m.uiMultiplier, 6)} shares, and no change is planned.` };
   const when = new Date(Number(m.effectiveAt) * 1000).toISOString();
   const within = m.effectiveAt - nowSec <= BigInt(cfg.multiplierWindowHours * 3600);
   const change = `from ${formatDecimal(m.uiMultiplier, 6)} to ${formatDecimal(m.newUIMultiplier, 6)} shares per token at ${when}`;
   return within
-    ? { ...base, result: "warn", rawValue: raw, reason: `A change to the token is scheduled within ${cfg.multiplierWindowHours} hours: ${change}.` }
-    : { ...base, result: "pass", rawValue: raw, reason: `A change is scheduled later than ${cfg.multiplierWindowHours} hours from now: ${change}.` };
+    ? { ...base, result: "warn", rawValue: raw, reason: `The token is due to change within ${cfg.multiplierWindowHours} hours, ${change}. This usually means a company event such as a dividend or a split.` }
+    : { ...base, result: "pass", rawValue: raw, reason: `A change is planned more than ${cfg.multiplierWindowHours} hours from now, ${change}.` };
 }
 
 // ---------- 3. independent reference ----------
@@ -150,14 +150,14 @@ export function checkReference(
   now: Date,
   cfg: GuardConfig,
 ): Check {
-  const base = { id: "reference" as const, name: "Independent price", source: ref.value?.sourceName ?? ref.source, asOf: ref.value?.priceTime ?? ref.asOf };
+  const base = { id: "reference" as const, name: "Price vs the real stock", source: ref.value?.sourceName ?? ref.source, asOf: ref.value?.priceTime ?? ref.asOf };
   const r = ref.value;
-  if (!r) return { ...base, result: "unavailable", rawValue: null, threshold: null, reason: `No independent price is available${ref.error ? ` (${ref.error})` : ""}, so this check cannot pass.` };
-  if (r.currency !== "USD") return { ...base, result: "unavailable", rawValue: `${r.pricePerShare} ${r.currency}`, threshold: null, reason: `The independent price is in ${r.currency}, not US dollars, so it cannot be compared.` };
+  if (!r) return { ...base, result: "unavailable", rawValue: ref.error ?? null, threshold: null, reason: "Bitstock could not get the stock's own price from a separate source, so this check cannot pass." };
+  if (r.currency !== "USD") return { ...base, result: "unavailable", rawValue: `${r.pricePerShare} ${r.currency}`, threshold: null, reason: `The stock's own price is in ${r.currency}, not US dollars, so it cannot be compared.` };
   const refPrice = tryParseDecimal(r.pricePerShare);
-  if (refPrice === undefined || refPrice <= 0n) return { ...base, result: "unavailable", rawValue: r.pricePerShare, threshold: null, reason: "The independent price is not a usable number." };
+  if (refPrice === undefined || refPrice <= 0n) return { ...base, result: "unavailable", rawValue: r.pricePerShare, threshold: null, reason: "The stock's own price could not be used." };
   if (quotePricePerToken === undefined || multiplier === undefined || multiplier <= 0n) {
-    return { ...base, result: "unavailable", rawValue: r.pricePerShare, threshold: null, reason: "The buy price or the share multiplier is unavailable, so the prices cannot be compared." };
+    return { ...base, result: "unavailable", rawValue: r.pricePerShare, threshold: null, reason: "The buy price or the shares per token are not known, so the prices cannot be compared." };
   }
   const perShare = div(quotePricePerToken, multiplier);
   const gap = percentDiff(perShare, refPrice);
@@ -169,16 +169,16 @@ export function checkReference(
   const gapText = `${gap >= 0n ? "+" : ""}${formatDecimal(gap, 2)}%`;
   if (live) {
     const threshold = `pass ≤ ${cfg.referenceWarnPercent}%, fail > ${cfg.referenceMaxPercent}%`;
-    if (abs(gap) <= parseDecimal(cfg.referenceWarnPercent)) return { ...base, result: "pass", rawValue: raw, threshold, reason: `The buy price is within ${cfg.referenceWarnPercent}% of the stock's price (${gapText}).` };
-    if (abs(gap) <= parseDecimal(cfg.referenceMaxPercent)) return { ...base, result: "warn", rawValue: raw, threshold, reason: `The buy price is ${gapText} away from the stock's price.` };
-    return { ...base, result: "fail", rawValue: raw, threshold, reason: `The buy price is ${gapText} away from the stock's price, more than the ${cfg.referenceMaxPercent}% allowed.` };
+    if (abs(gap) <= parseDecimal(cfg.referenceWarnPercent)) return { ...base, result: "pass", rawValue: raw, threshold, reason: `You would pay ${gapText} compared with the stock's own price, within the ${cfg.referenceWarnPercent}% Bitstock is comfortable with.` };
+    if (abs(gap) <= parseDecimal(cfg.referenceMaxPercent)) return { ...base, result: "warn", rawValue: raw, threshold, reason: `You would pay ${gapText} compared with the stock's own price.` };
+    return { ...base, result: "fail", rawValue: raw, threshold, reason: `You would pay ${gapText} compared with the stock's own price, more than the ${cfg.referenceMaxPercent}% allowed.` };
   }
   const threshold = `last close: never a pass, fail > ${cfg.referenceClosedMaxPercent}%`;
   if (abs(gap) > parseDecimal(cfg.referenceClosedMaxPercent)) {
-    return { ...base, result: "fail", rawValue: raw, threshold, reason: `The buy price is ${gapText} away from the last close at ${r.priceTime}, more than the ${cfg.referenceClosedMaxPercent}% allowed.` };
+    return { ...base, result: "fail", rawValue: raw, threshold, reason: `You would pay ${gapText} compared with the stock's last price from ${r.priceTime}, more than the ${cfg.referenceClosedMaxPercent}% allowed.` };
   }
-  const when = fresh && r.session ? `a ${r.session} price from ${r.priceTime}` : `from ${r.priceTime}`;
-  return { ...base, result: "warn", rawValue: raw, threshold, reason: `The stock is not in its regular session; its latest price is ${when}. The buy price is ${gapText} away from it, and the stock can move before regular trading.` };
+  const head = fresh && r.session ? `The stock is trading outside normal market hours; its latest price is from ${r.priceTime}.` : `The stock's own price is not live right now; its latest price is from ${r.priceTime}.`;
+  return { ...base, result: "warn", rawValue: raw, threshold, reason: `${head} You would pay ${gapText} compared with it, and the stock can move before normal trading.` };
 }
 
 // ---------- 4. execution quality ----------
@@ -193,31 +193,31 @@ export function chooseRoute(routes: Route[]): Route | undefined {
 
 export function checkExecution(q: Sourced<QuoteObs>, cfg: GuardConfig): Check {
   const threshold = `warn > ${cfg.priceImpactWarnPercent}%, fail > ${cfg.priceImpactMaxPercent}%`;
-  const base = { id: "execution" as const, name: "Price and route", source: q.source, asOf: q.asOf, threshold };
+  const base = { id: "execution" as const, name: "Price impact", source: q.source, asOf: q.asOf, threshold };
   const v = q.value;
   if (!v || v.errorCode !== undefined) {
     if (v?.errorCode !== undefined && MARKET_HOURS_CODES.has(v.errorCode)) {
-      return { ...base, result: "unavailable", rawValue: `error ${v.errorCode}`, reason: "Binance will not quote this stock while its exchange is closed, so Bitstock will wait for the next session.", retryAt: null };
+      return { ...base, result: "unavailable", rawValue: `error ${v.errorCode}`, reason: "Binance will not price this stock while its market is closed, so Bitstock will wait for the market to open.", retryAt: null };
     }
     const err = v?.errorCode !== undefined ? `error ${v.errorCode}${v.errorMessage ? `: ${v.errorMessage}` : ""}` : q.error;
-    return { ...base, result: "unavailable", rawValue: err ?? null, reason: `A live price could not be fetched${err ? ` (${err})` : ""}.`, retryAt: null };
+    return { ...base, result: "unavailable", rawValue: err ?? null, reason: "Bitstock could not get a live price for this amount.", retryAt: null };
   }
   const routes = v.routes ?? [];
-  if (routes.length === 0) return { ...base, result: "unavailable", rawValue: "no routes", reason: "Binance returned no way to make this trade right now.", retryAt: null };
+  if (routes.length === 0) return { ...base, result: "unavailable", rawValue: "no routes", reason: "Binance offered no way to make this trade right now.", retryAt: null };
   const route = chooseRoute(routes);
   if (!route) {
-    return { ...base, result: "fail", rawValue: routes.map((r) => `${r.vendorName}:${r.executionMode}`).join(", "), reason: "Only a quote-on-request route is offered. It cannot be tested before sending, so Bitstock will not use it." };
+    return { ...base, result: "fail", rawValue: routes.map((r) => `${r.vendorName}:${r.executionMode}`).join(", "), reason: "Binance only offered a kind of trade that cannot be tested first, so Bitstock will not use it." };
   }
   const out = BigInt(route.toTokenAmount ?? "0");
-  if (out <= 0n) return { ...base, result: "fail", rawValue: `toTokenAmount=${route.toTokenAmount}`, reason: "The quote would deliver nothing." };
+  if (out <= 0n) return { ...base, result: "fail", rawValue: `toTokenAmount=${route.toTokenAmount}`, reason: "The price offered would give you nothing." };
   const impact = tryParseDecimal(route.priceImpactPercent);
-  if (impact === undefined) return { ...base, result: "unavailable", rawValue: `priceImpactPercent=${route.priceImpactPercent}`, reason: "The quote did not include a usable price impact.", retryAt: null };
-  // Show the API's own figure: rounding a tiny impact to a few places would print a misleading 0.
-  const shown = route.priceImpactPercent;
-  const raw = `${route.vendorName} ${route.executionMode}, priceImpactPercent ${shown}, output ${route.toTokenAmount}`;
-  if (abs(impact) > parseDecimal(cfg.priceImpactMaxPercent)) return { ...base, result: "fail", rawValue: raw, reason: `This buy would move the price by ${shown}%, more than the ${cfg.priceImpactMaxPercent}% allowed.` };
-  if (abs(impact) > parseDecimal(cfg.priceImpactWarnPercent)) return { ...base, result: "warn", rawValue: raw, reason: `This buy would move the price by ${shown}%.` };
-  return { ...base, result: "pass", rawValue: raw, reason: `A direct swap route is available and this buy would move the price by ${shown}%.` };
+  if (impact === undefined) return { ...base, result: "unavailable", rawValue: `priceImpactPercent=${route.priceImpactPercent}`, reason: "The price offered did not say how much your buy would move the price.", retryAt: null };
+  // Rounded for reading; a tiny impact reads "less than 0.01%" rather than a misleading 0. The exact figure stays in rawValue.
+  const shown = abs(impact) < parseDecimal("0.01") ? "less than 0.01%" : `${formatDecimal(abs(impact), 2)}%`;
+  const raw = `${route.vendorName} ${route.executionMode}, priceImpactPercent ${route.priceImpactPercent}, output ${route.toTokenAmount}`;
+  if (abs(impact) > parseDecimal(cfg.priceImpactMaxPercent)) return { ...base, result: "fail", rawValue: raw, reason: `Your buy would move the price by ${shown}, more than the ${cfg.priceImpactMaxPercent}% allowed.` };
+  if (abs(impact) > parseDecimal(cfg.priceImpactWarnPercent)) return { ...base, result: "warn", rawValue: raw, reason: `Your buy would move the price by ${shown}, more than usual.` };
+  return { ...base, result: "pass", rawValue: raw, reason: `Your buy would move the price by ${shown}.` };
 }
 
 /** USD per token implied by a route: amount paid × the pay token's USD price ÷ tokens received. */
@@ -243,32 +243,32 @@ export interface SwapPin {
 }
 
 export function checkSimulation(sim: Sourced<SimulationObs> & { skipped?: string }, stockToken: string, wallet: string, pin?: SwapPin): Check {
-  const base = { id: "simulation" as const, name: "Dry run", source: sim.source, asOf: sim.asOf, threshold: "SUCCESS and the stock arrives" };
+  const base = { id: "simulation" as const, name: "Test run", source: sim.source, asOf: sim.asOf, threshold: "SUCCESS and the stock arrives" };
   // Pin the transaction before trusting any dry run of it: it must come from the buyer, go to the
   // contract the quote named as the spender, and carry no BNB.
   if (pin) {
     const raw = `to=${pin.tx.to}, expected=${pin.expectedTo ?? "unknown"}, value=${pin.tx.value}`;
     if (!pin.expectedTo || pin.tx.to.toLowerCase() !== pin.expectedTo.toLowerCase()) {
-      return { ...base, result: "fail", rawValue: raw, reason: "The swap Binance built does not go to the contract its quote named, so Bitstock will not use it." };
+      return { ...base, result: "fail", rawValue: raw, reason: "The trade Binance prepared does not go where its price offer said, so Bitstock will not use it." };
     }
-    if (pin.tx.from.toLowerCase() !== wallet.toLowerCase()) return { ...base, result: "fail", rawValue: raw, reason: "The swap Binance built is not from this wallet, so Bitstock will not use it." };
-    if (BigInt(pin.tx.value || "0") !== 0n) return { ...base, result: "fail", rawValue: raw, reason: "The swap Binance built would also send BNB, which a USDT purchase never needs." };
+    if (pin.tx.from.toLowerCase() !== wallet.toLowerCase()) return { ...base, result: "fail", rawValue: raw, reason: "The trade Binance prepared is not from your wallet, so Bitstock will not use it." };
+    if (BigInt(pin.tx.value || "0") !== 0n) return { ...base, result: "fail", rawValue: raw, reason: "The trade Binance prepared would also send BNB, which buying with USDT never needs, so Bitstock will not use it." };
   }
-  if (sim.skipped) return { ...base, result: "unavailable", rawValue: null, reason: `The dry run was not run: ${sim.skipped}`, retryAt: null };
+  if (sim.skipped) return { ...base, result: "unavailable", rawValue: sim.skipped, reason: "Bitstock could not prepare this trade for a test run right now.", retryAt: null };
   const v = sim.value;
-  if (!v) return { ...base, result: "unavailable", rawValue: null, reason: `The dry run could not be performed${sim.error ? ` (${sim.error})` : ""}.`, retryAt: null };
+  if (!v) return { ...base, result: "unavailable", rawValue: sim.error ?? null, reason: "Bitstock could not test this trade right now.", retryAt: null };
   if (v.status !== "SUCCESS") {
     const why = v.failReason ?? "no reason given";
     if (/allowance/i.test(why)) {
-      return { ...base, result: "fail", rawValue: `status=${v.status}, failReason=${why}`, reason: "The dry run failed because this wallet has not yet approved USDT for the swap. Approve first, then check again." };
+      return { ...base, result: "fail", rawValue: `status=${v.status}, failReason=${why}`, reason: "The test run failed because your wallet has not yet allowed this trade to use your USDT. Approve USDT in your wallet first, then check again." };
     }
-    return { ...base, result: "fail", rawValue: `status=${v.status}, failReason=${why}`, reason: `The dry run failed: ${why}.` };
+    return { ...base, result: "fail", rawValue: `status=${v.status}, failReason=${why}`, reason: "The test run of this trade failed, so Bitstock will not send it." };
   }
   const arriving = (v.balanceChanges ?? []).find(
     (c) => c.contractAddress?.toLowerCase() === stockToken.toLowerCase() && c.owner?.toLowerCase() === wallet.toLowerCase() && BigInt(c.change ?? "0") > 0n,
   );
-  if (!arriving) return { ...base, result: "fail", rawValue: `status=SUCCESS, balanceChanges=${JSON.stringify(v.balanceChanges ?? [])}`, reason: "The dry run succeeded but showed no stock arriving in this wallet, so Bitstock will not send it." };
-  return { ...base, result: "pass", rawValue: `status=SUCCESS, stock change +${arriving.change}`, reason: "The dry run succeeded and the stock arrives in this wallet." };
+  if (!arriving) return { ...base, result: "fail", rawValue: `status=SUCCESS, balanceChanges=${JSON.stringify(v.balanceChanges ?? [])}`, reason: "The test run worked but showed no stock arriving in your wallet, so Bitstock will not send it." };
+  return { ...base, result: "pass", rawValue: `status=SUCCESS, stock change +${arriving.change}`, reason: "Bitstock tested this exact trade, and the stock arrives in your wallet." };
 }
 
 // ---------- outcome ----------

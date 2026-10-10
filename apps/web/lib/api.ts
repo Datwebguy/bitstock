@@ -4,7 +4,7 @@ export const AGENT_URL = (process.env.NEXT_PUBLIC_AGENT_URL ?? "").replace(/\/+$
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${AGENT_URL}/v1${path}`, { ...init, headers: { "content-type": "application/json", ...(init?.headers ?? {}) }, cache: "no-store" });
   const body = (await res.json().catch(() => ({}))) as T & { error?: string };
-  if (!res.ok) throw new Error(body.error || `The service answered ${res.status}.`);
+  if (!res.ok) throw new Error(body.error || (res.status === 429 ? "Too many requests. Wait a minute and try again." : "Bitstock could not reach its server. Try again in a moment."));
   return body;
 }
 
@@ -13,7 +13,7 @@ export type Sourced<T> = { value: T | null; source: string; asOf: string; error?
 export interface MarketStatus { openState: boolean; marketStatus: string | null; reasonCode: string | null; reasonMsg: string | null; nextOpenTime: number | string | null }
 
 export interface MarketView {
-  token: { address: string; symbol: string; name: string | null; logo: string | null; ticker: string | null };
+  token: { address: string; symbol: string; name: string | null; logo: string | null; ticker: string | null; company: string | null };
   session: Sourced<MarketStatus>;
   tokenPrice: Sourced<string>;
   multiplier: Sourced<{ current: string; pending: string; effectiveAt: string }>;
@@ -31,16 +31,31 @@ export interface Decision {
   prepared?: { from: string; to: string; value: string; data: string; gas: string; gasPrice: string; slippagePercent: string; minReceiveAmount: string | null; simulation: { status: string; stockArriving: string | null }; expiresAt: number } | null;
 }
 
-export interface Holdings {
-  wallet: string;
-  balance: { raw: string | null; tokens: string | null; source: string; asOf: string; error?: string };
+export interface Position {
+  token: { address: string; symbol: string; name: string | null; logo: string | null; ticker: string | null; company: string };
+  balance: { raw: string; tokens: string; source: string; asOf: string };
   multiplier: { value: string | null; source: string; asOf: string };
   shares: string | null;
   valueAtReference: { value: string | null; price: string | null; priceTime: string | null; source: string; note: string };
   explanation: string | null;
   multiplierExplanation: string | null;
-  buys: Array<{ at: string; txHash: string; status: string; amountUsd: string; outcome: string }>;
 }
+
+export interface Holdings {
+  wallet: string;
+  positions: Position[];
+  checked: number;
+  unread: string[];
+  asOf: string;
+  buys: Array<{ at: string; txHash: string; status: string; amountUsd: string; outcome: Decision["outcome"]; symbol: string | null }>;
+}
+
+export interface ListedToken {
+  address: string; symbol: string; name: string | null; logo: string | null; ticker: string | null; company: string | null; decimals: number; price: string | null;
+  session: { openState: boolean; reasonCode: string | null; reasonMsg: string | null; nextOpenTime: number | string | null } | null;
+}
+
+export interface TokenList { tokens: ListedToken[]; asOf: string; source: string }
 
 /** Plain decimal formatting without floating point. */
 export function trimDecimal(s: string | null | undefined, places: number): string | null {
@@ -65,15 +80,31 @@ export function when(iso: string | null | undefined): string {
 /** Plain-language names for data sources; the full technical source stays in the stored decision record. */
 export function friendlySource(source: string): string {
   const s = source.toLowerCase();
-  if (s.includes("fallback") && s.includes("yahoo")) return "Yahoo Finance stock price (our first choice, Pyth, was unavailable)";
-  if (s.includes("pyth")) return "Pyth stock price";
-  if (s.includes("yahoo")) return "Yahoo Finance stock price";
-  if (s.includes("simulate")) return "Binance dry run of this exact trade";
-  if (s.includes("quote")) return "Binance live quote for this amount";
-  if (s.includes("underlying-market") || s.includes("rwa/tokens") || s.includes("rwa/price")) return "Binance market data";
-  if (s.includes("profile")) return "Binance company profile";
-  if (s.includes("uimultiplier") || s.includes("eth_call") || s.includes("bnb smart chain")) return "The NVDAB token contract on BNB Smart Chain";
-  return source;
+  if (s.includes("yahoo")) return "Yahoo Finance";
+  if (s.includes("pyth")) return "Pyth";
+  if (s.includes("simulate")) return "Binance test run";
+  if (s.includes("quote")) return "Binance live price";
+  if (s.includes("binance")) return "Binance";
+  if (s.includes("bnb smart chain") || s.includes("eth_call") || s.includes("bsc")) return "the token on BNB Smart Chain";
+  return "Bitstock";
+}
+
+/** "From Binance · 10 Oct 2026, 23:40": where a value came from and when, in plain words. */
+export function fromLine(source: string, asOf?: string | null): string {
+  return asOf ? `From ${friendlySource(source)} · ${when(asOf)}` : `From ${friendlySource(source)}`;
+}
+
+/** Plain labels for a check's result. */
+export const RESULT_LABEL: Record<Check["result"], string> = { pass: "OK", warn: "Caution", fail: "Failed", unavailable: "Not read" };
+
+/** A plain word for a stock's market state, from the live status object. */
+export function sessionWord(s: { openState: boolean; reasonCode: string | null } | null | undefined): { text: string; cls: string } {
+  if (!s) return { text: "Unavailable", cls: "idle" };
+  if (s.reasonCode === "ASSET_PAUSED") return { text: "Paused", cls: "bad" };
+  if (s.reasonCode === "MARKET_PAUSED" || s.reasonCode === "MARKET_MAINTENANCE") return { text: "Paused", cls: "bad" };
+  if (s.reasonCode === "ASSET_LIMITED") return { text: "Limited", cls: "warn" };
+  if (!s.openState) return { text: "Market closed", cls: "warn" };
+  return { text: "Trading", cls: "good" };
 }
 
 const ISO_RE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/g;

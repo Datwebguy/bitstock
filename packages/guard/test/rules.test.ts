@@ -31,7 +31,7 @@ describe("1. session", () => {
   it("warns when closed without a next open time and says so", () => {
     const c = sess(status({ openState: false, reasonCode: "MARKET_CLOSED", nextOpenTime: null }));
     expect(c.result).toBe("warn");
-    expect(c.reason).toContain("not given");
+    expect(c.reason).toContain("did not say when");
   });
   for (const msg of ["cash_dividend", "stock_dividend", "stock_split", "merger", "acquisition", "spinoff", "maintenance", "corporate action"]) {
     it(`fails on ASSET_PAUSED for ${msg}`, () => {
@@ -103,7 +103,7 @@ describe("3. independent reference", () => {
   it("never passes against a last close, even with zero gap", () => {
     const c = checkReference(ref("230.00", 60 * 40), perToken("230.00"), mult, NOW, cfg);
     expect(c.result).toBe("warn");
-    expect(c.reason).toContain("not in its regular session");
+    expect(c.reason).toContain("not live right now");
   });
   it("fails against a last close beyond 10%", () => {
     expect(checkReference(ref("200.00", 60 * 40), perToken("230.00"), mult, NOW, cfg).result).toBe("fail");
@@ -117,8 +117,12 @@ describe("3. independent reference", () => {
 describe("4. execution", () => {
   const swap = (impact: string, extra: Partial<Route> = {}): Route => ({ vendorName: "LiquidMesh", executionMode: "SWAP", toTokenAmount: "4334315581714481", priceImpactPercent: impact, isBest: true, ...extra });
   const ex = (routes: Route[]) => checkExecution({ source: "test", asOf: null, value: { routes } }, cfg);
-  it("passes a SWAP route with tiny impact", () => {
-    expect(ex([swap("0.0006252806")]).result).toBe("pass");
+  it("passes a SWAP route with tiny impact and words it without a misleading zero", () => {
+    const c = ex([swap("0.0006252806")]);
+    expect(c.result).toBe("pass");
+    expect(c.reason).toBe("Your buy would move the price by less than 0.01%.");
+    expect(c.rawValue).toContain("0.0006252806");
+    expect(ex([swap("0.5")]).reason).toContain("0.50%");
   });
   it("refuses an RFQ-only quote", () => {
     const c = ex([{ vendorName: "PcsXRfq", executionMode: "RFQ", toTokenAmount: "5", priceImpactPercent: "0" }]);
@@ -163,7 +167,7 @@ describe("5. simulation", () => {
   it("fails with an approval explanation on the real missing-allowance revert", () => {
     const c = sim({ status: "FAILED", failReason: "execution reverted: BEP20: transfer amount exceeds allowance", balanceChanges: [] });
     expect(c.result).toBe("fail");
-    expect(c.reason).toContain("approved");
+    expect(c.reason).toContain("Approve USDT");
   });
   it("fails when SUCCESS shows no stock arriving", () => {
     expect(sim({ status: "SUCCESS", balanceChanges: [] }).result).toBe("fail");
@@ -180,7 +184,7 @@ describe("5. simulation", () => {
   it("fails a swap to any other contract, even if its dry run succeeds", () => {
     const c = pinned("0x9999999999999999999999999999999999999999");
     expect(c.result).toBe("fail");
-    expect(c.reason).toContain("does not go to the contract its quote named");
+    expect(c.reason).toContain("does not go where its price offer said");
     const unknownTarget = checkSimulation({ source: "t", asOf: null, value: ok }, STOCK, WALLET, { tx: { from: WALLET, to: ROUTER, value: "0" }, expectedTo: undefined });
     expect(unknownTarget.result).toBe("fail");
   });

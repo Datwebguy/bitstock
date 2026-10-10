@@ -18,3 +18,18 @@ export function regionVerdict(country: string | null | undefined, region: string
   if (c === "UA" && BLOCKED_UA_REGIONS.has(r)) return { blocked: true, reason: `region UA-${r}` };
   return { blocked: false, known: true };
 }
+
+/** The same places in words, for the first-visit confirmation and the terms. */
+export const RESTRICTED_PLACES = [
+  "The United States and its territories",
+  "Canada",
+  "The Netherlands",
+  "The United Kingdom",
+  "Japan",
+  "Iran",
+  "Cuba",
+  "North Korea",
+  "Crimea and Sevastopol",
+  "Donetsk",
+  "Luhansk",
+] as const;

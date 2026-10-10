@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { api, trimDecimal, when, type MarketView } from "@/lib/api";
+import { api, trimDecimal, when, type MarketView, type ListedToken } from "@/lib/api";
 import { LogoMark } from "./Logo";
 import { Coin, ScrollLit, SplitReveal, TypeCycle, VelocityBand } from "./Motion";
 import { Reveal } from "./Reveal";
+import { useTokens } from "./Stocks";
 
 function useMarket() {
   const [m, setM] = useState<MarketView | null>(null);
@@ -35,9 +36,9 @@ function useMarket() {
 function sessionWord(m: MarketView | null): { text: string; cls: string } {
   const v = m?.session.value;
   if (!v) return { text: "unavailable", cls: "idle" };
-  if (v.reasonCode === "ASSET_PAUSED") return { text: "paused by issuer", cls: "bad" };
+  if (v.reasonCode === "ASSET_PAUSED") return { text: "paused by the company", cls: "bad" };
   if (v.reasonCode === "MARKET_PAUSED" || v.reasonCode === "MARKET_MAINTENANCE") return { text: "market paused", cls: "bad" };
-  if (!v.openState) return { text: "closed", cls: "warn" };
+  if (!v.openState) return { text: "US market closed", cls: "warn" };
   return { text: "trading", cls: "good" };
 }
 
@@ -49,17 +50,17 @@ function CheckConsole({ m, err }: { m: MarketView | null; err: boolean }) {
   const gap = m?.gapPercent.value;
   const pending = m?.multiplier.value && m.multiplier.value.pending !== m.multiplier.value.current && m.multiplier.value.effectiveAt !== "0";
   const rows: Array<{ k: string; v: string; cls: string }> = [
-    { k: "Market session", v: m ? s.text : "reading…", cls: m ? s.cls : "idle" },
-    { k: "Shares per token", v: mult ? `${mult}${pending ? " · change scheduled" : " · no change scheduled"}` : m ? "unavailable" : "reading…", cls: mult ? (pending ? "warn" : "good") : "idle" },
-    { k: "Independent price", v: ref ? `$${trimDecimal(ref.pricePerShare, 2)} · ${ref.session === "regular" ? "live" : "last close"}` : m ? "unavailable" : "reading…", cls: ref ? (ref.session === "regular" ? "good" : "warn") : "idle" },
+    { k: "Stock market", v: m ? s.text : "reading…", cls: m ? s.cls : "idle" },
+    { k: "Shares per token", v: mult ? `${mult}${pending ? " · change planned" : " · no change planned"}` : m ? "unavailable" : "reading…", cls: mult ? (pending ? "warn" : "good") : "idle" },
+    { k: "NVDA real price", v: ref ? `$${trimDecimal(ref.pricePerShare, 2)} · ${ref.session === "regular" ? "live" : "last close"}` : m ? "unavailable" : "reading…", cls: ref ? (ref.session === "regular" ? "good" : "warn") : "idle" },
     { k: "Token vs stock", v: gap ? `${gap.startsWith("-") ? "" : "+"}${gap}%` : m ? "unavailable" : "reading…", cls: gap ? (ref?.session === "regular" && Math.abs(Number(gap)) <= 0.5 ? "good" : "warn") : "idle" },
-    { k: "Your trade, dry-run", v: "runs when you check a buy", cls: "idle" },
+    { k: "Test run of your trade", v: "runs when you check a buy", cls: "idle" },
   ];
   return (
     <div className="console" role="group" aria-label="Live checks for NVDAB">
       <div className="console-head">
         <span className="dots" aria-hidden="true"><i /><i /><i /></span>
-        <span>NVDAB · live checks</span>
+        <span>NVIDIA (NVDAB) · live checks</span>
         <span className={`live ${err ? "off" : ""}`}>{err ? "offline" : "live"}</span>
       </div>
       <ol className="console-rows">
@@ -73,29 +74,21 @@ function CheckConsole({ m, err }: { m: MarketView | null; err: boolean }) {
           </li>
         ))}
       </ol>
-      <div className="console-foot">{m ? `Read ${when(m.session.asOf)} · sources shown on every screen` : "Reading live data…"}</div>
+      <div className="console-foot">{m ? `Read live ${when(m.session.asOf)}` : "Reading live data…"}</div>
     </div>
   );
 }
 
-function Ticker({ m }: { m: MarketView | null }) {
-  if (!m) return null;
-  const items = [
-    ["NVDAB", m.tokenPrice.value ? `$${trimDecimal(m.tokenPrice.value, 2)}` : "unavailable"],
-    ["Shares per token", m.multiplier.value ? trimDecimal(m.multiplier.value.current, 6) ?? "unavailable" : "unavailable"],
-    [m.reference.value?.session === "regular" ? "NVDA now" : "NVDA last close", m.reference.value ? `$${trimDecimal(m.reference.value.pricePerShare, 2)}` : "unavailable"],
-    ["Token vs stock", m.gapPercent.value ? `${m.gapPercent.value.startsWith("-") ? "" : "+"}${m.gapPercent.value}%` : "unavailable"],
-    ["Market", sessionWord(m).text],
-    ["52-week range", m.marketData.value?.low52W && m.marketData.value?.high52W ? `$${trimDecimal(m.marketData.value.low52W, 2)} – $${trimDecimal(m.marketData.value.high52W, 2)}` : "unavailable"],
-  ];
-  const strip = items.map(([k, v]) => (
-    <span className="tick-item" key={k}>
-      <b>{k}</b> <span className="num">{v}</span>
-    </span>
+function Ticker({ tokens }: { tokens: ListedToken[] | null }) {
+  if (!tokens || tokens.length === 0) return null;
+  const strip = tokens.map((t) => (
+    <a className="tick-item" key={t.address} href={`/check?s=${t.symbol}`} tabIndex={-1}>
+      <b>{t.ticker ?? t.symbol}</b> <span className="num">{t.price ? `$${trimDecimal(t.price, 2)}` : "unavailable"}</span>
+    </a>
   ));
   return (
-    <div className="ticker" aria-label="Live figures">
-      <div className="ticker-track">
+    <div className="ticker" aria-label={`Live prices of ${tokens.length} tokenized stocks`}>
+      <div className="ticker-track long">
         <div className="ticker-set">{strip}</div>
         <div className="ticker-set" aria-hidden="true">{strip}</div>
       </div>
@@ -104,28 +97,30 @@ function Ticker({ m }: { m: MarketView | null }) {
 }
 
 const STEPS = [
-  { n: "01", t: "Check", d: "Market session, share multiplier, an independent stock price, the price impact of your exact amount, and a dry run of the real trade." },
+  { n: "01", t: "Check", d: "Is the market open, what one token stands for, the real stock's price, how much your amount moves the price, and a test run of your exact trade." },
   { n: "02", t: "Buy", d: "Only when the checks allow it. With a warning, the price limit gets tighter. You sign in your own wallet; Bitstock never holds your keys." },
   { n: "03", t: "Explain", d: "Your tokens shown as shares, with what changes them in plain words: dividends, splits and pauses." },
 ];
 
 const CHECKS = [
-  { t: "Market session", d: "Is the stock trading, closed, limited or paused by its issuer?" },
-  { t: "Share multiplier", d: "Is a corporate action about to change what one token stands for?" },
-  { t: "Independent price", d: "Is the token's price close to the real stock price, from a separate source?" },
-  { t: "Price and route", d: "How much would your exact amount move the price, on a route that can be tested?" },
-  { t: "Dry run", d: "Does the exact transaction succeed, and do the tokens arrive in your wallet?" },
+  { t: "Stock market", d: "Is the stock trading, closed, limited or paused by the company?" },
+  { t: "Shares per token", d: "Is a company event, like a dividend or split, about to change what one token stands for?" },
+  { t: "Price vs the real stock", d: "Is the token's price close to the real stock's price, from a separate source?" },
+  { t: "Price impact", d: "How much would your exact amount move the price?" },
+  { t: "Test run", d: "Does your exact trade work, and do the tokens arrive in your wallet?" },
 ];
 
 const FAQ = [
   { q: "Do I need to give Bitstock my keys?", a: "No. Bitstock prepares and tests the transaction; you approve and sign it in your own wallet." },
-  { q: "What if the market is closed?", a: "Tokenized stocks can trade on chain when Wall Street is shut. Bitstock warns you, compares with the last close, and only allows a tighter price limit." },
+  { q: "What if the market is closed?", a: "Tokenized stocks can trade on chain when the US stock market is shut. Bitstock warns you, compares with the stock's last price, and only allows a tighter price limit." },
+  { q: "Which stocks can I buy?", a: "Every tokenized stock Binance lists on BNB Smart Chain right now, such as NVIDIA, Tesla, Microsoft, Meta, Alphabet, AMD and index funds like SPY and QQQ. The list is read live, so it changes when Binance's list changes." },
   { q: "Can it lose money?", a: "Yes. Prices move. Bitstock checks for avoidable problems before you buy; it does not promise profit or protect you from loss. It is not investment advice." },
-  { q: "What do I actually own?", a: "A token on BNB Smart Chain that stands for a number of shares. Its issuer can pause or block it. Holdings shows you the shares in plain words." },
+  { q: "What do I actually own?", a: "A token on BNB Smart Chain that stands for a number of shares. The company that issues it can pause or block it. Holdings shows you the shares in plain words." },
 ];
 
 export function Landing() {
   const { m, err } = useMarket();
+  const { list } = useTokens();
   return (
     <div className="landing">
       <section className="hero" aria-labelledby="hero-title">
@@ -136,19 +131,19 @@ export function Landing() {
               Buy tokenized stocks on chain.
               <span className="hl"> Only after the checks pass.</span>
             </h1>
-            <TypeCycle label="Bitstock checks the market session, the share multiplier, an independent price, the route and a dry run." phrases={["Checking the market session…", "Reading the share multiplier…", "Comparing an independent price…", "Measuring your exact trade…", "Dry-running the transaction…", "Showing you every result."]} />
-            <p className="hero-sub">Bitstock reads the market, the token, an independent stock price and a dry run of your exact trade, shows you every result, then lets you buy a small amount in your own wallet.</p>
+            <TypeCycle label="Bitstock checks the market, what one token stands for, the real stock's price, your trade size and a test run." phrases={["Checking the stock market…", "Reading shares per token…", "Comparing the real stock price…", "Measuring your exact trade…", "Test-running your trade…", "Showing you every result."]} />
+            <p className="hero-sub">Pick from every tokenized stock on Binance. Bitstock reads the market, the token, the real stock&apos;s price and a test run of your exact trade, shows you every result, then lets you buy a small amount in your own wallet.</p>
             <div className="hero-cta">
               <Link className="btn btn-primary btn-glow" href="/buy">Try a protected buy</Link>
               <Link className="btn btn-ghost" href="/check">See live checks</Link>
             </div>
-            <p className="hero-note">No keys leave your wallet · every buy dry-run first · every transaction public on BscScan</p>
+            <p className="hero-note">Your keys stay in your wallet · every buy tested first · every buy public on BscScan</p>
           </div>
           <CheckConsole m={m} err={err} />
         </div>
       </section>
 
-      <Ticker m={m} />
+      <Ticker tokens={list?.tokens ?? null} />
 
       <section className="band" aria-labelledby="how">
         <p className="eyebrow center">How it works</p>
@@ -168,7 +163,7 @@ export function Landing() {
       </section>
 
       <section className="band statement" aria-label="What Bitstock believes">
-        <ScrollLit text="A small buy deserves the same care as a big one. Read the market. Check the token. Compare a price from somewhere else. Test the exact trade. Then, and only then, buy." />
+        <ScrollLit text="A small buy deserves the same care as a big one. Read the market. Check the token. Compare the real stock's price. Test the exact trade. Then, and only then, buy." />
       </section>
 
       <VelocityBand words={["CHECK", "BUY", "EXPLAIN", "CHECK", "BUY", "EXPLAIN"]} />
@@ -205,7 +200,7 @@ export function Landing() {
             <li><b>Never holds your money or keys.</b> You sign every buy.</li>
             <li><b>Never trades for you uninvited.</b> Nothing happens without your approval.</li>
             <li><b>Never promises profit.</b> It removes avoidable mistakes, not market risk.</li>
-            <li><b>Never hides a number&apos;s source.</b> Each value says where and when it was read.</li>
+            <li><b>Never hides where a number came from.</b> Each value says where and when it was read.</li>
           </ul>
         </Reveal>
       </section>
@@ -227,7 +222,7 @@ export function Landing() {
         <Reveal className="cta-in">
           <Coin />
           <h2 id="go" className="section-title"><span className="gold">Start with a dollar.</span></h2>
-          <p className="muted">Check NVDAB live, then buy a small amount when the checks allow it.</p>
+          <p className="muted">Pick a stock, check it live, then buy a small amount when the checks allow it.</p>
           <div className="hero-cta center">
             <Link className="btn btn-primary btn-glow" href="/buy">Try a protected buy</Link>
             <Link className="btn btn-ghost" href="/check">See live checks</Link>
@@ -235,7 +230,7 @@ export function Landing() {
         </Reveal>
       </section>
 
-      <p className="footer-note">Bitstock is not investment advice. Tokenized stocks can be paused or blocked by their issuer.</p>
+      <p className="footer-note">Bitstock is not investment advice. Tokenized stocks can be paused or blocked by the company that issues them.</p>
     </div>
   );
 }

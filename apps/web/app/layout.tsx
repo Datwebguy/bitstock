@@ -7,7 +7,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "Bitstock: buy tokenized stocks only after the checks pass", template: "%s · Bitstock" },
-  description: "Bitstock checks the market, the token, an independent price and a dry run before every small buy of a tokenized stock on BNB Smart Chain, and shows every check.",
+  description: "Bitstock checks the market, the token, the real stock price and a test run before every small buy of a tokenized stock on BNB Smart Chain, and shows every check.",
   icons: { icon: "/icon.svg" },
 };
 

@@ -14,6 +14,7 @@ import { NVDAB, PROBE_NAMES, runProbe } from "./probes.ts";
 import { RateLimiter } from "./ratelimit.ts";
 import { attachUserTx, reconcileSubmitted } from "./reconcile.ts";
 import { sentryStatus, startSentry } from "./sentry.ts";
+import { findToken, listedTokens } from "./tokens.ts";
 
 const SERVICE = "bitstock-agent";
 const log = (o: Record<string, unknown>) => console.log(JSON.stringify({ at: new Date().toISOString(), ...o }));
@@ -104,9 +105,16 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     return send(res, 200, { token: { address: NVDAB, symbol: "NVDAB" }, maxBuyUsd: ctx.caps.maxBuyUsd, chainId: 56, killSwitch: killState(ctx.env, ctx.repo).on });
   }
 
+  if (path === "/v1/tokens" && method === "GET") {
+    if (!readLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many requests." });
+    return send(res, 200, await listedTokens(ctx));
+  }
+
   if (path === "/v1/market" && method === "GET") {
     if (!readLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many requests." });
-    return send(res, 200, await marketView(ctx));
+    const token = await findToken(ctx, url.searchParams.get("token") ?? NVDAB);
+    if (!token) return send(res, 404, { error: "That stock is not listed right now." });
+    return send(res, 200, await marketView(ctx, token));
   }
 
   if (path === "/v1/holdings" && method === "GET") {
@@ -120,6 +128,7 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     if (!decisionLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many checks from this address. Wait a minute and try again." });
     const body = await readJson(req);
     const request = validateRequest(body, ctx.caps.maxBuyUsd);
+    if (!(await findToken(ctx, request.token))) return send(res, 400, { error: "That stock is not listed right now." });
     const idem = req.headers["idempotency-key"];
     const key = typeof idem === "string" && /^[A-Za-z0-9-]{8,64}$/.test(idem) ? idem : null;
     const record = await makeDecision(ctx, request, key);

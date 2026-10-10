@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SplitReveal } from "@/components/Motion";
 import type { Metadata } from "next";
 import { CompanyNote, Quiz } from "@/components/Learn";
@@ -5,10 +6,10 @@ import { CompanyNote, Quiz } from "@/components/Learn";
 export const metadata: Metadata = { title: "Learn" };
 
 const OUTCOMES = [
-  { k: "Go", cls: "good", t: "Every check passed. The buy may go ahead with the normal price limit." },
-  { k: "Go, with a tighter limit", cls: "warn", t: "Something calls for caution, such as the stock market being closed. The buy may go ahead, but the price may move only a little before the trade cancels itself." },
+  { k: "Go", cls: "good", t: "Every check passed. You can buy with the normal price limit." },
+  { k: "Go, with a tighter limit", cls: "warn", t: "Something calls for caution, such as the US stock market being closed. You can still buy, but the price may move only a little before your buy cancels itself." },
   { k: "Wait", cls: "idle", t: "Something could not be read. Bitstock buys nothing now and checks everything again later." },
-  { k: "Do not buy now", cls: "bad", t: "A check failed, for example the issuer paused the token or the dry run did not show your tokens arriving. Nothing is bought." },
+  { k: "Do not buy now", cls: "bad", t: "A check failed, for example the company paused the token or the test run did not show your tokens arriving. Nothing is bought." },
 ];
 
 export default function LearnPage() {
@@ -18,7 +19,7 @@ export default function LearnPage() {
       <SplitReveal as="h1" text="How your tokenized stock works" />
       <p className="lede">Plain words about what you hold and how Bitstock decides.</p>
       <div className="grid">
-        <CompanyNote />
+        <Suspense><CompanyNote /></Suspense>
         <section className="card" aria-labelledby="out">
           <h2 id="out">What Bitstock&apos;s answers mean</h2>
           <ul className="list">

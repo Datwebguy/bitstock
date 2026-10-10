@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { short, useWallet } from "@/lib/wallet";
 import { Wordmark } from "./Logo";
 import { FlowBackground, ScrollDriver } from "./Motion";
+import { RegionGate } from "./RegionGate";
 
 const NAV = [
   { href: "/check", label: "Check", icon: "M12 3 20 6.5V12c0 4.6-3.3 8.1-8 9.5C7.3 20.1 4 16.6 4 12V6.5Z M8.5 12.3l2.4 2.4 4.6-5" },
@@ -63,6 +64,7 @@ export function Shell({ children }: { children: ReactNode }) {
     <>
       <FlowBackground />
       <ScrollDriver />
+      <RegionGate />
       <a className="skip" href="#main">Skip to content</a>
       <header className="topbar">
         <div className="topbar-in">

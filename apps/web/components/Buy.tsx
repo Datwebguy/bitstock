@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, friendlySource, humanize, units18, when, type Decision } from "@/lib/api";
-import { short, useWallet } from "@/lib/wallet";
+import { api, fromLine, humanize, RESULT_LABEL, units18, when, type Decision } from "@/lib/api";
+import { short, useWallet, walletMessage } from "@/lib/wallet";
+import { StockPicker, useSelectedSymbol, useTokens } from "./Stocks";
 
 const TITLES: Record<Decision["outcome"], string> = { GO: "Go", LIMIT: "Go, with a tighter limit", WAIT: "Wait", BLOCK: "Do not buy now" };
 const BADGE: Record<Decision["outcome"], string> = { GO: "✓", LIMIT: "!", WAIT: "…", BLOCK: "×" };
@@ -13,8 +14,12 @@ function feeBnb(gas: string, gasPrice: string): string {
   return `${s.slice(0, -18)}.${s.slice(-18, -10)}`;
 }
 
-export function BuyFlow({ nvdab, maxUsd }: { nvdab: string; maxUsd: string }) {
+export function BuyFlow({ maxUsd }: { maxUsd: string }) {
   const w = useWallet();
+  const { list, err: listErr } = useTokens();
+  const [symbol, setSymbol] = useSelectedSymbol();
+  const token = list?.tokens.find((t) => t.symbol === symbol) ?? null;
+  const stock = token?.ticker ?? symbol;
   const [amount, setAmount] = useState("");
   const [checking, setChecking] = useState(false);
   const [checkErr, setCheckErr] = useState<string | null>(null);
@@ -30,7 +35,7 @@ export function BuyFlow({ nvdab, maxUsd }: { nvdab: string; maxUsd: string }) {
   }, []);
 
   const check = async () => {
-    if (!w.account) return;
+    if (!w.account || !token) return;
     if (!/^\d{1,4}(\.\d{1,2})?$/.test(amount) || Number(amount) <= 0) {
       setCheckErr("Enter a dollar amount such as 1 or 2.50.");
       return;
@@ -42,10 +47,10 @@ export function BuyFlow({ nvdab, maxUsd }: { nvdab: string; maxUsd: string }) {
     setHash(null);
     setBuyMsg(null);
     try {
-      const r = await api<Decision>("/decisions", { method: "POST", headers: { "idempotency-key": crypto.randomUUID() }, body: JSON.stringify({ token: nvdab, amountUsd: amount, wallet: w.account }) });
+      const r = await api<Decision>("/decisions", { method: "POST", headers: { "idempotency-key": crypto.randomUUID() }, body: JSON.stringify({ token: token.address, amountUsd: amount, wallet: w.account }) });
       setD(r);
     } catch (e) {
-      setCheckErr(e instanceof Error ? e.message : "The check failed.");
+      setCheckErr(e instanceof Error ? e.message : "The check could not run. Try again in a moment.");
     } finally {
       setChecking(false);
     }
@@ -66,11 +71,11 @@ export function BuyFlow({ nvdab, maxUsd }: { nvdab: string; maxUsd: string }) {
     const p = d?.prepared;
     if (!d || !p || !w.account) return;
     if (Date.now() > p.expiresAt) {
-      setBuyMsg("This check is more than 90 seconds old. Check again so Bitstock re-reads the market.");
+      setBuyMsg("This check is more than 90 seconds old. Check again so Bitstock reads the market fresh.");
       return;
     }
     if (w.account.toLowerCase() !== p.from.toLowerCase()) {
-      setBuyMsg("The connected wallet is not the one this buy was prepared for.");
+      setBuyMsg("The wallet connected now is not the one this buy was checked for. Check again.");
       return;
     }
     setPhase("signing");
@@ -83,7 +88,7 @@ export function BuyFlow({ nvdab, maxUsd }: { nvdab: string; maxUsd: string }) {
       void poll(d.id, 60);
     } catch (e) {
       setPhase("failed");
-      setBuyMsg(e instanceof Error ? e.message : "The wallet did not send the transaction.");
+      setBuyMsg(walletMessage(e, "Your wallet did not send the buy. Nothing was spent."));
     }
   };
 
@@ -107,7 +112,10 @@ export function BuyFlow({ nvdab, maxUsd }: { nvdab: string; maxUsd: string }) {
       </section>
 
       <section className="card" aria-labelledby="s2">
-        <h2 id="s2">2 · How much NVDAB?</h2>
+        <h2 id="s2">2 · Which stock, and how much?</h2>
+        <StockPicker tokens={list?.tokens ?? null} symbol={symbol} onPick={(s) => (setSymbol(s), setD(null), setPhase("idle"), setHash(null), setBuyMsg(null))} />
+        {listErr && !list ? <p className="msg error" role="alert">The list of stocks is unavailable right now. {listErr}</p> : null}
+        {list && !token ? <p className="msg info">{symbol} is not listed on Binance right now. Choose another stock.</p> : null}
         <label className="field" htmlFor="amt">Amount in US dollars, paid in USDT</label>
         <div className="amount">
           <span aria-hidden="true">$</span>
@@ -119,7 +127,7 @@ export function BuyFlow({ nvdab, maxUsd }: { nvdab: string; maxUsd: string }) {
           ))}
         </div>
         <p id="amt-help" className="small muted">Up to ${maxUsd} per buy.</p>
-        <button className="btn btn-primary" type="button" onClick={() => void check()} disabled={!w.account || checking}>{checking ? "Checking market, token, price and a dry run…" : "Check this buy"}</button>
+        <button className="btn btn-primary" type="button" onClick={() => void check()} disabled={!w.account || !token || checking}>{checking ? "Checking the market, the token, the price and a test run…" : `Check this buy of ${stock}`}</button>
         {checkErr ? <p className="msg error" role="alert">{checkErr}</p> : null}
       </section>
 
@@ -138,39 +146,39 @@ export function BuyFlow({ nvdab, maxUsd }: { nvdab: string; maxUsd: string }) {
               <li key={c.id}>
                 <span className={`check-dot ${c.result}`} aria-hidden="true">{DOT[c.result]}</span>
                 <span className="check-name">{c.name}</span>
-                <span className={`check-result ${c.result}`}>{c.result}</span>
+                <span className={`check-result ${c.result}`}>{RESULT_LABEL[c.result]}</span>
                 <div className="small">{humanize(c.reason)}</div>
-                <span className="source">Source: {friendlySource(c.source)}{c.asOf ? `, as of ${when(c.asOf)}` : ""}</span>
+                <span className="source">{fromLine(c.source, c.asOf)}</span>
               </li>
             ))}
           </ol>
-          <p className="source">Decision recorded {when(d.at)} · reference {d.id.slice(0, 8)}</p>
+          <p className="source">Checked {when(d.at)} · saved so you can look it up later (number {d.id.slice(0, 8)})</p>
 
           {p && (d.outcome === "GO" || d.outcome === "LIMIT") ? (
             <>
               <hr className="divider" />
               <h3>Tested before you sign</h3>
               <dl className="kv small">
-                <dt>You receive about</dt><dd className="num">{units18(p.simulation.stockArriving) ?? "unavailable"} NVDAB</dd>
-                <dt>You receive at least</dt><dd className="num">{units18(p.minReceiveAmount) ?? "unavailable"} NVDAB</dd>
+                <dt>You receive about</dt><dd className="num">{units18(p.simulation.stockArriving) ?? "unavailable"} {symbol}</dd>
+                <dt>You receive at least</dt><dd className="num">{units18(p.minReceiveAmount) ?? "unavailable"} {symbol}</dd>
                 <dt>Price may move at most</dt><dd className="num">{p.slippagePercent}%</dd>
                 <dt>Network fee at most</dt><dd className="num">{feeBnb(p.gas, p.gasPrice)} BNB</dd>
                 <dt>Valid for</dt><dd className="num">{left > 0 ? `${left} s` : "expired"}</dd>
               </dl>
-              <p className="small muted">If the price moves past the limit before the trade lands, the swap cancels itself on chain and you keep your USDT.</p>
+              <p className="small muted">If the price moves past this limit before your buy goes through, it cancels itself and you keep your USDT.</p>
               <div className="steps" aria-label="Progress">
                 <div className={`step ${phase === "signing" ? "on" : phase !== "idle" && phase !== "failed" ? "done" : ""}`}>Confirm in wallet</div>
                 <div className={`step ${phase === "sent" ? "on" : phase === "confirmed" || phase === "reverted" ? "done" : ""}`}>On its way</div>
                 <div className={`step ${phase === "confirmed" ? "done" : ""}`}>Confirmed</div>
               </div>
               {left > 0 ? (
-                <button className="btn btn-primary" type="button" onClick={() => void buy()} disabled={!canBuy}>{phase === "signing" ? "Confirm in your wallet…" : `Buy $${amount} of NVDAB`}</button>
+                <button className="btn btn-primary" type="button" onClick={() => void buy()} disabled={!canBuy}>{phase === "signing" ? "Confirm in your wallet…" : `Buy $${amount} of ${stock}`}</button>
               ) : (
                 <button className="btn btn-ghost" type="button" onClick={() => void check()}>Check again</button>
               )}
-              {hash ? <p className="msg info">Transaction: <a className="mono" href={`https://bscscan.com/tx/${hash}`} target="_blank" rel="noopener noreferrer">{hash}</a></p> : null}
-              {phase === "confirmed" ? <p className="msg ok" role="status">Done. Your NVDAB has arrived. See it under Holdings.</p> : null}
-              {phase === "reverted" ? <p className="msg error" role="alert">The swap was cancelled on chain, for example because the price moved past your limit. Your USDT was not spent; only the network fee was.</p> : null}
+              {hash ? <p className="msg info">Your buy on BscScan: <a className="mono" href={`https://bscscan.com/tx/${hash}`} target="_blank" rel="noopener noreferrer">{hash}</a></p> : null}
+              {phase === "confirmed" ? <p className="msg ok" role="status">Done. Your {symbol} has arrived. See it under Holdings.</p> : null}
+              {phase === "reverted" ? <p className="msg error" role="alert">Your buy was cancelled, for example because the price moved past your limit. Your USDT was not spent; only the network fee was.</p> : null}
               {buyMsg ? <p className="msg error" role="alert">{buyMsg}</p> : null}
             </>
           ) : null}

@@ -7,8 +7,8 @@ import { isAddress } from "@bitstock/chain";
 import { buildRecord, runGuardWithContext, type DecisionRecord } from "@bitstock/guard";
 import type { AgentContext } from "./context.ts";
 import { killState } from "./killswitch.ts";
-import { prepareTransaction } from "./prepare.ts";
-import { NVDAB, USDT } from "./probes.ts";
+import { PrepareError, prepareTransaction } from "./prepare.ts";
+import { USDT } from "./probes.ts";
 
 export class InputError extends Error {}
 
@@ -18,14 +18,12 @@ export interface DecisionRequest {
   wallet: string;
 }
 
-const SUPPORTED_TOKENS = new Set([NVDAB.toLowerCase()]);
-
 export function validateRequest(body: unknown, maxBuyUsd: string): DecisionRequest {
   const b = (body ?? {}) as Record<string, unknown>;
   const token = typeof b["token"] === "string" ? b["token"] : "";
   const amountUsd = typeof b["amountUsd"] === "string" ? b["amountUsd"] : "";
   const wallet = typeof b["wallet"] === "string" ? b["wallet"] : "";
-  if (!isAddress(token) || !SUPPORTED_TOKENS.has(token.toLowerCase())) throw new InputError("This token is not supported yet.");
+  if (!isAddress(token)) throw new InputError("Choose a stock to buy.");
   if (!isAddress(wallet)) throw new InputError("The wallet address is not valid.");
   if (!/^\d{1,4}(\.\d{1,2})?$/.test(amountUsd) || Number(amountUsd) <= 0) throw new InputError("The amount must be a dollar amount such as 1 or 2.50.");
   if (Number(amountUsd) > Number(maxBuyUsd)) throw new InputError(`The most Bitstock will buy at once is $${maxBuyUsd}.`);
@@ -52,7 +50,8 @@ export async function makeDecision(ctx: AgentContext, req: DecisionRequest, idem
       } catch (e) {
         record.prepared = null;
         record.outcome = "BLOCK";
-        record.reason = e instanceof Error ? e.message.charAt(0).toUpperCase() + e.message.slice(1) + "." : "The final transaction could not be prepared.";
+        record.reason = e instanceof PrepareError ? e.message.charAt(0).toUpperCase() + e.message.slice(1) + "." : "The final trade could not be prepared. Check again in a moment.";
+        record.inputs.push({ name: "prepare error", value: e instanceof Error ? e.message.slice(0, 300) : String(e), source: "agent", asOf: new Date().toISOString(), status: "unavailable" });
       }
     }
   }

@@ -27,7 +27,7 @@ describe("contract: recorded live responses", () => {
     const sim = ev("b5-swap-build-and-simulate.railway-sg.json").result.simulation;
     const c = checkSimulation({ source: "evidence", asOf: null, value: sim }, NVDAB, "0x0000000000000000000000000000000000000001");
     expect(c.result).toBe("fail");
-    expect(c.reason).toContain("approved");
+    expect(c.reason).toContain("Approve USDT");
   });
   it("parses the real Yahoo chart response for NVDA", () => {
     const r = parseYahooChart(ev("reference-yahoo-nvda-chart.json").response, "NVDA");
