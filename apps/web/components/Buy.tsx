@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, units18, when, type Decision } from "@/lib/api";
+import { api, friendlySource, humanize, units18, when, type Decision } from "@/lib/api";
 import { short, useWallet } from "@/lib/wallet";
 
 const TITLES: Record<Decision["outcome"], string> = { GO: "Go", LIMIT: "Go, with a tighter limit", WAIT: "Wait", BLOCK: "Do not buy now" };
@@ -130,7 +130,7 @@ export function BuyFlow({ nvdab, maxUsd }: { nvdab: string; maxUsd: string }) {
             <span className="badge" aria-hidden="true">{BADGE[d.outcome]}</span>
             <div>
               <p className="outcome-title">{TITLES[d.outcome]}</p>
-              <p className="small">{d.reason}{d.recheckAt ? ` Bitstock will check again ${when(d.recheckAt)}.` : ""}</p>
+              <p className="small">{humanize(d.reason)}{d.recheckAt ? ` Bitstock will check again ${when(d.recheckAt)}.` : ""}</p>
             </div>
           </div>
           <ol className="checks">
@@ -139,12 +139,12 @@ export function BuyFlow({ nvdab, maxUsd }: { nvdab: string; maxUsd: string }) {
                 <span className={`check-dot ${c.result}`} aria-hidden="true">{DOT[c.result]}</span>
                 <span className="check-name">{c.name}</span>
                 <span className={`check-result ${c.result}`}>{c.result}</span>
-                <div className="small">{c.reason}</div>
-                <span className="source">Source: {c.source}{c.asOf ? `, as of ${when(c.asOf)}` : ""}</span>
+                <div className="small">{humanize(c.reason)}</div>
+                <span className="source">Source: {friendlySource(c.source)}{c.asOf ? `, as of ${when(c.asOf)}` : ""}</span>
               </li>
             ))}
           </ol>
-          <p className="source">Decision {d.id} · rules version {d.rulesVersion} · {when(d.at)}</p>
+          <p className="source">Decision recorded {when(d.at)} · reference {d.id.slice(0, 8)}</p>
 
           {p && (d.outcome === "GO" || d.outcome === "LIMIT") ? (
             <>

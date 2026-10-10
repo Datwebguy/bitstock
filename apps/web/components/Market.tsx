@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { api, trimDecimal, when, type MarketView } from "@/lib/api";
+import { api, friendlySource, trimDecimal, when, type MarketView } from "@/lib/api";
 
 function sessionView(s: MarketView["session"]): { cls: string; label: string; detail: string } {
   const v = s.value;
@@ -59,7 +59,7 @@ export function MarketHud() {
         </div>
         <p className="price num" aria-live="polite">{price ? `$${price}` : "unavailable"}</p>
         <span className="muted small">price per token</span>
-        <span className="source">Source: {m.tokenPrice.source}, as of {when(m.tokenPrice.asOf)}{m.tokenPrice.error ? `. Unavailable: ${m.tokenPrice.error}` : ""}</span>
+        <span className="source">Source: {friendlySource(m.tokenPrice.source)}, as of {when(m.tokenPrice.asOf)}{m.tokenPrice.error ? ". Unavailable right now." : ""}</span>
         <div className="chips">
           <Link className="btn btn-primary btn-inline" href="/buy">Check a buy</Link>
         </div>
@@ -70,21 +70,21 @@ export function MarketHud() {
           <div className="stat-label" id="ses">Market session</div>
           <div className="stat-value"><span className={`pill ${s.cls}`}>{s.label}</span></div>
           <p className="small">{s.detail}</p>
-          <span className="source">Source: {m.session.source}, as of {when(m.session.asOf)}</span>
+          <span className="source">Source: {friendlySource(m.session.source)}, as of {when(m.session.asOf)}</span>
         </section>
 
         <section className="card" aria-labelledby="mul">
           <div className="stat-label" id="mul">Shares per token</div>
           <div className="stat-value num">{mult ? trimDecimal(mult.current, 6) : "unavailable"}</div>
           <p className="small">{mult ? (pending ? `A change to ${trimDecimal(mult.pending, 6)} is scheduled for ${when(new Date(Number(mult.effectiveAt) * 1000).toISOString())}.` : "No change is scheduled.") : "The token contract could not be read."}</p>
-          <span className="source">Source: {m.multiplier.source}, as of {when(m.multiplier.asOf)}</span>
+          <span className="source">Source: {friendlySource(m.multiplier.source)}, as of {when(m.multiplier.asOf)}</span>
         </section>
 
         <section className="card" aria-labelledby="ref">
           <div className="stat-label" id="ref">{lastClose ? "Stock's last price" : "Stock price now"}</div>
           <div className="stat-value num">{ref ? `$${trimDecimal(ref.pricePerShare, 2)}` : "unavailable"}</div>
           <p className="small">{ref ? `${lastClose ? "Last traded" : "Traded"} ${when(ref.priceTime)}. An independent price, not taken from the token.` : "No independent price could be read; a buy would get a tighter limit."}</p>
-          <span className="source">Source: {m.reference.source}</span>
+          <span className="source">Source: {friendlySource(m.reference.source)}</span>
         </section>
 
         <section className="card" aria-labelledby="gap">

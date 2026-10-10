@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, when, type Holdings } from "@/lib/api";
+import { api, friendlySource, humanize, when, type Holdings } from "@/lib/api";
 import { useWallet } from "@/lib/wallet";
 
 export function HoldingsView() {
@@ -37,7 +37,7 @@ export function HoldingsView() {
         <p className="price num">{h.shares ?? "unavailable"}</p>
         <span className="muted small">shares of NVIDIA, as {h.balance.tokens ?? "unavailable"} NVDAB tokens</span>
         <p className="small">{h.explanation ?? "Your balance or the share multiplier could not be read."}</p>
-        <span className="source">Source: {h.balance.source} and {h.multiplier.source}, as of {when(h.balance.asOf)}</span>
+        <span className="source">Source: {friendlySource(h.balance.source)}, as of {when(h.balance.asOf)}</span>
       </section>
 
       <div className="grid grid-2">
@@ -45,12 +45,12 @@ export function HoldingsView() {
           <div className="stat-label" id="val">Worth at the stock&apos;s price</div>
           <div className="stat-value num">{h.valueAtReference.value ? `$${h.valueAtReference.value}` : "unavailable"}</div>
           <p className="small">{h.valueAtReference.price ? `Your shares × $${h.valueAtReference.price}, the stock's price at ${when(h.valueAtReference.priceTime)}. Not a price you can sell at.` : "No independent price is available right now."}</p>
-          <span className="source">Source: {h.valueAtReference.source}</span>
+          <span className="source">Source: {friendlySource(h.valueAtReference.source)}</span>
         </section>
         <section className="card" aria-labelledby="mult">
           <div className="stat-label" id="mult">What happens to your token</div>
-          <p className="small">{h.multiplierExplanation ?? "The share multiplier could not be read."}</p>
-          <span className="source">Source: {h.multiplier.source}</span>
+          <p className="small">{h.multiplierExplanation ? humanize(h.multiplierExplanation) : "The share multiplier could not be read."}</p>
+          <span className="source">Source: {friendlySource(h.multiplier.source)}</span>
         </section>
       </div>
 

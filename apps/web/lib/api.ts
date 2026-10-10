@@ -61,3 +61,24 @@ export function when(iso: string | null | undefined): string {
   if (Number.isNaN(d.getTime())) return "unavailable";
   return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
+
+/** Plain-language names for data sources; the full technical source stays in the stored decision record. */
+export function friendlySource(source: string): string {
+  const s = source.toLowerCase();
+  if (s.includes("fallback") && s.includes("yahoo")) return "Yahoo Finance stock price (our first choice, Pyth, was unavailable)";
+  if (s.includes("pyth")) return "Pyth stock price";
+  if (s.includes("yahoo")) return "Yahoo Finance stock price";
+  if (s.includes("simulate")) return "Binance dry run of this exact trade";
+  if (s.includes("quote")) return "Binance live quote for this amount";
+  if (s.includes("underlying-market") || s.includes("rwa/tokens") || s.includes("rwa/price")) return "Binance market data";
+  if (s.includes("profile")) return "Binance company profile";
+  if (s.includes("uimultiplier") || s.includes("eth_call") || s.includes("bnb smart chain")) return "The NVDAB token contract on BNB Smart Chain";
+  return source;
+}
+
+const ISO_RE = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z/g;
+
+/** Replace machine timestamps inside sentences with the reader's local date and time. */
+export function humanize(text: string): string {
+  return text.replace(ISO_RE, (iso) => when(iso));
+}

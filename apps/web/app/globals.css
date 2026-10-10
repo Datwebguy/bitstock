@@ -63,7 +63,7 @@ img { max-width: 100%; }
 .topnav a { text-decoration: none; color: var(--text-2); padding: 8px 12px; border-radius: 999px; font-weight: 600; font-size: 0.95rem; }
 .topnav a[aria-current="page"] { color: var(--on-brand); background: var(--brand); }
 .icon-btn { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg-elev); color: var(--text); cursor: pointer; }
-main.page { max-width: 1080px; margin: 0 auto; padding: 16px 16px 112px; }
+main.page { max-width: 1080px; margin: 0 auto; padding: 16px 16px 112px; overflow-x: clip; }
 .tabbar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; background: var(--bg-elev); border-top: 1px solid var(--line); padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(5, 1fr); }
 .tabbar a { display: grid; justify-items: center; gap: 2px; padding: 6px 2px; text-decoration: none; color: var(--muted); font-size: 0.72rem; font-weight: 600; border-radius: 12px; min-height: 48px; }
 .tabbar a svg { width: 22px; height: 22px; }
@@ -83,9 +83,9 @@ h3 { font-size: 1rem; margin: 0 0 6px; }
 .small { font-size: 0.85rem; }
 
 /* Surfaces */
-.grid { display: grid; gap: 12px; }
-@media (min-width: 720px) { .grid-2 { grid-template-columns: 1fr 1fr; } .grid-3 { grid-template-columns: repeat(3, 1fr); } }
-.card { background: var(--bg-elev); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+.grid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 720px) { .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.card { min-width: 0; overflow-wrap: anywhere; background: var(--bg-elev); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
 .card-hero { position: relative; overflow: hidden; }
 .card-hero::after { content: ""; position: absolute; inset: auto -30% -60% auto; width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--brand) 26%, transparent), transparent 70%); pointer-events: none; }
 .source { display: block; margin-top: 10px; color: var(--muted); font-size: 0.78rem; line-height: 1.4; overflow-wrap: anywhere; }
