@@ -291,3 +291,7 @@ main.page-landing { max-width: none; padding: 0 0 112px; }
   .ticker-track { animation: none; }
   .reveal.pre { opacity: 1; transform: none; }
 }
+@media (max-width: 559px) {
+  .console-row { grid-template-columns: 26px minmax(0, 1fr); row-gap: 2px; }
+  .console-v { grid-column: 2; text-align: left; }
+}
