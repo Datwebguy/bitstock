@@ -1,0 +1,290 @@
+{
+  "redaction": "The buyer wallet's public address was replaced with <probe-wallet> (and <probe-wallet-hex> inside calldata) before publishing. Nothing else was changed. The transaction itself is public on BscScan.",
+  "summary": {
+    "what": "First real Mode A buy: the owner signed the prepared transaction in their own wallet on /buy",
+    "txHash": "0x526643d73ed93ad2a90033397710d4d03d41d6835938e722ba647b408666e8c1",
+    "bscscan": "https://bscscan.com/tx/0x526643d73ed93ad2a90033397710d4d03d41d6835938e722ba647b408666e8c1",
+    "block": 126905587,
+    "blockTime": "2026-10-10T22:12:10Z",
+    "status": "success",
+    "usdtOut": "1000000000000000000",
+    "nvdabIn": "4333697515150079",
+    "simulatedNvdab": "see decision.prepared.simulation",
+    "gasLimitPrepared": "1403731",
+    "gasUsed": 939279,
+    "effectiveGasPriceWei": 52249999,
+    "feeBnb": "0.0000490773",
+    "swapApiSuggestedGas": "250000",
+    "nodeEstimate": "1122985",
+    "verifiedVia": "eth_getTransactionReceipt on https://bsc-dataseed.bnbchain.org"
+  },
+  "decision": {
+    "id": "19db9797-54e1-4ce5-a6a9-61ad9e262fb1",
+    "at": "2026-10-10T22:11:31.795Z",
+    "rulesVersion": "1",
+    "request": {
+      "token": "0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436",
+      "side": "buy",
+      "amountUsd": "1",
+      "wallet": "<probe-wallet>"
+    },
+    "inputs": [
+      {
+        "name": "market status",
+        "value": {
+          "openState": true,
+          "marketStatus": null,
+          "reasonCode": "TRADING",
+          "reasonMsg": null,
+          "nextOpenTime": null,
+          "nextCloseTime": null
+        },
+        "source": "Binance Web3 API rwa/underlying-market",
+        "asOf": "2026-10-10T22:11:30.707Z",
+        "status": "ok"
+      },
+      {
+        "name": "multiplier state",
+        "value": {
+          "uiMultiplier": "1000778223752807865",
+          "newUIMultiplier": "1000778223752807865",
+          "effectiveAt": "0"
+        },
+        "source": "BSC eth_call uiMultiplier/newUIMultiplier/effectiveAt",
+        "asOf": "2026-10-10T22:11:31.016Z",
+        "status": "ok"
+      },
+      {
+        "name": "quote",
+        "value": [
+          {
+            "quoteId": "a4d4266a441d4019aa11522317855cf7",
+            "vendorName": "LiquidMesh",
+            "executionMode": "SWAP",
+            "binanceChainId": "56",
+            "fromTokenAmount": "1000000000000000000",
+            "toTokenAmount": "4333683362664552",
+            "tradeFee": "0.00966483",
+            "estimateGasFee": "250000",
+            "priceImpactPercent": "0.0000000000",
+            "router": "0x55d398326f99059ff775485246999027b3197955--0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+            "fromToken": {
+              "tokenContractAddress": "0x55d398326f99059fF775485246999027B3197955",
+              "tokenSymbol": "USDT",
+              "tokenUnitPrice": "0.9990643419224504",
+              "decimal": "18",
+              "isHoneyPot": false,
+              "taxRate": "0"
+            },
+            "toToken": {
+              "tokenContractAddress": "0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436",
+              "tokenSymbol": "NVDAB",
+              "tokenUnitPrice": "230.74943505068490943305000000",
+              "decimal": "18",
+              "isHoneyPot": false,
+              "taxRate": "0"
+            },
+            "dexRouterList": [
+              {
+                "dexProtocol": {
+                  "dexName": "Kipseli",
+                  "percent": "100.00"
+                },
+                "fromToken": {
+                  "tokenContractAddress": "0x55d398326f99059ff775485246999027b3197955",
+                  "tokenSymbol": "USDT",
+                  "tokenUnitPrice": "0.9990643419224504",
+                  "decimal": "18",
+                  "isHoneyPot": false,
+                  "taxRate": "0"
+                },
+                "fromTokenIndex": "0",
+                "toToken": {
+                  "tokenContractAddress": "0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+                  "tokenSymbol": "NVDAB",
+                  "tokenUnitPrice": "230.74943505068490943305000000",
+                  "decimal": "18",
+                  "isHoneyPot": false,
+                  "taxRate": "0"
+                },
+                "toTokenIndex": "1"
+              }
+            ],
+            "approveTarget": "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5",
+            "isBest": true,
+            "feeAmount": null,
+            "feeToken": null,
+            "actualSwapAmount": null
+          }
+        ],
+        "source": "Binance Web3 API aggregator/quote",
+        "asOf": "2026-10-10T22:11:30.708Z",
+        "status": "ok"
+      },
+      {
+        "name": "underlying ticker",
+        "value": "NVDA",
+        "source": "Binance Web3 API rwa/underlying-profile",
+        "asOf": "2026-10-10T22:11:30.709Z",
+        "status": "ok"
+      },
+      {
+        "name": "independent price",
+        "value": {
+          "pricePerShare": "229.28",
+          "currency": "USD",
+          "priceTime": "2026-10-09T20:00:00.000Z",
+          "sourceName": "Yahoo Finance chart API (regularMarketPrice) (fallback; earlier source failed: Pyth Pro (Equity.US regular-hours feed): latest_price HTTP 403: Not entitled: feed 1314 (no grant accepts this feed (asset type 'equity', instrument type 'spot', exchange 1)))"
+        },
+        "source": "Yahoo Finance chart API (regularMarketPrice) (fallback; earlier source failed: Pyth Pro (Equity.US regular-hours feed): latest_price HTTP 403: Not entitled: feed 1314 (no grant accepts this feed (asset type 'equity', instrument type 'spot', exchange 1)))",
+        "asOf": "2026-10-09T20:00:00.000Z",
+        "status": "ok"
+      },
+      {
+        "name": "pay-token allowance",
+        "value": {
+          "spender": "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5",
+          "allowance": "2000000000000000000",
+          "needed": "1000000000000000000"
+        },
+        "source": "BSC eth_call allowance",
+        "asOf": "2026-10-10T22:11:31.366Z",
+        "status": "ok"
+      },
+      {
+        "name": "swap transaction",
+        "value": {
+          "from": "<probe-wallet>",
+          "to": "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5",
+          "value": "0",
+          "dataBytes": 2052
+        },
+        "source": "Binance Web3 API aggregator/swap",
+        "asOf": "2026-10-10T22:11:31.489Z",
+        "status": "ok"
+      },
+      {
+        "name": "simulation",
+        "value": {
+          "status": "SUCCESS",
+          "failReason": "",
+          "balanceChanges": [
+            {
+              "contractAddress": "0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436",
+              "tokenType": "Erc20",
+              "change": "4333692658146492",
+              "owner": "<probe-wallet>"
+            },
+            {
+              "contractAddress": "0x55d398326f99059fF775485246999027B3197955",
+              "tokenType": "Erc20",
+              "change": "-1000000000000000000",
+              "owner": "<probe-wallet>"
+            }
+          ],
+          "allowanceChanges": [
+            {
+              "tokenAddress": "0x55d398326f99059ff775485246999027b3197955",
+              "owner": "<probe-wallet>",
+              "spender": "0xb44446b0c8e56988c34f7ff73ae904982b5fdda5",
+              "preAmount": "2000000000000000000",
+              "postAmount": "1000000000000000000"
+            }
+          ]
+        },
+        "source": "Binance Web3 API pre-transaction/simulate",
+        "asOf": "2026-10-10T22:11:31.794Z",
+        "status": "ok"
+      }
+    ],
+    "checks": [
+      {
+        "id": "session",
+        "name": "Market session",
+        "source": "Binance Web3 API rwa/underlying-market",
+        "asOf": "2026-10-10T22:11:30.707Z",
+        "threshold": null,
+        "result": "pass",
+        "rawValue": "openState=true, reasonCode=TRADING, marketStatus=null, reasonMsg=null",
+        "reason": "The market reports this token as trading."
+      },
+      {
+        "id": "multiplier",
+        "name": "Share multiplier",
+        "source": "BSC eth_call uiMultiplier/newUIMultiplier/effectiveAt",
+        "asOf": "2026-10-10T22:11:31.016Z",
+        "threshold": "change within 24 h warns",
+        "result": "pass",
+        "rawValue": "uiMultiplier=1.000778223752807865, newUIMultiplier=1.000778223752807865, effectiveAt=0",
+        "reason": "Each token stands for 1.000778 shares and no change is scheduled."
+      },
+      {
+        "id": "reference",
+        "name": "Independent price",
+        "source": "Yahoo Finance chart API (regularMarketPrice) (fallback; earlier source failed: Pyth Pro (Equity.US regular-hours feed): latest_price HTTP 403: Not entitled: feed 1314 (no grant accepts this feed (asset type 'equity', instrument type 'spot', exchange 1)))",
+        "asOf": "2026-10-09T20:00:00.000Z",
+        "result": "warn",
+        "rawValue": "buy price per share 230.3554 USD vs 229.2800 USD, gap 0.469%",
+        "threshold": "last close: never a pass, fail > 10.0%",
+        "reason": "The stock is not in its regular session; its latest price is from 2026-10-09T20:00:00.000Z. The buy price is +0.46% away from it, and the stock can move before regular trading."
+      },
+      {
+        "id": "execution",
+        "name": "Price and route",
+        "source": "Binance Web3 API aggregator/quote",
+        "asOf": "2026-10-10T22:11:30.708Z",
+        "threshold": "warn > 0.3%, fail > 1.0%",
+        "result": "pass",
+        "rawValue": "LiquidMesh SWAP, priceImpactPercent 0.0000000000, output 4333683362664552",
+        "reason": "A direct swap route is available and this buy would move the price by 0.0000000000%."
+      },
+      {
+        "id": "simulation",
+        "name": "Dry run",
+        "source": "Binance Web3 API pre-transaction/simulate",
+        "asOf": "2026-10-10T22:11:31.794Z",
+        "threshold": "SUCCESS and the stock arrives",
+        "result": "pass",
+        "rawValue": "status=SUCCESS, stock change +4333692658146492",
+        "reason": "The dry run succeeded and the stock arrives in this wallet."
+      }
+    ],
+    "outcome": "LIMIT",
+    "reason": "The stock is not in its regular session; its latest price is from 2026-10-09T20:00:00.000Z. The buy price is +0.46% away from it, and the stock can move before regular trading.",
+    "limits": {
+      "slippagePercent": "0.1000",
+      "why": "Warnings present: slippage tightened to impact 0.000000% \u00d7 2 + 0.10%, kept between 0.10% and 0.25% (rule in docs/METHOD.md)."
+    },
+    "recheckAt": null,
+    "txHash": "0x526643d73ed93ad2a90033397710d4d03d41d6835938e722ba647b408666e8c1",
+    "receipt": {
+      "status": "success",
+      "blockNumber": "126905587",
+      "gasUsed": "939279",
+      "effectiveGasPrice": "52249999",
+      "transactionHash": "0x526643d73ed93ad2a90033397710d4d03d41d6835938e722ba647b408666e8c1"
+    },
+    "prepared": {
+      "from": "<probe-wallet>",
+      "to": "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5",
+      "value": "0",
+      "data": "0xad43f73d0000000000000000000000000000000000000000000000004acad54d8a0009f300000000000000000000000000000000000000000000000000000000000000000000000000000000000000003d90f66b534dd8482b181e24655a9e8265316be900000000000000000000000055d398326f99059ff775485246999027b31979550000000000000000000000000000000000000000000000000de0b6b3a764000000000000000000000000000002fca66c1d1afb4e2a7884261eb00f63598a7436000000000000000000000000000000000000000000000000000f618545be44ff000000000000000000000000d2a27f8fdbaaec431d59046a8bce4e5db665a271000000000000000000000000000000000000000000000000000f6576496690680000000000000000000000000000000000000000000000000000000000000140000000000000000000000000000000000000000000000000000000000000068447ee97ff0000000000000000000000000000000000000000000000001ae2e74d66bd7d4b000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f657649669068000000000000000000000000000000000000000000000000000000000000000000000000000000000000000055d398326f99059ff775485246999027b319795500000000000000000000000002fca66c1d1afb4e2a7884261eb00f63598a74360000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000000f618545be4500000000000000000000000000000000000000000000000000000000006acaba0700000000000000000000000000000000000000000000000000000000000001c00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000062000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000a000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000016000000000000000000000000055d398326f99059ff775485246999027b319795500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000c475cd388127473912b1489defa4f8f344088b900000000000000000000000000000000000000000000000000000000000000010000000000000000000000000c475cd388127473912b1489defa4f8f344088b900000000000000000000000000000000000000000000000000000000000000018000000000000000000027104cb2140c29518db6203f661b9f6dd60b68bb7f0d0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000001e0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000055d398326f99059ff775485246999027b319795500000000000000000000000002fca66c1d1afb4e2a7884261eb00f63598a74360000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000006acab81300000000000000000000000000000000000000000000000000000000000000a00000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c475cd388127473912b1489defa4f8f344088b9000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000418c1a75e82b65eaf3f955ae840a1207c64b7d32dc072654a9d01880b57cccd6da1e817e6b05ee27effaf395f8047346b760109bfa388cda3cf098e5ee9ddc8c791b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "gas": "1403731",
+      "gasPrice": "53492903",
+      "chainId": 56,
+      "slippagePercent": "0.1000",
+      "minReceiveAmount": "4329349679301887",
+      "simulation": {
+        "status": "SUCCESS",
+        "stockArriving": "4333692658146492"
+      },
+      "gasSources": {
+        "swapResponse": "250000",
+        "nodeEstimate": "1122985",
+        "headroomPercent": "25"
+      },
+      "expiresAt": 1791670382551
+    },
+    "status": "confirmed"
+  }
+}
