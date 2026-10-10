@@ -56,6 +56,25 @@ export interface DecisionRecord {
   limits: SlippageLimit | null;
   /** WAIT only: when the full guard runs again. */
   recheckAt: string | null;
+  /** GO or LIMIT: the final transaction the user is asked to sign, after its own dry run. */
+  prepared?: PreparedTx | null;
   txHash: string | null;
   receipt: unknown | null;
+}
+
+export interface PreparedTx {
+  from: string;
+  to: string;
+  value: string;
+  data: string;
+  /** Gas limit: the largest of the swap's own figure and the node's estimate, plus headroom. */
+  gas: string;
+  gasPrice: string;
+  chainId: number;
+  slippagePercent: string;
+  minReceiveAmount: string | null;
+  simulation: { status: string; stockArriving: string | null };
+  gasSources: Record<string, string | null>;
+  /** Unix ms after which the app must ask the guard again instead of sending this. */
+  expiresAt: number;
 }

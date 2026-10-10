@@ -38,7 +38,19 @@ async function timed<T>(fn: () => Promise<T>): Promise<{ ok: true; value: T; at:
   }
 }
 
+export interface GuardRun {
+  record: DecisionRecord;
+  /** The SWAP route the checks were run on, so the final transaction uses the same quote. */
+  route: Route | undefined;
+  /** Buy amount in the pay token's smallest units. */
+  amountUnits: bigint;
+}
+
 export async function runGuard(deps: GuardDeps, req: GuardRequest, cfg: GuardConfig): Promise<DecisionRecord> {
+  return (await runGuardWithContext(deps, req, cfg)).record;
+}
+
+export async function runGuardWithContext(deps: GuardDeps, req: GuardRequest, cfg: GuardConfig): Promise<GuardRun> {
   if (!isAddress(req.token) || !isAddress(req.wallet)) throw new Error("token and wallet must be addresses");
   const amountFixed = parseDecimal(req.amountUsd);
   if (amountFixed <= 0n) throw new Error("amount must be above zero");
@@ -115,6 +127,6 @@ export async function runGuard(deps: GuardDeps, req: GuardRequest, cfg: GuardCon
   const impact = tryParseDecimal(route?.priceImpactPercent);
   const decision = decide(checks, impact, now, cfg);
   const record = buildRecord(req, inputs, checks, decision, cfg, now);
-  return record;
+  return { record, route, amountUnits };
 }
 
