@@ -1,6 +1,4 @@
-import { readFileSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { resolve } from "node:path";
 import { isAdmin } from "./auth.ts";
 import { variableStatus } from "./config.ts";
 import { buildContext } from "./context.ts";
@@ -26,14 +24,6 @@ const claimLimiter = new RateLimiter(3, 60_000);
 const gift = new GiftService(ctx, giftConfigFromEnv(process.env));
 /** Browser origins allowed to call the API (comma-separated): the web app's hosts, nothing else. */
 const allowedOrigins = new Set((process.env["PUBLIC_WEB_ORIGIN"] ?? "").split(",").map((o) => o.trim().replace(/\/+$/, "")).filter(Boolean));
-
-const PUBLIC_DIR = resolve(import.meta.dirname, "../public");
-const STATIC: Record<string, { file: string; type: string }> = {
-  "/buy": { file: "buy.html", type: "text/html; charset=utf-8" },
-  "/buy.js": { file: "buy.js", type: "text/javascript; charset=utf-8" },
-  "/buy.css": { file: "buy.css", type: "text/css; charset=utf-8" },
-};
-const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
 
 const json = (v: unknown) => JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? x.toString() : x), 2);
 
@@ -86,10 +76,10 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   }
   if (method === "OPTIONS") return void res.writeHead(204).end();
 
-  const page = STATIC[path];
-  if (page && method === "GET") {
-    res.writeHead(200, { "content-type": page.type, "content-security-policy": CSP, "x-content-type-options": "nosniff", "referrer-policy": "no-referrer", "cache-control": "no-cache" });
-    return void res.end(readFileSync(resolve(PUBLIC_DIR, page.file)));
+  // The buy screen lives in the web app. The old signing page that was served here is gone; send visitors to the web app.
+  if (path === "/buy" && method === "GET") {
+    const web = [...allowedOrigins][0];
+    if (web) return void res.writeHead(302, { location: `${web}/buy`, "cache-control": "no-store" }).end();
   }
 
   if (path === "/healthz" && method === "GET") {
