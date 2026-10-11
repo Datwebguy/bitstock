@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { short, useWallet } from "@/lib/wallet";
+import { LanguagePicker } from "./Language";
 import { Wordmark } from "./Logo";
 import { FlowBackground, ScrollDriver } from "./Motion";
 import { RegionGate } from "./RegionGate";
@@ -81,6 +82,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </nav>
           <span className="spacer" />
           {w.account ? <span className="pill good" title={w.account}>{short(w.account)}</span> : null}
+          <LanguagePicker />
           <ThemeToggle />
         </div>
       </header>

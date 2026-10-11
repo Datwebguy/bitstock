@@ -439,3 +439,10 @@ h1.split { font-size: clamp(1.7rem, 5.5vw, 2.6rem); line-height: 1.12; letter-sp
 .cmd code { flex: 1; min-width: 0; }
 .cmd .chip { flex: none; min-height: 36px; padding: 6px 12px; }
 .stock-logo:not(.fallback) { background: #fff; object-fit: contain; padding: 3px; border: 1px solid var(--line); }
+
+/* language picker */
+.lang select { appearance: none; background: var(--bg-elev); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 7px 28px 7px 10px; font: inherit; font-size: 0.85rem; cursor: pointer; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 14px) 52%, calc(100% - 9px) 52%; background-size: 5px 5px; background-repeat: no-repeat; }
+.lang select:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+/* translated pages: show the whole translated sentence in place of word-by-word animations */
+html:not([lang="en"]) .sr-only ~ [aria-hidden="true"] { display: none; }
+html:not([lang="en"]) .sr-only:has(~ [aria-hidden="true"]) { position: static; width: auto; height: auto; margin: 0; overflow: visible; clip: auto; white-space: normal; }

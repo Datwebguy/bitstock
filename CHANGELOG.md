@@ -4,6 +4,9 @@ All notable changes are recorded here. The format follows Keep a Changelog and t
 
 ## [Unreleased]
 
+### Added
+- Languages: English, 简体中文, Español, Português, Türkçe and Tiếng Việt, chosen in the header. The agent translates on-screen text through `/v1/translate` (OpenAI, `OPENAI_API_KEY`), caches each sentence, and keeps the English wherever a number, amount, address or name would change. Without the key the site stays in English.
+
 ### Fixed
 - Gift claims: a claim that failed before it was sent can be retried; a sent claim that is slow to confirm is settled from its receipt and never sent twice.
 - Guard: a malformed number from Binance makes a check unavailable (or fails it) instead of causing a server error.
