@@ -35,6 +35,7 @@
  * but keep signing OUT of the LLM tool list.
  */
 
+import { runBitstock } from "./bitstock.js";
 import { randomUUID } from "node:crypto";
 import type { DataPart, Message } from "@a2a-js/sdk";
 import {
@@ -115,6 +116,13 @@ export class SellerAgentExecutor extends SellerCore implements AgentExecutor {
         result = await this.negotiate(data);
       } else if (skill === "notify_funded") {
         result = await this.notifyFunded(data);
+      } else if (skill === "guard_check" || skill === "multiplier_status") {
+        // Bitstock's own skills: fixed rules over live data, no model (src/bitstock.ts).
+        try {
+          result = JSON.parse(await runBitstock(JSON.stringify(data))) as Record<string, unknown>;
+        } catch (e) {
+          result = { skill, error: e instanceof Error ? e.message : String(e), nothingBought: true };
+        }
       } else {
         // Includes a plain text message (no DataPart → skill is undefined):
         // the seller has no free-form skill, so prose is rejected here.
@@ -168,7 +176,16 @@ export class SellerAgentExecutor extends SellerCore implements AgentExecutor {
 function inbound(context: RequestContext): Record<string, unknown> {
   const parts = context.userMessage?.parts ?? [];
   const dataPart = parts.find((p): p is DataPart => p.kind === "data");
-  return dataPart?.data ?? {};
+  if (dataPart) return dataPart.data;
+  // A text part carrying a Bitstock JSON envelope is accepted too.
+  const text = parts.find((p) => p.kind === "text") as { text?: string } | undefined;
+  try {
+    const j = JSON.parse(text?.text ?? "") as Record<string, unknown>;
+    if (j && (j.skill === "guard_check" || j.skill === "multiplier_status")) return j;
+  } catch {
+    // not JSON
+  }
+  return {};
 }
 
 function reply(
