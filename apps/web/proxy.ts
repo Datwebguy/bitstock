@@ -1,6 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { regionVerdict } from "./lib/regions";
 
+// Reown AppKit (WalletConnect) hosts, limited to the ones the modal and a pairing were observed to use, plus
+// chain RPC for after a wallet connects. Relay and verify: pairing and signing requests. API: wallet list and
+// project config. Fonts: the modal's typeface.
+const REOWN_CONNECT = [
+  "https://api.web3modal.org",
+  "https://relay.walletconnect.org", "wss://relay.walletconnect.org",
+  "https://pulse.walletconnect.org",
+  "https://verify.walletconnect.org",
+  "https://rpc.walletconnect.org",
+  "https://keys.walletconnect.org",
+  "https://bsc-dataseed.bnbchain.org",
+].join(" ");
+const REOWN_IMG = "https://api.web3modal.org https://walletconnect.org https://secure.walletconnect.org";
+const REOWN_FONT = "https://fonts.reown.com";
+const REOWN_FRAME = "'self' https://verify.walletconnect.org https://secure.walletconnect.org";
+
 /** A fresh nonce per request for a strict Content-Security-Policy (AGENTS.md section 4, item 13). */
 export function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
@@ -9,11 +25,15 @@ export function proxy(request: NextRequest) {
   const csp = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
-    `style-src 'self' 'nonce-${nonce}'`,
+    // Reown AppKit injects its theme as <style> elements and style attributes without a nonce, and a nonce in
+    // style-src makes browsers ignore 'unsafe-inline'. Styles only: script-src above stays nonce-based and strict.
+    "style-src 'self' 'unsafe-inline'",
     // Token logos come from Binance's CDN as live data from the RWA API.
-    "img-src 'self' data: https://onchainos.bnbstatic.com https://financialmodelingprep.com",
-    "font-src 'self'",
-    `connect-src 'self' ${agent}`.trim(),
+    `img-src 'self' data: blob: https://onchainos.bnbstatic.com https://financialmodelingprep.com ${REOWN_IMG}`,
+    `font-src 'self' ${REOWN_FONT}`,
+    `connect-src 'self' ${agent} ${REOWN_CONNECT}`.trim().replace(/\s+/g, " "),
+    // The wallet modal shows the wallet's own verification page and the relay's verify frame.
+    `frame-src ${REOWN_FRAME}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
