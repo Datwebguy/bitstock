@@ -236,6 +236,7 @@ createServer((req, res) => {
   startSentry(process.env, async () => (await listedTokens(ctx)).tokens.map((t) => t.address), log);
   const tick = () => {
     void reconcileSubmitted(ctx, log);
+    void gift.reconcileClaims(log);
     void processDueIntents(ctx, log);
   };
   tick();

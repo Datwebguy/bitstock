@@ -10,7 +10,7 @@ import { DatabaseSync } from "node:sqlite";
 import { randomUUID, timingSafeEqual } from "node:crypto";
 import { findSwapTx, type SimulationResult } from "@bitstock/binance";
 import {
-  addressFromPrivateKey, approveCalldata, erc20Allowance, erc20BalanceOf, isAddress, prepareCall, rpcCall, sendRawTransaction, simulateCall, transferFromCalldata, waitForReceipt,
+  addressFromPrivateKey, approveCalldata, erc20Allowance, erc20BalanceOf, getReceipt, isAddress, prepareCall, rpcCall, sendRawTransaction, simulateCall, transferFromCalldata, waitForReceipt,
 } from "@bitstock/chain";
 import { chooseRoute, parseDecimal, type Route } from "@bitstock/guard";
 import type { AgentContext } from "./context.ts";
@@ -237,7 +237,9 @@ export class GiftService {
       const w = wallet.toLowerCase();
       if (w === vault || w === relayer) throw new GiftError("That wallet cannot claim.");
       const existing = this.#db.prepare("SELECT * FROM gift_claims WHERE campaign_id = ? AND wallet = ?").get(cur.id, w) as unknown as Claim | undefined;
-      if (existing) return { already: true, ...this.#publicClaim(existing) };
+      // A claim that failed before anything was broadcast moved nothing, so that wallet and box are free again.
+      if (existing && existing.status === "failed" && !existing.tx_hash) this.#db.prepare("DELETE FROM gift_claims WHERE id = ?").run(existing.id);
+      else if (existing) return { already: true, ...this.#publicClaim(existing) };
       const order = (JSON.parse(cur.boxes) as string[]).map((b) => BigInt(b));
       const taken = new Set((this.#db.prepare("SELECT box_index FROM gift_claims WHERE campaign_id = ?").all(cur.id) as Array<{ box_index: number }>).map((r) => r.box_index));
       const index = order.findIndex((_, i) => !taken.has(i));
@@ -253,18 +255,52 @@ export class GiftService {
       const id = randomUUID();
       // The row is written before sending: one per wallet and one per box, so a retry after a crash never sends twice.
       this.#db.prepare("INSERT INTO gift_claims (id, campaign_id, box_index, wallet, amount, status, created_at) VALUES (?, ?, ?, ?, ?, 'sending', ?)").run(id, cur.id, index, w, amount.toString(), new Date().toISOString());
+      let broadcast = false;
       try {
         const prepared = await prepareCall(this.ctx.rpcUrl, relayerKey, relayer, this.#token(), data);
         this.#db.prepare("UPDATE gift_claims SET tx_hash = ? WHERE id = ?").run(prepared.signed.hash, id);
         await sendRawTransaction(this.ctx.txRpcUrl, prepared.signed.raw);
+        broadcast = true;
         const r = await waitForReceipt(this.ctx.txRpcUrl, prepared.signed.hash, 120_000);
         this.#db.prepare("UPDATE gift_claims SET status = ?, gas_used = ?, fee_wei = ? WHERE id = ?").run(r.status === "success" ? "confirmed" : "reverted", r.gasUsed.toString(), (r.gasUsed * r.effectiveGasPrice).toString(), id);
       } catch (e) {
-        this.#db.prepare("UPDATE gift_claims SET status = 'failed', error = ? WHERE id = ?").run(e instanceof Error ? e.message.slice(0, 300) : String(e), id);
-        throw new GiftError("The transfer could not be sent. Try again later.", 502);
+        const why = e instanceof Error ? e.message.slice(0, 300) : String(e);
+        if (!broadcast) {
+          // Nothing reached the network, so nothing was sent: free the box and the wallet so a retry works.
+          this.#db.prepare("DELETE FROM gift_claims WHERE id = ?").run(id);
+          throw new GiftError("The transfer could not be sent. Nothing was sent; try again in a moment.", 502);
+        }
+        // It was broadcast but not confirmed in time. It may still land, so the row stays and is settled from its receipt.
+        this.#db.prepare("UPDATE gift_claims SET error = ? WHERE id = ?").run(why, id);
+        throw new GiftError("Your claim was sent and is waiting for the network to confirm it. It will show up here when it does.", 202);
       }
       return this.#publicClaim(this.#db.prepare("SELECT * FROM gift_claims WHERE id = ?").get(id) as unknown as Claim);
     });
+  }
+
+  /**
+   * Settle every claim still marked sending from its receipt (run at start and on a timer). A transaction the node
+   * has never heard of, an hour after it was signed, was dropped: its box and wallet are freed.
+   */
+  async reconcileClaims(log: (o: Record<string, unknown>) => void): Promise<void> {
+    const rows = this.#db.prepare("SELECT * FROM gift_claims WHERE status = 'sending' AND tx_hash IS NOT NULL").all() as unknown as Claim[];
+    for (const c of rows) {
+      try {
+        const r = await getReceipt(this.ctx.txRpcUrl, c.tx_hash as string);
+        if (r) {
+          this.#db.prepare("UPDATE gift_claims SET status = ?, gas_used = ?, fee_wei = ? WHERE id = ?").run(r.status === "success" ? "confirmed" : "reverted", r.gasUsed.toString(), (r.gasUsed * r.effectiveGasPrice).toString(), c.id);
+          log({ level: "info", msg: "gift claim settled", box: c.box_index + 1, status: r.status });
+          continue;
+        }
+        const known = (await rpcCall<unknown>(this.ctx.txRpcUrl, "eth_getTransactionByHash", [c.tx_hash])).result;
+        if (!known && Date.now() - Date.parse(c.created_at) > 3_600_000) {
+          this.#db.prepare("DELETE FROM gift_claims WHERE id = ?").run(c.id);
+          log({ level: "warn", msg: "gift claim dropped by the network; box freed", box: c.box_index + 1 });
+        }
+      } catch (e) {
+        log({ level: "warn", msg: "gift claim reconcile failed", box: c.box_index + 1, error: e instanceof Error ? e.message : String(e) });
+      }
+    }
   }
 
   #fundedUsd(): string | null {
