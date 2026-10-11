@@ -30,7 +30,7 @@ Read on 11 Oct 2026 from the live agent's [`/healthz`](https://agent-production-
 |---|---|
 | Guard decisions recorded by the live agent | 17: 15 LIMIT, 2 BLOCK (the counters reset when the agent restarts) |
 | Real buys on BSC mainnet | 1 (see below) |
-| Tests | 191 passing, 77 of them in the guard |
+| Tests | 198 passing, 79 of them in the guard |
 | Binance Web3 API endpoints used | 8 (listed below), called from Singapore |
 
 ## Proof on BSC mainnet
@@ -99,7 +99,7 @@ sequenceDiagram
 |---|---|
 | Signed Binance Web3 API client (RWA Data, Trading, Transaction) | Built, used live |
 | Guard: five checks, four outcomes, stored decision records, written method | Built, used live |
-| Protected buy (Mode A): decision API, prepared and re-simulated transaction, signing page | Built; one real buy on mainnet |
+| Protected buy (Mode A): decision API, prepared and re-simulated transaction, signed in the web app | Built; one real buy on mainnet |
 | Chain package: unit conversions, EIP-155 signing, ERC-20 transfer with dry run, multiplier events | Built, tested |
 | Explainer and multiplier sentry | Built; the sentry records snapshots on the server |
 | Web app: home, live check, buy, holdings, learn, about, claim notice | Built, deployed at https://trybitstock.xyz |
@@ -113,7 +113,7 @@ sequenceDiagram
 
 | Criterion | What to look at |
 |---|---|
-| Technical implementation | A deterministic guard with 77 tests (191 across the repository), contract tests replaying recorded live responses, bigint money math with property tests, EIP-155 signing checked against the specification's test vector, a real buy whose prepared transaction is pinned and re-simulated, SQLite storage with idempotency keys, a persistent kill switch and reconciliation from receipts. |
+| Technical implementation | A deterministic guard with 79 tests (198 across the repository), contract tests replaying recorded live responses, bigint money math with property tests, EIP-155 signing checked against the specification's test vector, a real buy whose prepared transaction is pinned and re-simulated, SQLite storage with idempotency keys, a persistent kill switch and reconciliation from receipts. |
 | Creativity | The guard treats a weekend as a real condition: tokenized stocks trade on chain while Wall Street is shut, so it compares with the last close and only allows a tighter limit, instead of either blocking or ignoring it. |
 | Developer experience | A timestamped friction log with evidence for each line: [`docs/DX_EVIDENCE.md`](docs/DX_EVIDENCE.md). The report itself is written by the owner. |
 | Product quality | Phone-first, light and dark, keyboard and reduced-motion friendly. Lighthouse (mobile) on the Vercel deployment: performance 97 to 99, accessibility 100, best practices 100. |
@@ -164,7 +164,7 @@ NEXT_PUBLIC_AGENT_URL=http://localhost:8080 NEXT_PUBLIC_REOWN_PROJECT_ID=<your R
 ## Repository
 
 ```text
-apps/agent       decision API, signing page, intent queue, sentry, admin
+apps/agent       decision API, intent queue, gift relayer, sentry, admin
 apps/web         the web app (Next.js)
 packages/binance signed Web3 API client and by-shape finders
 packages/guard   the five checks, the outcome rule, decision records

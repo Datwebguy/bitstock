@@ -4,6 +4,19 @@ All notable changes are recorded here. The format follows Keep a Changelog and t
 
 ## [Unreleased]
 
+### Fixed
+- Gift claims: a claim that failed before it was sent can be retried; a sent claim that is slow to confirm is settled from its receipt and never sent twice.
+- Guard: a malformed number from Binance makes a check unavailable (or fails it) instead of causing a server error.
+- Holdings and Learn no longer show an earlier wallet's or stock's data after switching.
+- Buy explains what to do when a confirmation takes longer than usual.
+- Screens no longer show fixed numbers (a 15-minute delay, $1 and $2 examples, 90 seconds) or raw status words.
+
+### Removed
+- The agent's old `/buy` signing page, which no longer worked; `/buy` on the agent now redirects to the web app.
+
+### Security
+- Next.js 16.3.8, fixing six advisories reported by `pnpm audit`.
+
 ### Changed
 - Web app: wallet connection now uses Reown AppKit (WalletConnect) on BNB Smart Chain only, so phones can connect any WalletConnect wallet instead of needing an in-wallet browser. The wallet context (`account`, `connect`, `send`, `onBsc`, `error`) is unchanged for Buy, Holdings and Claim. The project ID is read from `NEXT_PUBLIC_REOWN_PROJECT_ID`; without it the site says wallet connection is not set up and does not connect.
 - Content-Security-Policy: allows the Reown relay, API, verify, RPC, image and font hosts. `style-src` now permits inline styles because AppKit injects un-nonced styles; `script-src` stays nonce-based and strict.
