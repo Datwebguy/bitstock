@@ -7,14 +7,15 @@ import { Coin, ScrollLit, SplitReveal, TypeCycle, VelocityBand } from "./Motion"
 import { Reveal } from "./Reveal";
 import { useTokens } from "./Stocks";
 
-function useMarket() {
+function useMarket(address: string | null) {
   const [m, setM] = useState<MarketView | null>(null);
   const [err, setErr] = useState(false);
   useEffect(() => {
+    if (!address) return;
     let alive = true;
     let retry: ReturnType<typeof setTimeout> | undefined;
     const load = (): void => {
-      api<MarketView>("/market")
+      api<MarketView>(`/market?token=${address}`)
         .then((v) => alive && (setM(v), setErr(false)))
         .catch(() => {
           if (!alive) return;
@@ -29,7 +30,7 @@ function useMarket() {
       clearInterval(t);
       if (retry) clearTimeout(retry);
     };
-  }, []);
+  }, [address]);
   return { m, err };
 }
 
@@ -52,15 +53,15 @@ function CheckConsole({ m, err }: { m: MarketView | null; err: boolean }) {
   const rows: Array<{ k: string; v: string; cls: string }> = [
     { k: "Stock market", v: m ? s.text : "reading…", cls: m ? s.cls : "idle" },
     { k: "Shares per token", v: mult ? `${mult}${pending ? " · change planned" : " · no change planned"}` : m ? "unavailable" : "reading…", cls: mult ? (pending ? "warn" : "good") : "idle" },
-    { k: "NVDA real price", v: ref ? `$${trimDecimal(ref.pricePerShare, 2)} · ${ref.session === "regular" ? "live" : "last close"}` : m ? "unavailable" : "reading…", cls: ref ? (ref.session === "regular" ? "good" : "warn") : "idle" },
+    { k: `${m?.token.ticker ?? "Stock"} real price`, v: ref ? `$${trimDecimal(ref.pricePerShare, 2)} · ${ref.session === "regular" ? "live" : "last close"}` : m ? "unavailable" : "reading…", cls: ref ? (ref.session === "regular" ? "good" : "warn") : "idle" },
     { k: "Token vs stock", v: gap ? `${gap.startsWith("-") ? "" : "+"}${gap}%` : m ? "unavailable" : "reading…", cls: gap ? (ref?.session === "regular" && Math.abs(Number(gap)) <= 0.5 ? "good" : "warn") : "idle" },
     { k: "Test run of your trade", v: "runs when you check a buy", cls: "idle" },
   ];
   return (
-    <div className="console" role="group" aria-label="Live checks for NVDAB">
+    <div className="console" role="group" aria-label={`Live checks for ${m?.token.symbol ?? "a tokenized stock"}`}>
       <div className="console-head">
         <span className="dots" aria-hidden="true"><i /><i /><i /></span>
-        <span>NVIDIA (NVDAB) · live checks</span>
+        <span>{m ? `${m.token.company ?? m.token.symbol} (${m.token.symbol}) · live checks` : "Live checks"}</span>
         <span className={`live ${err ? "off" : ""}`}>{err ? "offline" : "live"}</span>
       </div>
       <ol className="console-rows">
@@ -113,14 +114,15 @@ const CHECKS = [
 const FAQ = [
   { q: "Do I need to give Bitstock my keys?", a: "No. Bitstock prepares and tests the transaction; you approve and sign it in your own wallet." },
   { q: "What if the market is closed?", a: "Tokenized stocks can trade on chain when the US stock market is shut. Bitstock warns you, compares with the stock's last price, and only allows a tighter price limit." },
-  { q: "Which stocks can I buy?", a: "Every tokenized stock Binance lists on BNB Smart Chain right now, such as NVIDIA, Tesla, Microsoft, Meta, Alphabet, AMD and index funds like SPY and QQQ. The list is read live, so it changes when Binance's list changes." },
+  { q: "Which stocks can I buy?", a: "Every tokenized stock Binance lists on BNB Smart Chain right now. The list is read live, so it changes when Binance's list changes. Open Check to browse and search all of it." },
   { q: "Can it lose money?", a: "Yes. Prices move. Bitstock checks for avoidable problems before you buy; it does not promise profit or protect you from loss. It is not investment advice." },
   { q: "What do I actually own?", a: "A token on BNB Smart Chain that stands for a number of shares. The company that issues it can pause or block it. Holdings shows you the shares in plain words." },
 ];
 
 export function Landing() {
-  const { m, err } = useMarket();
   const { list } = useTokens();
+  const featured = list?.tokens.find((t) => t.symbol === list.featured)?.address ?? null;
+  const { m, err } = useMarket(featured);
   return (
     <div className="landing">
       <section className="hero" aria-labelledby="hero-title">

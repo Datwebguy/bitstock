@@ -1,12 +1,11 @@
 /**
- * Multiplier sentry (AGENTS.md section 8): stores a snapshot of NVDAB's ERC-8056 state every N
+ * Multiplier sentry (AGENTS.md section 8): stores a snapshot of every listed token's ERC-8056 state every N
  * minutes, and scans forward for UIMultiplierUpdated logs. History starts at the first run; the
  * public RPC refuses old log ranges, so a gap between runs larger than one scan is recorded, not hidden.
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { getMultiplierUpdates, readMultiplierState, rpcCall } from "@bitstock/chain";
-import { NVDAB } from "./probes.ts";
 
 export const MAX_SCAN_BLOCKS = 4000n;
 
@@ -45,20 +44,37 @@ function paths(dataDir: string): Paths {
 
 const line = (file: string, v: unknown) => appendFileSync(file, JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? x.toString() : x)) + "\n");
 
-export async function runSentryOnce(env: NodeJS.ProcessEnv): Promise<{ snapshot: unknown; scanned: ScanPlan | null; updates: number; error?: string }> {
+/** `tokens` is the live list of token addresses to watch; nothing is hardcoded. */
+export async function runSentryOnce(env: NodeJS.ProcessEnv, tokens: string[]): Promise<{ snapshot: unknown; scanned: ScanPlan | null; updates: number; error?: string }> {
   const rpc = env["BSC_RPC_URL"] ?? "";
   const logRpc = env["BSC_LOG_RPC_URL"] || rpc;
   const p = paths(env["DATA_DIR"] || "./data");
   const head = BigInt((await rpcCall<string>(rpc, "eth_blockNumber", [])).result);
-  const state = await readMultiplierState(rpc, NVDAB);
-  const snapshot = { at: new Date().toISOString(), block: head, token: NVDAB, ...state, source: `eth_call via ${new URL(rpc).host}` };
-  line(p.snapshots, snapshot);
+  if (tokens.length === 0) throw new Error("there are no listed tokens to watch");
+  const at = new Date().toISOString();
+  const source = `eth_call via ${new URL(rpc).host}`;
+  let snapshot: unknown = null;
+  // A few at a time, so a long list does not flood the node. A token that cannot be read is skipped and the next run retries.
+  for (let i = 0; i < tokens.length; i += 6) {
+    await Promise.all(
+      tokens.slice(i, i + 6).map(async (token) => {
+        try {
+          const state = await readMultiplierState(rpc, token);
+          const snap = { at, block: head, token, ...state, source };
+          line(p.snapshots, snap);
+          snapshot ??= snap;
+        } catch {
+          /* unreadable now; recorded by absence */
+        }
+      }),
+    );
+  }
 
   const cursor = existsSync(p.cursor) ? BigInt((JSON.parse(readFileSync(p.cursor, "utf8")) as { block: string }).block) : null;
   const plan = planScan(cursor, head);
   if (!plan) return { snapshot, scanned: null, updates: 0 };
   try {
-    const found = await getMultiplierUpdates(logRpc, NVDAB, plan.from, plan.to, 2000n);
+    const found = await getMultiplierUpdates(logRpc, tokens, plan.from, plan.to, 2000n);
     for (const u of found) line(p.updates, { ...u, seenAt: new Date().toISOString() });
     if (plan.skipped) line(p.gaps, { ...plan.skipped, recordedAt: new Date().toISOString(), why: "gap between runs was wider than one scan" });
     writeFileSync(p.cursor, JSON.stringify({ block: plan.to.toString() }));
@@ -84,7 +100,7 @@ export function sentryStatus(env: NodeJS.ProcessEnv): Record<string, unknown> {
   };
 }
 
-export function startSentry(env: NodeJS.ProcessEnv, log: (o: Record<string, unknown>) => void): void {
+export function startSentry(env: NodeJS.ProcessEnv, tokens: () => Promise<string[]>, log: (o: Record<string, unknown>) => void): void {
   const minutes = Number(env["SENTRY_INTERVAL_MINUTES"] ?? "10");
   if (!Number.isFinite(minutes) || minutes < 1) throw new Error("SENTRY_INTERVAL_MINUTES must be at least 1");
   if (!env["BSC_RPC_URL"]) {
@@ -92,7 +108,8 @@ export function startSentry(env: NodeJS.ProcessEnv, log: (o: Record<string, unkn
     return;
   }
   const tick = () =>
-    runSentryOnce(env)
+    tokens()
+      .then((list) => runSentryOnce(env, list))
       .then((r) => log({ level: r.error ? "warn" : "info", msg: "sentry run", updates: r.updates, scannedTo: r.scanned?.to.toString() ?? null, ...(r.error ? { error: r.error } : {}) }))
       .catch((e: unknown) => log({ level: "error", msg: "sentry run failed", error: e instanceof Error ? e.message : String(e) }));
   void tick();

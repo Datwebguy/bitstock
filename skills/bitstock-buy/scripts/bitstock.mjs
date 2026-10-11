@@ -12,7 +12,12 @@
  * Output is one JSON object on stdout. Exit codes: 0 ok (check: GO or LIMIT), 2 WAIT, 3 BLOCK,
  * 4 bad input, 5 Bitstock unreachable.
  */
-const AGENT = (process.env.BITSTOCK_AGENT_URL || "https://agent-production-6403.up.railway.app").replace(/\/+$/, "");
+// The Bitstock server to ask. Set BITSTOCK_AGENT_URL; there is no server baked into this script.
+const AGENT = (process.env.BITSTOCK_AGENT_URL ?? "").replace(/\/+$/, "");
+if (!AGENT) {
+  process.stdout.write(JSON.stringify({ ok: false, error: "BITSTOCK_AGENT_URL is not set. Ask the person running Bitstock for the server address." }, null, 2) + "\n");
+  process.exit(4);
+}
 
 function args(argv) {
   const out = { _: [] };

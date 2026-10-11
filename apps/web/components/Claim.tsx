@@ -90,7 +90,7 @@ export function ClaimView({ region }: { region: string | null }) {
 
       <section className="card" aria-labelledby="boxes">
         <h2 id="boxes">The boxes</h2>
-        <p className="small">The gift is {g.fundedUsd ? `$${g.fundedUsd}` : "a small amount"} of {symbol}, split into ten boxes of different sizes. You receive the stock token itself, not dollars. Shares of the pot: 20%, 15%, 15%, three of 10% and four of 5%. The order claims take them was fixed and committed before the gift opened, and is revealed after it closes.</p>
+        <p className="small">The gift is {g.fundedUsd ? `$${g.fundedUsd}` : "a small amount"} of {symbol}, split into ten boxes of different sizes. You receive the stock token itself, not dollars. The order claims take them was fixed and committed before the gift opened, and is revealed after it closes.</p>
         <ul className="list small">
           {g.boxes?.map((b, i) => <li key={i}><span>{g.boxesUsd?.[i] ? `About $${g.boxesUsd[i]} worth` : ["Largest", "Large", "Large", "Medium", "Medium", "Medium", "Small", "Small", "Small", "Small"][i]}</span><span className="num">{units18(b, 8)} {symbol}</span></li>)}
         </ul>

@@ -55,7 +55,9 @@ export interface ListedToken {
   session: { openState: boolean; reasonCode: string | null; reasonMsg: string | null; nextOpenTime: number | string | null } | null;
 }
 
-export interface TokenList { tokens: ListedToken[]; asOf: string; source: string }
+export interface TokenList { tokens: ListedToken[]; asOf: string; source: string; featured: string }
+
+export interface AgentConfig { featured: { address: string; symbol: string } | null; maxBuyUsd: string; chainId: number; killSwitch: boolean }
 
 /** Plain decimal formatting without floating point. */
 export function trimDecimal(s: string | null | undefined, places: number): string | null {

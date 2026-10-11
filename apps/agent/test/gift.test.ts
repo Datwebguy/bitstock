@@ -45,7 +45,9 @@ describe("gift config and region", () => {
   it("refuses a relayer BNB cap above 0.01 and bad keys; derives addresses from keys", () => {
     expect(() => giftConfigFromEnv({ GIFT_RELAYER_MAX_BNB: "0.02" })).toThrow(/0.01/);
     expect(() => giftConfigFromEnv({ GIFT_VAULT_PRIVATE_KEY: "abc" })).toThrow();
-    const c = giftConfigFromEnv({ GIFT_VAULT_PRIVATE_KEY: "0x4646464646464646464646464646464646464646464646464646464646464646" });
+    const key = "0x4646464646464646464646464646464646464646464646464646464646464646";
+    expect(() => giftConfigFromEnv({ GIFT_VAULT_PRIVATE_KEY: key })).toThrow(/GIFT_TOKEN/); // no stock is chosen for the operator
+    const c = giftConfigFromEnv({ GIFT_VAULT_PRIVATE_KEY: key, GIFT_TOKEN: "0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436" });
     expect(c.vault).toBe("0x9d8a62f656a8d1615c1294fd71e9cfb3e4855a4f");
     expect(c.relayer).toBeNull();
     expect(c.maxRelayerBnbWei).toBe(10n ** 16n);

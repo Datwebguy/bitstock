@@ -7,7 +7,7 @@ interface QuizItem { question: string; options: string[]; answer: number; explan
 
 export function CompanyNote() {
   const { list } = useTokens();
-  const [symbol, setSymbol] = useSelectedSymbol();
+  const [symbol, setSymbol] = useSelectedSymbol(list ?? null);
   const token = list?.tokens.find((t) => t.symbol === symbol) ?? null;
   const [m, setM] = useState<MarketView | null>(null);
   const [err, setErr] = useState<string | null>(null);

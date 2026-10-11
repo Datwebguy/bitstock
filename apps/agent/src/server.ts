@@ -10,11 +10,11 @@ import { runLiveGuard } from "./guard.ts";
 import { health } from "./health.ts";
 import { holdingsView, marketView } from "./market.ts";
 import { clearKill, engageKill, killState } from "./killswitch.ts";
-import { NVDAB, PROBE_NAMES, runProbe } from "./probes.ts";
+import { PROBE_NAMES, runProbe } from "./probes.ts";
 import { RateLimiter } from "./ratelimit.ts";
 import { attachUserTx, reconcileSubmitted } from "./reconcile.ts";
 import { sentryStatus, startSentry } from "./sentry.ts";
-import { findToken, listedTokens } from "./tokens.ts";
+import { featuredToken, findToken, listedTokens } from "./tokens.ts";
 import { GiftError, GiftService, giftConfigFromEnv } from "./gift-service.ts";
 
 const SERVICE = "bitstock-agent";
@@ -105,17 +105,20 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   }
 
   if (path === "/v1/config" && method === "GET") {
-    return send(res, 200, { token: { address: NVDAB, symbol: "NVDAB" }, maxBuyUsd: ctx.caps.maxBuyUsd, chainId: 56, killSwitch: killState(ctx.env, ctx.repo).on });
+    const f = await featuredToken(ctx).catch(() => null);
+    return send(res, 200, { featured: f ? { address: f.address, symbol: f.symbol } : null, maxBuyUsd: ctx.caps.maxBuyUsd, chainId: 56, killSwitch: killState(ctx.env, ctx.repo).on });
   }
 
   if (path === "/v1/tokens" && method === "GET") {
     if (!readLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many requests." });
-    return send(res, 200, await listedTokens(ctx));
+    const list = await listedTokens(ctx);
+    return send(res, 200, { ...list, featured: (await featuredToken(ctx)).symbol });
   }
 
   if (path === "/v1/market" && method === "GET") {
     if (!readLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many requests." });
-    const token = await findToken(ctx, url.searchParams.get("token") ?? NVDAB);
+    const want = url.searchParams.get("token");
+    const token = want ? await findToken(ctx, want) : await featuredToken(ctx);
     if (!token) return send(res, 404, { error: "That stock is not listed right now." });
     return send(res, 200, await marketView(ctx, token));
   }
@@ -196,9 +199,11 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   if (path === "/v1/admin/guard" && method === "GET") {
     const usd = url.searchParams.get("usd") ?? "";
     const wallet = process.env["PROBE_WALLET_ADDRESS"] ?? "";
+    const gtoken = await findToken(ctx, url.searchParams.get("token") ?? "");
+    if (!gtoken) return send(res, 400, { error: "token must be a listed symbol or address" });
     if (!/^\d{1,4}(\.\d{1,2})?$/.test(usd)) return send(res, 400, { error: "usd must be a dollar amount like 1 or 2.50" });
     if (!wallet) return send(res, 503, { error: "PROBE_WALLET_ADDRESS is not set" });
-    return send(res, 200, await runLiveGuard(process.env, usd, wallet));
+    return send(res, 200, await runLiveGuard(process.env, gtoken.address, usd, wallet));
   }
   if (path === "/v1/admin/gift/fund" && method === "POST") return send(res, 200, await gift.fund(url.searchParams.get("usd") ?? ""));
   if (path === "/v1/admin/gift/open" && method === "POST") return send(res, 200, await gift.open());
@@ -228,7 +233,7 @@ createServer((req, res) => {
   });
 }).listen(port, () => {
   log({ level: "info", msg: "listening", service: SERVICE, port });
-  startSentry(process.env, log);
+  startSentry(process.env, async () => (await listedTokens(ctx)).tokens.map((t) => t.address), log);
   const tick = () => {
     void reconcileSubmitted(ctx, log);
     void processDueIntents(ctx, log);

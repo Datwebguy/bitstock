@@ -45,8 +45,8 @@ export function decodeMultiplierUpdated(log: RawLog): MultiplierUpdate {
   };
 }
 
-/** UIMultiplierUpdated logs for a token, fetched in chunks the RPC accepts. */
-export async function getMultiplierUpdates(rpcUrl: string, token: string, fromBlock: bigint, toBlock: bigint, chunk = 5000n): Promise<MultiplierUpdate[]> {
+/** UIMultiplierUpdated logs for one token or a list of tokens, fetched in chunks the RPC accepts. */
+export async function getMultiplierUpdates(rpcUrl: string, token: string | string[], fromBlock: bigint, toBlock: bigint, chunk = 5000n): Promise<MultiplierUpdate[]> {
   const out: MultiplierUpdate[] = [];
   for (let start = fromBlock; start <= toBlock; start += chunk) {
     const end = start + chunk - 1n < toBlock ? start + chunk - 1n : toBlock;

@@ -3,7 +3,8 @@
  * JSON object naming a skill, or the same in words ("guard_check TSLAB 1 0x..."). If Bitstock cannot be
  * read, the call fails and nothing is invented (AGENTS.md 0.2, 4.3).
  */
-const API = (process.env.BITSTOCK_AGENT_URL || "https://agent-production-6403.up.railway.app").replace(/\/+$/, "");
+// The Bitstock server this agent reads from. Required: there is no default server in code.
+const API = (process.env.BITSTOCK_AGENT_URL ?? "").replace(/\/+$/, "");
 
 export class BitstockUnavailable extends Error {}
 
@@ -26,6 +27,7 @@ export function parsePrompt(prompt: string): Req {
 const str = (v: unknown): string | undefined => (typeof v === "string" && v ? v : undefined);
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
+  if (!API) throw new BitstockUnavailable("BITSTOCK_AGENT_URL is not set, so Bitstock cannot be read");
   let res: Response;
   try {
     res = await fetch(`${API}/v1${path}`, { ...init, headers: { "content-type": "application/json", ...(init?.headers ?? {}) } });

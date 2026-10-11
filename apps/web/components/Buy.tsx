@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, fromLine, humanize, RESULT_LABEL, units18, when, type Decision } from "@/lib/api";
+import { api, fromLine, type AgentConfig, humanize, RESULT_LABEL, units18, when, type Decision } from "@/lib/api";
 import { short, useWallet, walletMessage } from "@/lib/wallet";
 import { StockPicker, useSelectedSymbol, useTokens } from "./Stocks";
 
@@ -14,10 +14,14 @@ function feeBnb(gas: string, gasPrice: string): string {
   return `${s.slice(0, -18)}.${s.slice(-18, -10)}`;
 }
 
-export function BuyFlow({ maxUsd }: { maxUsd: string }) {
+export function BuyFlow() {
   const w = useWallet();
   const { list, err: listErr } = useTokens();
-  const [symbol, setSymbol] = useSelectedSymbol();
+  const [maxUsd, setMaxUsd] = useState<string | null>(null);
+  useEffect(() => {
+    api<AgentConfig>("/config").then((c) => setMaxUsd(c.maxBuyUsd)).catch(() => setMaxUsd(null));
+  }, []);
+  const [symbol, setSymbol] = useSelectedSymbol(list ?? null);
   const token = list?.tokens.find((t) => t.symbol === symbol) ?? null;
   const stock = token?.ticker ?? symbol;
   const [amount, setAmount] = useState("");
@@ -122,11 +126,11 @@ export function BuyFlow({ maxUsd }: { maxUsd: string }) {
           <input id="amt" inputMode="decimal" autoComplete="off" value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))} aria-describedby="amt-help" />
         </div>
         <div className="chips" role="group" aria-label="Quick amounts">
-          {["1", "2", maxUsd].filter((v, i, a) => a.indexOf(v) === i).map((v) => (
-            <button key={v} type="button" className="chip" aria-pressed={amount === v} onClick={() => setAmount(v)}>${v}</button>
+          {(maxUsd ? [maxUsd] : []).map((v) => (
+            <button key={v} type="button" className="chip" aria-pressed={amount === v} onClick={() => setAmount(v)}>Most: ${v}</button>
           ))}
         </div>
-        <p id="amt-help" className="small muted">Up to ${maxUsd} per buy.</p>
+        <p id="amt-help" className="small muted">{maxUsd ? `Up to $${maxUsd} per buy.` : "The most you can buy at once could not be read."}</p>
         <button className="btn btn-primary" type="button" onClick={() => void check()} disabled={!w.account || !token || checking}>{checking ? "Checking the market, the token, the price and a test run…" : `Check this buy of ${stock}`}</button>
         {checkErr ? <p className="msg error" role="alert">{checkErr}</p> : null}
       </section>

@@ -57,8 +57,8 @@ function OpenWindow({ address, ticker }: { address: string; ticker: string }) {
       </div>
       <p className="small">
         {regular
-          ? `Binance reports ${ticker} in its regular trading session. A scheduled buy would run its checks 15 minutes after the open.`
-          : `A scheduled buy of ${ticker} waits until Binance reports a regular trading session${next ? ` (Binance says it opens ${next})` : ""}, then waits 15 minutes and runs every check again before asking you.`}
+          ? `Binance reports ${ticker} in its regular trading session. A scheduled buy runs its checks a set delay after the open.`
+          : `A scheduled buy of ${ticker} waits until Binance reports a regular trading session${next ? ` (Binance says it opens ${next})` : ""}, then waits a short delay (15 minutes unless you change it) and runs every check again before asking you.`}
       </p>
       <span className="source">{fromLine(m.session.source, m.session.asOf)}</span>
     </>
@@ -67,7 +67,7 @@ function OpenWindow({ address, ticker }: { address: string; ticker: string }) {
 
 export function AutopilotView() {
   const { list } = useTokens();
-  const [symbol, setSymbol] = useSelectedSymbol();
+  const [symbol, setSymbol] = useSelectedSymbol(list ?? null);
   const t = list?.tokens.find((x) => x.symbol === symbol) ?? null;
   const ticker = t?.ticker ?? symbol;
   return (

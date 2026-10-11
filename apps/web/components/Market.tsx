@@ -103,7 +103,7 @@ function Hud({ symbol, address }: { symbol: string; address: string }) {
 
 export function MarketHud() {
   const { list, err } = useTokens();
-  const [symbol, setSymbol] = useSelectedSymbol();
+  const [symbol, setSymbol] = useSelectedSymbol(list ?? null);
   const tokens = list?.tokens ?? null;
   const t = tokens?.find((x) => x.symbol === symbol) ?? null;
   const pick = (s: string) => {

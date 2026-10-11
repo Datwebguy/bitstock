@@ -68,3 +68,13 @@ export async function findToken(ctx: AgentContext, idOrSymbol: string): Promise<
   const k = idOrSymbol.trim().toLowerCase();
   return tokens.find((t) => t.address === k || t.symbol.toLowerCase() === k) ?? null;
 }
+
+/**
+ * The token shown first. FEATURED_TOKEN (a symbol or address) if set and listed; otherwise the first
+ * token in the live list. Never a baked-in token.
+ */
+export async function featuredToken(ctx: AgentContext): Promise<ListedToken> {
+  const { tokens } = await listedTokens(ctx);
+  const want = (ctx.env["FEATURED_TOKEN"] ?? "").trim().toLowerCase();
+  return (want ? tokens.find((t) => t.address === want || t.symbol.toLowerCase() === want) : undefined) ?? tokens[0]!;
+}

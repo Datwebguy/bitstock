@@ -23,7 +23,7 @@ Bitstock is a market-aware check for small buys of tokenized stocks on BNB Smart
 
 Everything the user's wallet does goes through the official **`binance-agentic-wallet`** skill and its `baw` CLI. Read that skill's `SKILL.md` and the reference file for each `baw` command before running it, and follow its rules (preflight, `--json`, confirmation, error handling, security pre-check). Where this file and the official skill disagree about the wallet, the official skill wins.
 
-The helper `scripts/bitstock.mjs` (Node 18+, no dependencies) talks only to the Bitstock API. Run it from this skill's folder: `node scripts/bitstock.mjs <command> ...`. It prints one JSON object. Set `BITSTOCK_AGENT_URL` only if the user gives you a different Bitstock server.
+The helper `scripts/bitstock.mjs` (Node 18+, no dependencies) talks only to the Bitstock API. Run it from this skill's folder: `node scripts/bitstock.mjs <command> ...`. It prints one JSON object. `BITSTOCK_AGENT_URL` must be set to the Bitstock server address (the user knows it; it is shown on the Bitstock Autopilot page). Without it the helper stops and says so; never guess a server.
 
 ## Before anything
 

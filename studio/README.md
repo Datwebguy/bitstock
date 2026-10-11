@@ -11,6 +11,8 @@ The answers come from fixed rules over live data from the Bitstock API (`app/age
 
 ## Run
 
+Set `BITSTOCK_AGENT_URL` to the Bitstock server address; there is no default in code.
+
 ```bash
 cd studio && pnpm install
 (cd app/agent && npx bag wallet new --generate-password)   # the agent's own identity wallet; keep it in .studio/, never commit it

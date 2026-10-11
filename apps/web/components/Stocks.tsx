@@ -23,10 +23,11 @@ export function useTokens(): { list: TokenList | null; err: string | null } {
   return { list, err };
 }
 
-const DEFAULT = "NVDAB";
-
-/** The stock chosen in the address bar (?s=SYMBOL), so a link always opens the same stock. */
-export function useSelectedSymbol(): [string, (symbol: string) => void] {
+/**
+ * The stock chosen in the address bar (?s=SYMBOL), so a link always opens the same stock. With none
+ * chosen, the one the agent features (its configuration, else the first on Binance's live list).
+ */
+export function useSelectedSymbol(list: TokenList | null): [string, (symbol: string) => void] {
   const params = useSearchParams();
   const router = useRouter();
   const path = usePathname();
@@ -39,7 +40,7 @@ export function useSelectedSymbol(): [string, (symbol: string) => void] {
       /* storage unavailable */
     }
   }, []);
-  const symbol = (fromUrl || remembered || DEFAULT).toUpperCase();
+  const symbol = (fromUrl || remembered || list?.featured || "").toUpperCase();
   const set = (s: string) => {
     try {
       localStorage.setItem("stock", s);

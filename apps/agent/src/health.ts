@@ -1,7 +1,7 @@
 import { rpcCall } from "@bitstock/chain";
 import type { AgentContext } from "./context.ts";
 import { killState } from "./killswitch.ts";
-import { NVDAB } from "./probes.ts";
+import { featuredToken } from "./tokens.ts";
 
 interface DepStatus {
   ok: boolean;
@@ -25,9 +25,16 @@ async function timed(fn: () => Promise<unknown>): Promise<DepStatus> {
 export async function dependencyStatus(ctx: AgentContext): Promise<Record<string, DepStatus>> {
   if (cache && Date.now() - cache.at < 30_000) return cache.deps;
   const [binance, rpc, reference] = await Promise.all([
-    timed(() => ctx.api.rwaPrice([NVDAB])),
+    timed(async () => {
+      const t = await featuredToken(ctx);
+      await ctx.api.rwaPrice([t.address]);
+    }),
     timed(() => rpcCall(ctx.rpcUrl, "eth_blockNumber", [])),
-    timed(() => ctx.reference.read("NVDA")),
+    timed(async () => {
+      const t = await featuredToken(ctx);
+      if (!t.ticker) throw new Error("the featured token has no stock ticker");
+      await ctx.reference.read(t.ticker);
+    }),
   ]);
   const storage = await timed(async () => ctx.repo.countsByOutcome());
   cache = { at: Date.now(), deps: { binance, rpc, reference, storage } };

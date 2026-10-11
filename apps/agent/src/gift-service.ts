@@ -16,10 +16,10 @@ import { chooseRoute, parseDecimal, type Route } from "@bitstock/guard";
 import type { AgentContext } from "./context.ts";
 import { BOX_WEIGHTS, assignmentText, boxAmounts, commitment, newSecret, shuffle } from "./gift.ts";
 import { killState } from "./killswitch.ts";
-import { NVDAB, USDT } from "./probes.ts";
+import { USDT } from "./probes.ts";
 
 export interface GiftConfig {
-  token: string;
+  token: string | null;
   vault: string | null;
   vaultKey: string | null;
   relayer: string | null;
@@ -37,8 +37,10 @@ export function giftConfigFromEnv(env: NodeJS.ProcessEnv): GiftConfig {
   const relayerKey = env["GIFT_RELAYER_PRIVATE_KEY"] || null;
   if (vaultKey && !KEY_RE.test(vaultKey)) throw new Error("GIFT_VAULT_PRIVATE_KEY is not a 32-byte hex key");
   if (relayerKey && !KEY_RE.test(relayerKey)) throw new Error("GIFT_RELAYER_PRIVATE_KEY is not a 32-byte hex key");
-  const token = env["GIFT_TOKEN"] || NVDAB;
-  if (!isAddress(token)) throw new Error("GIFT_TOKEN must be a token address");
+  // Which stock the gift gives is the operator's choice, never a default in code.
+  const token = env["GIFT_TOKEN"] || null;
+  if (token && !isAddress(token)) throw new Error("GIFT_TOKEN must be a token address");
+  if ((vaultKey || relayerKey) && !token) throw new Error("GIFT_TOKEN must name the stock the gift gives");
   const maxCampaignUsd = env["GIFT_CAMPAIGN_MAX_USD"] || "1";
   if (!/^\d{1,4}(\.\d{1,2})?$/.test(maxCampaignUsd)) throw new Error("GIFT_CAMPAIGN_MAX_USD must be a dollar amount");
   const maxBnb = env["GIFT_RELAYER_MAX_BNB"] || "0.01";
@@ -47,7 +49,7 @@ export function giftConfigFromEnv(env: NodeJS.ProcessEnv): GiftConfig {
   if (!Number.isInteger(claimDays) || claimDays < 1 || claimDays > 60) throw new Error("GIFT_CLAIM_DAYS must be 1 to 60");
   const k = (v: string) => (v.startsWith("0x") ? v : `0x${v}`);
   return {
-    token: token.toLowerCase(),
+    token: token ? token.toLowerCase() : null,
     vault: vaultKey ? addressFromPrivateKey(k(vaultKey)).toLowerCase() : null,
     vaultKey: vaultKey ? k(vaultKey) : null,
     relayer: relayerKey ? addressFromPrivateKey(k(relayerKey)).toLowerCase() : null,
@@ -123,6 +125,11 @@ export class GiftService {
     return run;
   }
 
+  #token(): string {
+    if (!this.cfg.token) throw new GiftError("The gift stock is not configured (GIFT_TOKEN).", 503);
+    return this.cfg.token;
+  }
+
   #requireKeys(): { vault: string; vaultKey: string; relayer: string; relayerKey: string } {
     const { vault, vaultKey, relayer, relayerKey } = this.cfg;
     if (!vault || !vaultKey || !relayer || !relayerKey) throw new GiftError("The gift wallets are not configured.", 503);
@@ -155,7 +162,7 @@ export class GiftService {
       const amount = parseDecimal(usd); // USDT on BSC has 18 decimals, like the fixed point
       const usdtBal = (await erc20BalanceOf(this.ctx.rpcUrl, USDT, vault)).value;
       if (usdtBal < amount) throw new GiftError("The vault does not hold enough USDT.");
-      const routes = (await this.ctx.api.quote({ fromTokenAddress: USDT, toTokenAddress: this.cfg.token, amount: amount.toString(), userWalletAddress: vault })) as Route[];
+      const routes = (await this.ctx.api.quote({ fromTokenAddress: USDT, toTokenAddress: this.#token(), amount: amount.toString(), userWalletAddress: vault })) as Route[];
       const route = Array.isArray(routes) ? chooseRoute(routes) : undefined;
       if (!route?.quoteId || !route.approveTarget) throw new GiftError("Binance offered no testable swap route for the funding swap.", 502);
       const record: Record<string, unknown> = { at: new Date().toISOString(), usd, route: { vendor: route.vendorName, mode: route.executionMode, impact: route.priceImpactPercent, out: route.toTokenAmount, spender: route.approveTarget } };
@@ -168,16 +175,16 @@ export class GiftService {
         record["approve"] = { tx: a.hash, status: a.status, gasUsed: a.gasUsed.toString(), feeWei: a.feeWei.toString() };
         if (a.status !== "success") throw new GiftError(`The USDT approval reverted: ${a.hash}`, 502);
       }
-      const swap = await this.ctx.api.swap({ fromTokenAddress: USDT, toTokenAddress: this.cfg.token, amount: amount.toString(), userWalletAddress: vault, quoteId: route.quoteId, slippagePercent: "0.5", ...(route.vendorName ? { vendor: route.vendorName } : {}) });
+      const swap = await this.ctx.api.swap({ fromTokenAddress: USDT, toTokenAddress: this.#token(), amount: amount.toString(), userWalletAddress: vault, quoteId: route.quoteId, slippagePercent: this.ctx.cfg.defaultSlippagePercent, ...(route.vendorName ? { vendor: route.vendorName } : {}) });
       const tx = findSwapTx(swap);
       if (!tx || tx.to.toLowerCase() !== route.approveTarget.toLowerCase() || tx.from.toLowerCase() !== vault || BigInt(tx.value || "0") !== 0n) throw new GiftError("The swap Binance built does not match its quote, so it was not sent.", 502);
       const sim = (await this.ctx.api.simulate({ from: tx.from, to: tx.to, value: "0", data: tx.data })) as SimulationResult;
-      const arriving = sim.balanceChanges?.find((c) => c.contractAddress.toLowerCase() === this.cfg.token && c.owner.toLowerCase() === vault && BigInt(c.change) > 0n);
+      const arriving = sim.balanceChanges?.find((c) => c.contractAddress.toLowerCase() === this.#token() && c.owner.toLowerCase() === vault && BigInt(c.change) > 0n);
       record["simulation"] = { status: sim.status, arriving: arriving?.change ?? null };
       if (sim.status !== "SUCCESS" || !arriving) throw new GiftError("The funding swap failed its test run, so it was not sent.", 502);
-      const before = (await erc20BalanceOf(this.ctx.rpcUrl, this.cfg.token, vault)).value;
+      const before = (await erc20BalanceOf(this.ctx.rpcUrl, this.#token(), vault)).value;
       const s = await this.#send(vaultKey, vault, tx.to, tx.data, tx.gas ? (BigInt(tx.gas) * 125n) / 100n : undefined);
-      const after = (await erc20BalanceOf(this.ctx.rpcUrl, this.cfg.token, vault)).value;
+      const after = (await erc20BalanceOf(this.ctx.rpcUrl, this.#token(), vault)).value;
       record["swap"] = { tx: s.hash, status: s.status, gasUsed: s.gasUsed.toString(), feeWei: s.feeWei.toString(), received: (after - before).toString() };
       this.#db.prepare("INSERT INTO gift_funding (id, at, record) VALUES (?, ?, ?)").run(randomUUID(), String(record["at"]), JSON.stringify(record));
       if (s.status !== "success") throw new GiftError(`The funding swap reverted: ${s.hash}`, 502);
@@ -196,7 +203,7 @@ export class GiftService {
       const funded = last ? (JSON.parse(last.record) as { swap?: { received?: string; status?: string; tx?: string } }) : null;
       if (!funded?.swap?.received || funded.swap.status !== "success") throw new GiftError("Fund the vault first; boxes come from what was actually received.", 409);
       const received = BigInt(funded.swap.received);
-      const held = (await erc20BalanceOf(this.ctx.rpcUrl, this.cfg.token, vault)).value;
+      const held = (await erc20BalanceOf(this.ctx.rpcUrl, this.#token(), vault)).value;
       if (held < received) throw new GiftError("The vault holds less than the funding swap received.", 409);
       const boxes = boxAmounts(received);
       const order = shuffle(boxes);
@@ -205,14 +212,14 @@ export class GiftService {
       const c = commitment(text, secret);
       const total = order.reduce((a, b) => a + b, 0n);
       const data = approveCalldata(relayer, total);
-      const sim = await simulateCall(this.ctx.rpcUrl, this.cfg.token, data, vault);
+      const sim = await simulateCall(this.ctx.rpcUrl, this.#token(), data, vault);
       if (!sim.ok) throw new GiftError(`Approving the relayer would fail: ${sim.reason}`, 502);
-      const a = await this.#send(vaultKey, vault, this.cfg.token, data);
+      const a = await this.#send(vaultKey, vault, this.#token(), data);
       if (a.status !== "success") throw new GiftError(`Approving the relayer reverted: ${a.hash}`, 502);
       const id = randomUUID();
       const expires = new Date(Date.now() + this.cfg.claimDays * 86_400_000).toISOString();
       this.#db.prepare("INSERT INTO gift_campaigns (id, created_at, token, received, boxes, commitment, secret, status, expires_at, fund, approve_tx) VALUES (?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?)")
-        .run(id, new Date().toISOString(), this.cfg.token, received.toString(), text, c, secret, expires, funded.swap.tx ?? null, a.hash);
+        .run(id, new Date().toISOString(), this.#token(), received.toString(), text, c, secret, expires, funded.swap.tx ?? null, a.hash);
       return { id, commitment: c, boxes: boxes.map(String), expiresAt: expires, approveTx: a.hash };
     });
   }
@@ -241,13 +248,13 @@ export class GiftService {
       const bnb = BigInt((await rpcCall<string>(this.ctx.rpcUrl, "eth_getBalance", [relayer, "latest"])).result);
       if (bnb > this.cfg.maxRelayerBnbWei) throw new GiftError("The relayer holds more BNB than its cap, so it will not send until that is fixed.", 503);
       const data = transferFromCalldata(vault, w, amount);
-      const sim = await simulateCall(this.ctx.rpcUrl, this.cfg.token, data, relayer);
+      const sim = await simulateCall(this.ctx.rpcUrl, this.#token(), data, relayer);
       if (!sim.ok) throw new GiftError(`This transfer would be refused, for example by the token's own rules for this address. ${sim.reason}`, 409);
       const id = randomUUID();
       // The row is written before sending: one per wallet and one per box, so a retry after a crash never sends twice.
       this.#db.prepare("INSERT INTO gift_claims (id, campaign_id, box_index, wallet, amount, status, created_at) VALUES (?, ?, ?, ?, ?, 'sending', ?)").run(id, cur.id, index, w, amount.toString(), new Date().toISOString());
       try {
-        const prepared = await prepareCall(this.ctx.rpcUrl, relayerKey, relayer, this.cfg.token, data);
+        const prepared = await prepareCall(this.ctx.rpcUrl, relayerKey, relayer, this.#token(), data);
         this.#db.prepare("UPDATE gift_claims SET tx_hash = ? WHERE id = ?").run(prepared.signed.hash, id);
         await sendRawTransaction(this.ctx.txRpcUrl, prepared.signed.raw);
         const r = await waitForReceipt(this.ctx.txRpcUrl, prepared.signed.hash, 120_000);
