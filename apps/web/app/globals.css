@@ -434,3 +434,8 @@ h1.split { font-size: clamp(1.7rem, 5.5vw, 2.6rem); line-height: 1.12; letter-sp
 .ticker-track.long { animation-duration: 150s; }
 .tick-item { text-decoration: none; }
 @media (max-width: 400px) { .gate-places { columns: 1; } }
+.ap-steps { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-size: 0.95rem; line-height: 1.5; }
+.cmd { display: flex; align-items: center; gap: 10px; margin: 8px 0; padding: 10px 10px 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-sunk); }
+.cmd code { flex: 1; min-width: 0; }
+.cmd .chip { flex: none; min-height: 36px; padding: 6px 12px; }
+.stock-logo:not(.fallback) { background: #fff; object-fit: contain; padding: 3px; border: 1px solid var(--line); }

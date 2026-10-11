@@ -54,7 +54,7 @@ function Hud({ symbol, address }: { symbol: string; address: string }) {
     <div className="grid">
       <section className="card card-hero" aria-labelledby="tok">
         <div className="token">
-          <StockLogo t={{ logo: m.token.logo, symbol }} size={44} />
+          <StockLogo t={{ logo: m.token.logo, symbol, ticker: m.token.ticker }} size={44} />
           <div>
             <h2 id="tok" className="check-name">{m.token.company ?? m.token.name ?? symbol}</h2>
             <div className="muted small">{symbol} · tracks {stock} · on BNB Smart Chain</div>

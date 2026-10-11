@@ -11,7 +11,7 @@ export function proxy(request: NextRequest) {
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'nonce-${nonce}'`,
     // Token logos come from Binance's CDN as live data from the RWA API.
-    "img-src 'self' data: https://onchainos.bnbstatic.com",
+    "img-src 'self' data: https://onchainos.bnbstatic.com https://financialmodelingprep.com",
     "font-src 'self'",
     `connect-src 'self' ${agent}`.trim(),
     "object-src 'none'",

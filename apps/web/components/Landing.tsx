@@ -230,7 +230,7 @@ export function Landing() {
         </Reveal>
       </section>
 
-      <p className="footer-note">Bitstock is not investment advice. Tokenized stocks can be paused or blocked by the company that issues them.</p>
+      <p className="footer-note"><a href="/about">About Bitstock</a> · <a href="/autopilot">Autopilot</a> · Bitstock is not investment advice. Tokenized stocks can be paused or blocked by the company that issues them.</p>
     </div>
   );
 }

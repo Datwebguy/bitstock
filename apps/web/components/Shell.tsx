@@ -10,6 +10,7 @@ import { RegionGate } from "./RegionGate";
 const NAV = [
   { href: "/check", label: "Check", icon: "M12 3 20 6.5V12c0 4.6-3.3 8.1-8 9.5C7.3 20.1 4 16.6 4 12V6.5Z M8.5 12.3l2.4 2.4 4.6-5" },
   { href: "/buy", label: "Buy", icon: "M12 4v16 M4 12h16" },
+  { href: "/autopilot", label: "Autopilot", icon: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z M12 7v5l3.5 2" },
   { href: "/holdings", label: "Holdings", icon: "M4 7h16v12H4z M4 7l2-3h12l2 3 M9 12h6" },
   { href: "/learn", label: "Learn", icon: "M4 5h7a3 3 0 0 1 3 3v12a2 2 0 0 0-2-2H4z M20 5h-5 M20 5v13h-6" },
   { href: "/about", label: "About", icon: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 11v6 M12 7.5v.5" },
@@ -87,7 +88,7 @@ export function Shell({ children }: { children: ReactNode }) {
         {children}
       </main>
       <nav className="tabbar" aria-label="Main">
-        {NAV.map((n) => (
+        {NAV.filter((n) => n.href !== "/about").map((n) => (
           <Link key={n.href} href={n.href} aria-current={isOn(n.href) ? "page" : undefined}>
             <Icon d={n.icon} />
             {n.label}

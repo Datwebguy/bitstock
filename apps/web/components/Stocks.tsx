@@ -52,9 +52,18 @@ export function useSelectedSymbol(): [string, (symbol: string) => void] {
   return [symbol, set];
 }
 
-export function StockLogo({ t, size = 40 }: { t: Pick<ListedToken, "logo" | "symbol"> | null; size?: number }) {
-  if (t?.logo) return <img className="stock-logo" src={t.logo} alt="" width={size} height={size} loading="lazy" />;
-  return <span className={`stock-logo fallback s${size}`} aria-hidden="true">{t?.symbol.slice(0, 1) ?? "?"}</span>;
+/**
+ * The company's own logo, looked up by its stock ticker; Binance's bStock logo if that fails, then
+ * the first letter. Tokens on BNB Smart Chain carry Binance's framed logo, so the company mark comes
+ * from a public logo service keyed by ticker.
+ */
+export function StockLogo({ t, size = 40 }: { t: Pick<ListedToken, "logo" | "symbol"> & { ticker?: string | null } | null; size?: number }) {
+  const sources = [t?.ticker ? `https://financialmodelingprep.com/image-stock/${encodeURIComponent(t.ticker)}.png` : null, t?.logo ?? null].filter((v): v is string => Boolean(v));
+  const [i, setI] = useState(0);
+  const key = sources.join("|");
+  useEffect(() => setI(0), [key]);
+  if (i < sources.length) return <img className="stock-logo" src={sources[i]} alt="" width={size} height={size} loading="lazy" onError={() => setI((n) => n + 1)} />;
+  return <span className={`stock-logo fallback s${size}`} aria-hidden="true">{(t?.ticker ?? t?.symbol ?? "?").slice(0, 1)}</span>;
 }
 
 function Row({ t, onPick, current }: { t: ListedToken; onPick: (s: string) => void; current: boolean }) {
@@ -109,7 +118,7 @@ export function StockPicker({ tokens, symbol, onPick }: { tokens: ListedToken[] 
   return (
     <>
       <button type="button" className="picker" onClick={() => ref.current?.showModal()} disabled={!tokens} aria-haspopup="dialog">
-        <StockLogo t={t ?? { logo: null, symbol }} size={36} />
+        <StockLogo t={t ?? { logo: null, symbol, ticker: null }} size={36} />
         <span className="stock-id">
           <b>{t?.ticker ?? symbol}</b>
           <span className="muted small">{t ? (t.company ?? t.name ?? symbol) : tokens ? "Not listed right now" : "Loading stocks…"}</span>
