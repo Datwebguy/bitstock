@@ -15,12 +15,15 @@ import { RateLimiter } from "./ratelimit.ts";
 import { attachUserTx, reconcileSubmitted } from "./reconcile.ts";
 import { sentryStatus, startSentry } from "./sentry.ts";
 import { findToken, listedTokens } from "./tokens.ts";
+import { GiftError, GiftService, giftConfigFromEnv } from "./gift-service.ts";
 
 const SERVICE = "bitstock-agent";
 const log = (o: Record<string, unknown>) => console.log(JSON.stringify({ at: new Date().toISOString(), ...o }));
 const ctx = buildContext(process.env);
 const decisionLimiter = new RateLimiter(Number(process.env["RATE_LIMIT_PER_MINUTE"] ?? "10"), 60_000);
 const readLimiter = new RateLimiter(120, 60_000);
+const claimLimiter = new RateLimiter(3, 60_000);
+const gift = new GiftService(ctx, giftConfigFromEnv(process.env));
 /** Browser origins allowed to call the API (comma-separated): the web app's hosts, nothing else. */
 const allowedOrigins = new Set((process.env["PUBLIC_WEB_ORIGIN"] ?? "").split(",").map((o) => o.trim().replace(/\/+$/, "")).filter(Boolean));
 
@@ -152,6 +155,18 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     }
   }
 
+  if (path === "/v1/gift" && method === "GET") {
+    if (!readLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many requests." });
+    return send(res, 200, gift.status());
+  }
+  if (path === "/v1/gift/claim" && method === "POST") {
+    const h = (n: string) => (typeof req.headers[n] === "string" ? (req.headers[n] as string) : null);
+    if (!gift.trustedProxy(h("x-gift-proxy-secret") ?? undefined)) return send(res, 403, { error: "Claims are accepted only through the Bitstock web app." });
+    if (!claimLimiter.allow(h("x-claim-ip") ?? clientKey(req))) return send(res, 429, { error: "Too many claims from this address. Wait a minute and try again." });
+    const body = (await readJson(req)) as { wallet?: unknown };
+    return send(res, 200, await gift.claim(typeof body.wallet === "string" ? body.wallet : "", h("x-claim-country"), h("x-claim-region")));
+  }
+
   const im = /^\/v1\/intents\/([0-9a-f-]{36})$/.exec(path);
   if (im && method === "GET") {
     const i = ctx.repo.intent(im[1]!);
@@ -185,6 +200,10 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     if (!wallet) return send(res, 503, { error: "PROBE_WALLET_ADDRESS is not set" });
     return send(res, 200, await runLiveGuard(process.env, usd, wallet));
   }
+  if (path === "/v1/admin/gift/fund" && method === "POST") return send(res, 200, await gift.fund(url.searchParams.get("usd") ?? ""));
+  if (path === "/v1/admin/gift/open" && method === "POST") return send(res, 200, await gift.open());
+  if (path === "/v1/admin/gift/close" && method === "POST") return send(res, 200, await gift.close());
+  if (path === "/v1/admin/gift/reveal" && method === "POST") return send(res, 200, gift.reveal());
   if (path === "/v1/admin/sentry" && method === "GET") return send(res, 200, sentryStatus(process.env));
   if (path === "/v1/admin/decisions" && method === "GET") {
     const limit = Number(url.searchParams.get("limit") ?? "10");
@@ -203,6 +222,7 @@ const port = Number(process.env["PORT"] ?? 3000);
 createServer((req, res) => {
   handle(req, res).catch((e: unknown) => {
     if (e instanceof InputError) return send(res, 400, { error: e.message });
+    if (e instanceof GiftError) return send(res, e.status, { error: e.message });
     log({ level: "error", msg: e instanceof Error ? e.message : String(e) });
     send(res, 500, { error: "Something went wrong on the server. Nothing was prepared or sent." });
   });

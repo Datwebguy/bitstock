@@ -104,3 +104,46 @@ export async function sendRawTransaction(rpcUrl: string, raw: string): Promise<s
   const { result } = await rpcCall<string>(rpcUrl, "eth_sendRawTransaction", [raw]);
   return result;
 }
+
+export function approveCalldata(spender: string, amount: bigint): string {
+  if (!isAddress(spender)) throw new Error("invalid spender");
+  if (amount < 0n) throw new Error("amount must not be negative");
+  return selector("approve(address,uint256)") + encodeAddress(spender) + encodeUint(amount);
+}
+
+export function transferFromCalldata(from: string, to: string, amount: bigint): string {
+  if (!isAddress(from) || !isAddress(to)) throw new Error("invalid address");
+  if (amount <= 0n) throw new Error("amount must be positive");
+  return selector("transferFrom(address,address,uint256)") + encodeAddress(from) + encodeAddress(to) + encodeUint(amount);
+}
+
+/** Dry run of any call that should return an ERC-20 style `true` (or nothing), sent from `sender`. */
+export async function simulateCall(rpcUrl: string, to: string, data: string, sender: string): Promise<TransferSimulation> {
+  try {
+    const { result } = await ethCall(rpcUrl, to, data, sender);
+    if (result === "0x" || BigInt(result) === 1n) return { ok: true, reason: "The call would succeed." };
+    return { ok: false, reason: "The token returned false for this call." };
+  } catch (e) {
+    if (e instanceof RpcError) return { ok: false, reason: `The call would be refused: ${decodeRevertReason(e.data) ?? e.message}` };
+    throw e;
+  }
+}
+
+/**
+ * Sign a call to `to` with `data` from the key's address, after the caller's dry run. Gas is the node's
+ * estimate plus 20%, or `minGas` when that is higher (some routers under-report).
+ */
+export async function prepareCall(rpcUrl: string, privateKey: string, from: string, to: string, data: string, opts: { value?: bigint; minGas?: bigint; nonce?: bigint } = {}): Promise<PreparedTransfer> {
+  const value = opts.value ?? 0n;
+  const [gas, price, count] = await Promise.all([
+    rpcCall<string>(rpcUrl, "eth_estimateGas", [{ from, to, data, value: "0x" + value.toString(16) }]),
+    rpcCall<string>(rpcUrl, "eth_gasPrice", []),
+    opts.nonce === undefined ? rpcCall<string>(rpcUrl, "eth_getTransactionCount", [from, "pending"]) : Promise.resolve({ result: "0x" + opts.nonce.toString(16), latencyMs: 0 }),
+  ]);
+  let gasLimit = (BigInt(gas.result) * 12n) / 10n;
+  if (opts.minGas !== undefined && opts.minGas > gasLimit) gasLimit = opts.minGas;
+  const tx = { nonce: BigInt(count.result), gasPrice: BigInt(price.result), gasLimit, to, value, data, chainId: BSC_CHAIN_ID };
+  const signed = signLegacyTx(tx, privateKey);
+  if (signed.from.toLowerCase() !== from.toLowerCase()) throw new Error("the key does not belong to the sending address");
+  return { signed, gasLimit, gasPrice: tx.gasPrice, nonce: tx.nonce };
+}
