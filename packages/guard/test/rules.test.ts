@@ -177,6 +177,11 @@ describe("5. simulation", () => {
     // Any other failure still fails for an Agentic Wallet.
     expect(checkSimulation({ ...failed, value: { ...failed.value, failReason: "execution reverted: paused" } }, STOCK, WALLET, undefined, { approvalByWallet: true }).result).toBe("fail");
   });
+  it("says plainly when the wallet lacks USDT", () => {
+    const c = sim({ status: "FAILED", failReason: "execution reverted: BEP20: transfer amount exceeds balance", balanceChanges: [] });
+    expect(c.result).toBe("fail");
+    expect(c.reason).toContain("does not hold enough USDT");
+  });
   it("fails when SUCCESS shows no stock arriving", () => {
     expect(sim({ status: "SUCCESS", balanceChanges: [] }).result).toBe("fail");
     expect(sim({ status: "SUCCESS", balanceChanges: [{ contractAddress: STOCK, owner: "0x2222222222222222222222222222222222222222", change: "5" }] }).result).toBe("fail");

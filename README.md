@@ -52,9 +52,9 @@ Every row is a real transaction or a real recorded response. Nothing here is sim
 | Explainer and multiplier sentry | Built; the sentry records snapshots on the server |
 | Web app: home, live check, buy, holdings, learn, about, claim notice | Built, deployed |
 | Restricted-jurisdiction block on the claim page | Built, tested from a US connection |
-| Free first slice (gift with the network fee paid for the recipient) | **Not built** |
-| Scheduled buys through the user's own Binance Agentic Wallet (Mode B wallet skill) | **Not built** |
-| Agent on BNB Agent Studio | **Not built** |
+| Free first slice ($1 in ten boxes, network fee paid for the recipient) | Built, deployed; not yet funded or claimed |
+| Checked buys through the user's own Binance Agentic Wallet (wallet skill) | Built; first real swap not yet made |
+| Agent on BNB Agent Studio | Built, hosted, registered on-chain (ERC-8004 agent 370988) |
 
 ## How it maps to the judging criteria
 

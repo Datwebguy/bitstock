@@ -267,6 +267,9 @@ export function checkSimulation(sim: Sourced<SimulationObs> & { skipped?: string
       }
       return { ...base, result: "fail", rawValue: `status=${v.status}, failReason=${why}`, reason: "The test run failed because your wallet has not yet allowed this trade to use your USDT. Approve USDT in your wallet first, then check again." };
     }
+    if (/exceeds balance|insufficient balance/i.test(why)) {
+      return { ...base, result: "fail", rawValue: `status=${v.status}, failReason=${why}`, reason: "Your wallet does not hold enough USDT for this buy. Add USDT on BNB Smart Chain, then check again." };
+    }
     return { ...base, result: "fail", rawValue: `status=${v.status}, failReason=${why}`, reason: "The test run of this trade failed, so Bitstock will not send it." };
   }
   const arriving = (v.balanceChanges ?? []).find(

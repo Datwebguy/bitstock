@@ -44,8 +44,9 @@ Cut order if time runs short, from the bottom: Studio agent, Mode B skill, Learn
 2. *Decide.* GO, LIMIT (tighter slippage by a written rule), WAIT (re-checked from scratch later) or BLOCK (one sentence why). Missing data never becomes a guess.
 3. *Buy (Mode A, built).* The swap is rebuilt from the checked quote, pinned to the contract the quote named, dry-run again and given a gas limit from the node's estimate; the user signs in their own wallet. One real buy on mainnet: 1 USDT for 0.004333697515150079 NVDAB.
 4. *Explain (built).* Holdings in shares, and a multiplier explanation that says "dividend" only when the announcement matches and every input is confirmed. For NVDAB it currently says "multiplier change", because the earlier multiplier and the issuer's withholding rate are not confirmed.
-5. *Mode B, scheduled buys through the user's own Binance Agentic Wallet:* not built.
-6. *Front door, a free first slice with the network fee paid for the recipient:* not built. The claim page says so, and refuses restricted jurisdictions with HTTP 451.
+5. *Mode B, checked buys through the user's own Binance Agentic Wallet:* the wallet skill is built and its checks run live; no real Agentic Wallet swap has been made yet.
+6. *Front door, a $1 first slice split into ten boxes, with the network fee paid for the recipient:* built and deployed, closed until its wallets are funded; the claim page refuses restricted jurisdictions with HTTP 451.
+7. *Studio agent:* registered as ERC-8004 agent 370988; serves `guard_check` and `multiplier_status` from live data with fixed rules.
 
 **Binance Web3 API modules used:** RWA Data (`rwa/tokens`, `rwa/underlying-market`, `rwa/underlying-profile`, `rwa/price`), Trading (`aggregator/quote`, `aggregator/swap`, `aggregator/approve-transaction`), Transaction (`pre-transaction/simulate`). Not used: Market, Wallet, B402, Agentic Wallet, BNB Agent Studio.
 
@@ -58,12 +59,13 @@ Cut order if time runs short, from the bottom: Studio agent, Mode B skill, Learn
 | A real protected buy, 1 USDT to 0.004333697515150079 NVDAB | https://bscscan.com/tx/0x526643d73ed93ad2a90033397710d4d03d41d6835938e722ba647b408666e8c1 |
 | The owner's USDT approval, capped at 2 USDT | https://bscscan.com/tx/0x1a500450deba945ebc1d2207d702e7db791293a424499213a4c78d7e7fd4d8be |
 | A guard decision while the US market was closed (LIMIT) | `docs/evidence/guard-nvdab-1usd-after-approval.railway-sg.json` |
-| Funding swap into NVDAB for the gift | not built |
-| A gasless claim to a wallet with no BNB | not built |
-| An Agentic Wallet swap | not built |
-| An ERC-8004 registration | not built |
+| Funding swap into NVDAB for the gift | built; not run yet (needs the vault funded) |
+| A gasless claim to a wallet with no BNB | built; not run yet |
+| An Agentic Wallet swap | skill built (`skills/bitstock-buy`); no real swap made yet |
+| An ERC-8004 registration (agent ID 370988, BSC mainnet, registry `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432`; sponsored gas, the agent wallet holds 0 BNB; read back with `bag erc8004 show`) | Agent card: https://studio-production-6e9e.up.railway.app/.well-known/agent-card.json (transaction hash not captured) |
+| The Studio agent answering from outside (free x402 face and A2A, live data) | https://studio-production-6e9e.up.railway.app |
 
-**Not built / known limits:** the gift and its gasless claim; the Mode B wallet skill; the Agent Studio agent. The open-hours path has not been shown live, because the US market was closed all weekend. Multiplier history starts when the sentry began recording, because free RPC endpoints refuse historical log queries. The independent price uses Yahoo's chart API (unofficial, no service guarantee) because the Pyth Pro key was not entitled to US equities. The guard's thresholds are starting values, not yet measured.
+**Not yet proven live / known limits:** the gift claim, the Agentic Wallet swap (both built, not run). The open-hours path has not been shown live, because the US market was closed all weekend. Multiplier history starts when the sentry began recording, because free RPC endpoints refuse historical log queries. The independent price uses Yahoo's chart API (unofficial, no service guarantee) because the Pyth Pro key was not entitled to US equities. The guard's thresholds are starting values, not yet measured.
 
 **Eligibility and safety:** restricted jurisdictions are refused at the claim page; there are no hot wallets or relayer in the deployed system, so no funds are held; the agent has a persistent kill switch and a $5 buy cap; tokens can be paused or blocked by the issuer; not investment advice.
 
