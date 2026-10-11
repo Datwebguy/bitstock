@@ -147,7 +147,7 @@ The defaults are conservative starting values, not measured ones; `docs/METHOD.m
 | Trading | `GET /api/v1/dex/aggregator/approve-transaction` | Probed: approval order verified |
 | Transaction | `POST /api/v1/dex/pre-transaction/simulate` | Dry run of every swap |
 
-Also used: BNB Smart Chain JSON-RPC (multiplier, allowance, balances, gas estimates, receipts) and a public market-chart feed as the independent stock price (Pyth Pro is tried first when its key is entitled to US equities; see [`docs/VERIFIED.md`](docs/VERIFIED.md) section 6a).
+Also used: BNB Smart Chain JSON-RPC (multiplier, allowance, balances, gas estimates, receipts) and Yahoo Finance's chart API as the independent stock price (Pyth Pro is tried first when its key is entitled to US equities; see [`docs/VERIFIED.md`](docs/VERIFIED.md) section 6a).
 
 ## Run it
 

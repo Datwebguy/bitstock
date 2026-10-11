@@ -20,7 +20,7 @@ export const MAX_TEXTS = 60;
 export const MAX_CHARS = 700;
 
 // Names that must never be translated or dropped.
-const NAMES = ["Bitstock", "Binance", "BNB Smart Chain", "BNB", "USDT", "WalletConnect", "BscScan", "Pyth", "Agentic Wallet", "PancakeSwap", "NVIDIA", "Nvidia"];
+const NAMES = ["Bitstock", "Binance", "BNB Smart Chain", "BNB", "USDT", "WalletConnect", "BscScan", "Pyth", "Yahoo Finance", "Agentic Wallet", "PancakeSwap", "NVIDIA", "Nvidia"];
 
 /** The parts of a text that must survive translation exactly: numbers, amounts, addresses, tickers and names. */
 export function protectedParts(text: string): string[] {

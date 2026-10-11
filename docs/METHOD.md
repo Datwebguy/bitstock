@@ -11,7 +11,7 @@ The guard is deterministic (ADR 0002): the same inputs and the same rules versio
 | Market status (`statusInfo`) | Binance Web3 API `rwa/underlying-market` |
 | Share multiplier and any scheduled change | The token contract on BSC: `uiMultiplier()`, `newUIMultiplier()`, `effectiveAt()` |
 | Underlying ticker | Binance Web3 API `rwa/underlying-profile` |
-| Independent stock price | Public market-chart feed, `regularMarketPrice` and `regularMarketTime` (see `docs/VERIFIED.md` section 6 for why and its limits) |
+| Independent stock price | Yahoo Finance chart API, `regularMarketPrice` and `regularMarketTime` (see `docs/VERIFIED.md` section 6 for why and its limits) |
 | Live quote at the exact size | Binance Web3 API `aggregator/quote` |
 | The wallet's USDT approval | The USDT contract on BSC: `allowance(wallet, spender)` |
 | Dry run | Binance Web3 API `aggregator/swap`, then `pre-transaction/simulate` |
