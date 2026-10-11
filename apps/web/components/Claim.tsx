@@ -26,8 +26,11 @@ export function ClaimView({ region }: { region: string | null }) {
   const [checking, setChecking] = useState(false);
 
   const load = () => api<GiftStatus>("/gift").then((v) => (setG(v), setErr(null))).catch((e: Error) => setErr(e.message));
+  // The boxes left change as other people claim, so the page re-reads them while it is open.
   useEffect(() => {
     void load();
+    const t = setInterval(() => { if (document.visibilityState === "visible") void load(); }, 15_000);
+    return () => clearInterval(t);
   }, []);
 
   // Ask the server whether this wallet already has its slice, so that is known after a refresh or a reconnect too.

@@ -8,7 +8,11 @@ export function GiftPill() {
   const [g, setG] = useState<{ open: boolean; remaining?: number; boxes?: unknown[] } | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
-    api<{ open: boolean; remaining?: number; boxes?: unknown[] }>("/gift").then(setG).catch(() => setFailed(true));
+    let alive = true;
+    const load = () => api<{ open: boolean; remaining?: number; boxes?: unknown[] }>("/gift").then((v) => { if (alive) { setG(v); setFailed(false); } }).catch(() => { if (alive) setFailed(true); });
+    void load();
+    const t = setInterval(() => { if (document.visibilityState === "visible") void load(); }, 15_000);
+    return () => { alive = false; clearInterval(t); };
   }, []);
   if (failed) return <span className="pill idle">Status unavailable</span>;
   if (!g) return <span className="pill idle">Reading…</span>;
