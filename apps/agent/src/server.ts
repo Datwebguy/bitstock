@@ -14,6 +14,7 @@ import { attachUserTx, reconcileSubmitted } from "./reconcile.ts";
 import { sentryStatus, startSentry } from "./sentry.ts";
 import { featuredToken, findToken, listedTokens } from "./tokens.ts";
 import { GiftError, GiftService, giftConfigFromEnv } from "./gift-service.ts";
+import { LANGUAGES, MAX_CHARS, MAX_TEXTS, translatorFromEnv } from "./translate.ts";
 
 const SERVICE = "bitstock-agent";
 const log = (o: Record<string, unknown>) => console.log(JSON.stringify({ at: new Date().toISOString(), ...o }));
@@ -22,6 +23,8 @@ const decisionLimiter = new RateLimiter(Number(process.env["RATE_LIMIT_PER_MINUT
 const readLimiter = new RateLimiter(120, 60_000);
 const claimLimiter = new RateLimiter(3, 60_000);
 const gift = new GiftService(ctx, giftConfigFromEnv(process.env));
+const translator = translatorFromEnv(process.env);
+const translateLimiter = new RateLimiter(60, 60_000);
 /** Browser origins allowed to call the API (comma-separated): the web app's hosts, nothing else. */
 const allowedOrigins = new Set((process.env["PUBLIC_WEB_ORIGIN"] ?? "").split(",").map((o) => o.trim().replace(/\/+$/, "")).filter(Boolean));
 
@@ -97,6 +100,15 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   if (path === "/v1/config" && method === "GET") {
     const f = await featuredToken(ctx).catch(() => null);
     return send(res, 200, { featured: f ? { address: f.address, symbol: f.symbol } : null, maxBuyUsd: ctx.caps.maxBuyUsd, chainId: 56, killSwitch: killState(ctx.env, ctx.repo).on });
+  }
+
+  if (path === "/v1/translate" && method === "POST") {
+    if (!translateLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many requests." });
+    const body = (await readJson(req, 64_000)) as { lang?: unknown; texts?: unknown };
+    const lang = typeof body?.lang === "string" ? body.lang : "";
+    const texts = Array.isArray(body?.texts) ? body.texts.filter((t): t is string => typeof t === "string" && t.length > 0 && t.length <= MAX_CHARS).slice(0, MAX_TEXTS) : [];
+    if (!(lang in LANGUAGES)) return send(res, 400, { error: "That language is not offered." });
+    return send(res, 200, { lang, enabled: translator.enabled, translations: await translator.translate(lang, texts) });
   }
 
   if (path === "/v1/tokens" && method === "GET") {
