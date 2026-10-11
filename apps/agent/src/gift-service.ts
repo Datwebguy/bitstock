@@ -278,6 +278,17 @@ export class GiftService {
     });
   }
 
+  /** The claim this wallet already made in the open gift, if any. Claims are public, so this reveals nothing new. */
+  claimOf(wallet: string): Record<string, unknown> | null {
+    if (!isAddress(wallet)) throw new GiftError("The wallet address is not valid.");
+    const cur = this.current();
+    if (!cur) return null;
+    const row = this.#db.prepare("SELECT * FROM gift_claims WHERE campaign_id = ? AND wallet = ?").get(cur.id, wallet.toLowerCase()) as unknown as Claim | undefined;
+    // A claim that failed before anything was broadcast moved nothing, so that wallet may try again.
+    if (!row || (row.status === "failed" && !row.tx_hash)) return null;
+    return this.#publicClaim(row);
+  }
+
   /**
    * Settle every claim still marked sending from its receipt (run at start and on a timer). A transaction the node
    * has never heard of, an hour after it was signed, was dropped: its box and wallet are freed.

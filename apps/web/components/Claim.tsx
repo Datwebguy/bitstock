@@ -23,10 +23,25 @@ export function ClaimView({ region }: { region: string | null }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [mine, setMine] = useState<GiftClaim | null>(null);
 
+  const [checking, setChecking] = useState(false);
+
   const load = () => api<GiftStatus>("/gift").then((v) => (setG(v), setErr(null))).catch((e: Error) => setErr(e.message));
   useEffect(() => {
     void load();
   }, []);
+
+  // Ask the server whether this wallet already has its slice, so that is known after a refresh or a reconnect too.
+  useEffect(() => {
+    setMine(null); setMsg(null); setPhase("idle");
+    if (!w.account) { setChecking(false); return; }
+    let alive = true;
+    setChecking(true);
+    api<{ claim: GiftClaim | null }>(`/gift/claim?wallet=${w.account}`)
+      .then((r) => { if (alive && r.claim) { setMine(r.claim); setPhase(r.claim.status === "confirmed" ? "done" : "failed"); } })
+      .catch(() => undefined)
+      .finally(() => { if (alive) setChecking(false); });
+    return () => { alive = false; };
+  }, [w.account]);
 
   const token = list?.tokens.find((t) => t.address === g?.token) ?? null;
   const symbol = token?.symbol ?? "the stock";
@@ -41,7 +56,6 @@ export function ClaimView({ region }: { region: string | null }) {
       if (!res.ok) throw new Error(out.error ?? "The claim did not go through.");
       setMine(out);
       setPhase(out.status === "confirmed" ? "done" : "failed");
-      if (out.already) setMsg("This wallet has already claimed its slice.");
       void load();
     } catch (e) {
       setPhase("failed");
@@ -79,14 +93,16 @@ export function ClaimView({ region }: { region: string | null }) {
           <>
             <p className="small">Wallet <span className="mono">{short(w.account)}</span></p>
             <DisconnectButton />
-            <button className="btn btn-primary" type="button" onClick={() => void claim()} disabled={phase === "working" || phase === "done" || region === "unknown" || g.remaining === 0}>
-              {phase === "working" ? "Testing and sending your slice…" : phase === "done" ? "Claimed" : `Claim my free ${symbol}`}
+            <button className="btn btn-primary" type="button" onClick={() => void claim()} disabled={phase === "working" || phase === "done" || checking || Boolean(mine) || region === "unknown" || g.remaining === 0}>
+              {phase === "working" ? "Testing and sending your slice…" : mine ? "Already claimed" : checking ? "Checking this wallet…" : `Claim my free ${symbol}`}
             </button>
           </>
         )}
         {w.error ? <p className="msg error" role="alert">{w.error}</p> : null}
         {mine && mine.status === "confirmed" ? (
-          <p className="msg ok" role="status">Done. Box {mine.box} sent you {units18(mine.amount, 8)} {symbol}. <a href={`https://bscscan.com/tx/${mine.txHash}`} target="_blank" rel="noopener noreferrer">See it on BscScan</a>.</p>
+          <p className="msg ok" role="status">This wallet has its slice: Box {mine.box} sent {units18(mine.amount, 8)} {symbol}. Each wallet can claim once. <a href={`https://bscscan.com/tx/${mine.txHash}`} target="_blank" rel="noopener noreferrer">See it on BscScan</a>.</p>
+        ) : mine ? (
+          <p className="msg info" role="status">This wallet has already claimed Box {mine.box}. {CLAIM_STATUS[mine.status] ?? "Unavailable"}. Each wallet can claim once.{mine.txHash ? <> <a href={`https://bscscan.com/tx/${mine.txHash}`} target="_blank" rel="noopener noreferrer">See it on BscScan</a>.</> : null}</p>
         ) : null}
         {msg ? <p className={`msg ${phase === "failed" ? "error" : "info"}`} role="alert">{msg}</p> : null}
       </section>

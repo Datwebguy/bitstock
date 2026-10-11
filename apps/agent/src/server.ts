@@ -164,6 +164,10 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     if (!readLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many requests." });
     return send(res, 200, gift.status());
   }
+  if (path === "/v1/gift/claim" && method === "GET") {
+    if (!readLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many requests." });
+    return send(res, 200, { claim: gift.claimOf(url.searchParams.get("wallet") ?? "") });
+  }
   if (path === "/v1/gift/claim" && method === "POST") {
     const h = (n: string) => (typeof req.headers[n] === "string" ? (req.headers[n] as string) : null);
     if (!gift.trustedProxy(h("x-gift-proxy-secret") ?? undefined)) return send(res, 403, { error: "Claims are accepted only through the Bitstock web app." });

@@ -89,3 +89,19 @@ describe("reconciling gift claims from receipts", () => {
     expect(row(unsent)?.status).toBe("sending");
   });
 });
+
+describe("looking up a wallet's claim", () => {
+  const A = "0x" + "ab".repeat(20);
+  it("finds the claim whatever the letter case, and nothing for a wallet that has not claimed", () => {
+    addClaim(0, A, "confirmed", HASH(7), 10_000);
+    expect(svc.claimOf(A.toUpperCase().replace("0X", "0x"))).toMatchObject({ box: 1, status: "confirmed" });
+    expect(svc.claimOf("0x" + "cd".repeat(20))).toBeNull();
+  });
+  it("lets a wallet try again after a claim that never reached the network failed", () => {
+    addClaim(1, A, "failed", null, 10_000);
+    expect(svc.claimOf(A)).toBeNull();
+  });
+  it("rejects an address that is not valid", () => {
+    expect(() => svc.claimOf("nope")).toThrow();
+  });
+});
