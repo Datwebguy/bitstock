@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
@@ -12,5 +13,5 @@ export function GiftPill() {
   if (failed) return <span className="pill idle">Status unavailable</span>;
   if (!g) return <span className="pill idle">Reading…</span>;
   if (!g.open) return <span className="pill warn">Not open right now</span>;
-  return <span className="pill good">Open · {g.remaining} of {g.boxes?.length} boxes left</span>;
+  return <Link href="/claim" className="pill good" style={{ textDecoration: "none" }}>Open · {g.remaining} of {g.boxes?.length} boxes left · Claim</Link>;
 }

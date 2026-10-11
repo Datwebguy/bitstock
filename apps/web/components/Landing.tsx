@@ -5,6 +5,7 @@ import { api, trimDecimal, when, type MarketView, type ListedToken } from "@/lib
 import { LogoMark } from "./Logo";
 import { Coin, ScrollLit, SplitReveal, TypeCycle, VelocityBand } from "./Motion";
 import { Reveal } from "./Reveal";
+import { GiftBanner } from "./GiftBanner";
 import { useTokens } from "./Stocks";
 
 function useMarket(address: string | null) {
@@ -144,6 +145,8 @@ export function Landing() {
           <CheckConsole m={m} err={err} />
         </div>
       </section>
+
+      <GiftBanner tokens={list?.tokens ?? null} />
 
       <Ticker tokens={list?.tokens ?? null} />
 
