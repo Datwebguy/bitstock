@@ -3,9 +3,12 @@ import { useEffect, useState } from "react";
 import { api, fromLine, when, type MarketView } from "@/lib/api";
 import { StockPicker, useSelectedSymbol, useTokens } from "./Stocks";
 
+// The repository the skill is installed from (owner/name), set at build time. Nothing is baked in.
+const REPO = process.env.NEXT_PUBLIC_REPO ?? "";
+
 const INSTALL = [
   "npx skills add binance/binance-skills-hub/skills/binance-web3/binance-agentic-wallet",
-  "npx skills add Datwebguy/bitstock/skills/bitstock-buy",
+  ...(REPO ? [`npx skills add ${REPO}/skills/bitstock-buy`] : []),
 ];
 
 function Copy({ text }: { text: string }) {
@@ -91,7 +94,8 @@ export function AutopilotView() {
 
       <section className="card" aria-labelledby="ap-setup">
         <h2 id="ap-setup">Set it up</h2>
-        <p className="small">You need a Binance Agentic Wallet, created and signed in through the Binance App, and an AI agent that can use skills. Add the two skills:</p>
+        <p className="small">You need a Binance Agentic Wallet, created and signed in through the Binance App, and an AI agent that can use skills. Add {INSTALL.length > 1 ? "the two skills" : "the Binance Agentic Wallet skill"}:</p>
+        {!REPO ? <p className="msg info">The Bitstock skill is not published yet, so there is nothing to install for it.</p> : null}
         {INSTALL.map((c) => <Copy key={c} text={c} />)}
         <p className="small">Then ask your agent:</p>
         <Copy text={`Buy $1 of ${ticker} with Bitstock now.`} />

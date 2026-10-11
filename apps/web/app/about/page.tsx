@@ -40,7 +40,7 @@ export default function AboutPage() {
         <section className="card">
           <h2>How it decides</h2>
           <p className="small">Five checks on live data: whether the stock market is open, how many shares one token stands for, the real stock&apos;s price from a separate source, how much your exact amount moves the price, and a test run that must show your tokens arriving. The rules are fixed and written down; no AI model decides whether, what or how much to buy.</p>
-          <p className="small"><a href="https://github.com/Datwebguy/bitstock" target="_blank" rel="noopener noreferrer">How it is built, and the proof</a></p>
+          {process.env.NEXT_PUBLIC_REPO ? <p className="small"><a href={`https://github.com/${process.env.NEXT_PUBLIC_REPO}`} target="_blank" rel="noopener noreferrer">How it is built, and the proof</a></p> : null}
         </section>
       </div>
     </>
