@@ -22,7 +22,7 @@ Built for BNB Hack: Tokenized Stocks Edition. BSC mainnet only. Spot only. Not i
   <img src="docs/screenshots/phone-learn-dark.jpg" width="200" alt="Learn, dark theme">
 </p>
 
-## By the numbers
+## Live figures
 
 Read on 11 Oct 2026 from the live agent's [`/healthz`](https://agent-production-6403.up.railway.app/healthz) and from the repository. These are counts of things that happened, not claims about returns.
 
