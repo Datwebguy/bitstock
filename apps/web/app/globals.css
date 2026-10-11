@@ -454,3 +454,15 @@ html:not([lang="en"]) .sr-only:has(~ [aria-hidden="true"]) { position: static; w
 .gift-title { margin: 0 0 4px; font-size: 1.05rem; font-weight: 700; }
 .gift-banner .btn { flex: none; }
 @media (max-width: 520px) { .gift-banner { margin: 20px 16px 0; } .gift-banner .btn { width: 100%; text-align: center; } }
+
+/* narrow phones with a connected wallet: keep the header on one line by showing the logo mark only */
+@media (max-width: 470px) {
+  .topbar-in { gap: 8px; padding-left: 12px; padding-right: 12px; }
+  .topbar-in:has(.pill) .wordmark-text { display: none; }
+  .lang select { padding-right: 24px; }
+}
+@media (max-width: 340px) {
+  .topbar-in { gap: 6px; padding-left: 10px; padding-right: 10px; }
+  .lang select { font-size: 0.8rem; padding-left: 8px; }
+  .topbar-in .pill { padding-left: 8px; padding-right: 8px; font-size: 0.75rem; }
+}
