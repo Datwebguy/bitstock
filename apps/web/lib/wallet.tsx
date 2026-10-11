@@ -1,13 +1,14 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createAppKit, useAppKit, useAppKitAccount, useAppKitEvents, useAppKitNetwork, useAppKitProvider } from "@reown/appkit/react";
+import { bsc } from "@reown/appkit/networks";
+import { EthersAdapter } from "@reown/appkit-adapter-ethers";
+
+/** BNB Smart Chain is the only chain Bitstock works on. */
+const BSC_CHAIN_ID = 56;
 
 interface Eip1193 {
   request(args: { method: string; params?: unknown[] }): Promise<unknown>;
-  on?(event: string, cb: (...a: unknown[]) => void): void;
-  removeListener?(event: string, cb: (...a: unknown[]) => void): void;
-}
-declare global {
-  interface Window { ethereum?: Eip1193 }
 }
 
 interface WalletState {
@@ -22,57 +23,101 @@ interface WalletState {
 
 const Ctx = createContext<WalletState | null>(null);
 
+const NOT_CONFIGURED = "Wallet connection is not set up on this site yet. Please try again later.";
+const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID ?? "";
+
+let started = false;
+/** Starts AppKit once, in the browser only. The project ID comes from configuration, never from code. */
+function startAppKit(): void {
+  if (started || typeof window === "undefined" || !projectId) return;
+  started = true;
+  const origin = window.location.origin;
+  createAppKit({
+    adapters: [new EthersAdapter()],
+    networks: [bsc],
+    defaultNetwork: bsc,
+    projectId,
+    metadata: {
+      name: "Bitstock",
+      description: "Checks the market, the token and a test run before every small buy of a tokenized stock.",
+      url: origin,
+      icons: [`${origin}/icon.svg`],
+    },
+    // Wallets only: no email or social sign-in, no analytics, no on-ramp or swaps inside the modal.
+    features: { analytics: false, email: false, socials: false, onramp: false, swaps: false, send: false, history: false },
+    enableWalletGuide: false,
+    allowUnsupportedChain: false,
+  });
+}
+startAppKit();
+
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const [account, setAccount] = useState<string | null>(null);
-  const [chain, setChain] = useState<string | null>(null);
-  const [available, setAvailable] = useState(false);
-  const [connecting, setConnecting] = useState(false);
+  // AppKit hooks throw until createAppKit has run, and it only runs in the browser. So the server render and the
+  // first client render use the inert state below, and the real provider takes over right after hydration.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted && projectId ? <Connected>{children}</Connected> : <Inert missing={!projectId}>{children}</Inert>;
+}
+
+function Inert({ children, missing }: { children: ReactNode; missing: boolean }) {
+  const value = useMemo<WalletState>(
+    () => ({
+      account: null,
+      onBsc: false,
+      available: false,
+      connecting: false,
+      error: missing ? NOT_CONFIGURED : null,
+      connect: async () => undefined,
+      send: async () => {
+        throw new Error(missing ? NOT_CONFIGURED : "No wallet is connected.");
+      },
+    }),
+    [missing],
+  );
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
+
+function Connected({ children }: { children: ReactNode }) {
+  const { open } = useAppKit();
+  const { address, isConnected, status } = useAppKitAccount({ namespace: "eip155" });
+  const { chainId } = useAppKitNetwork();
+  const { walletProvider } = useAppKitProvider<Eip1193>("eip155");
+  const events = useAppKitEvents();
   const [error, setError] = useState<string | null>(null);
 
+  // A wallet that connected on another chain is told once, plainly, and can switch inside the modal.
+  const account = isConnected && address ? address : null;
+  const onBsc = account !== null && Number(chainId) === BSC_CHAIN_ID;
+
   useEffect(() => {
-    const eth = window.ethereum;
-    setAvailable(Boolean(eth));
-    if (!eth) return;
-    const onAcc = (a: unknown) => setAccount(Array.isArray(a) && typeof a[0] === "string" ? a[0] : null);
-    const onChain = (c: unknown) => setChain(typeof c === "string" ? c : null);
-    eth.request({ method: "eth_accounts" }).then(onAcc).catch(() => undefined);
-    eth.request({ method: "eth_chainId" }).then(onChain).catch(() => undefined);
-    eth.on?.("accountsChanged", onAcc);
-    eth.on?.("chainChanged", onChain);
-    return () => {
-      eth.removeListener?.("accountsChanged", onAcc);
-      eth.removeListener?.("chainChanged", onChain);
-    };
-  }, []);
+    const name = events.data?.event;
+    if (name === "CONNECT_SUCCESS") setError(null);
+    if (name === "CONNECT_ERROR") setError("Your wallet did not connect. Try again.");
+  }, [events]);
 
   const connect = useCallback(async () => {
-    const eth = window.ethereum;
-    if (!eth) {
-      setError("No wallet was found in this browser. Open Bitstock inside your wallet app's browser.");
-      return;
-    }
-    setConnecting(true);
     setError(null);
     try {
-      const accounts = (await eth.request({ method: "eth_requestAccounts" })) as string[];
-      setAccount(accounts[0] ?? null);
-      const c = (await eth.request({ method: "eth_chainId" })) as string;
-      if (c !== "0x38") await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x38" }] });
-      setChain("0x38");
+      await open({ view: account ? "Account" : "Connect", namespace: "eip155" });
     } catch (e) {
       setError(walletMessage(e, "Your wallet did not connect. Try again."));
-    } finally {
-      setConnecting(false);
     }
-  }, []);
+  }, [open, account]);
 
-  const send = useCallback(async (tx: Record<string, string>) => {
-    const eth = window.ethereum;
-    if (!eth) throw new Error("No wallet is available.");
-    return (await eth.request({ method: "eth_sendTransaction", params: [tx] })) as string;
-  }, []);
+  const send = useCallback(
+    async (tx: Record<string, string>) => {
+      if (!walletProvider || !account) throw new Error("No wallet is connected.");
+      if (!onBsc) throw Object.assign(new Error("Switch to BNB Smart Chain."), { code: 4902 });
+      return (await walletProvider.request({ method: "eth_sendTransaction", params: [tx] })) as string;
+    },
+    [walletProvider, account, onBsc],
+  );
 
-  return <Ctx.Provider value={{ account, onBsc: chain === "0x38", available, connecting, error, connect, send }}>{children}</Ctx.Provider>;
+  const value = useMemo<WalletState>(
+    () => ({ account, onBsc, available: true, connecting: status === "connecting", error, connect, send }),
+    [account, onBsc, status, error, connect, send],
+  );
+  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
 /** Plain words for what a wallet reported; raw wallet errors are not shown to people. */

@@ -4,6 +4,10 @@ All notable changes are recorded here. The format follows Keep a Changelog and t
 
 ## [Unreleased]
 
+### Changed
+- Web app: wallet connection now uses Reown AppKit (WalletConnect) on BNB Smart Chain only, so phones can connect any WalletConnect wallet instead of needing an in-wallet browser. The wallet context (`account`, `connect`, `send`, `onBsc`, `error`) is unchanged for Buy, Holdings and Claim. The project ID is read from `NEXT_PUBLIC_REOWN_PROJECT_ID`; without it the site says wallet connection is not set up and does not connect.
+- Content-Security-Policy: allows the Reown relay, API, verify, RPC, image and font hosts. `style-src` now permits inline styles because AppKit injects un-nonced styles; `script-src` stays nonce-based and strict.
+
 ## [0.1.0] - 2026-10-10
 
 ### Added
