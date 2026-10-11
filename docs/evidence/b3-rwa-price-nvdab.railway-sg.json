@@ -1,0 +1,40 @@
+{
+  "probe": 3,
+  "name": "RWA price for NVDAB",
+  "ranAt": "2026-10-10T20:11:02.914Z",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/v1/dex/market/rwa/price",
+      "query": "binanceChainId=56&tokenContractAddresses=0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436",
+      "body": "",
+      "httpStatus": 200,
+      "json": {
+        "code": 0,
+        "msg": "success",
+        "data": [
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+            "platformId": "bstock",
+            "tokenPrice": "230.53000000",
+            "referencePrice": "230.350736",
+            "tokenPriceUpdatedAt": 1791663004630
+          }
+        ],
+        "timestamp": 1791663062964,
+        "success": true
+      }
+    }
+  ],
+  "result": [
+    {
+      "binanceChainId": "56",
+      "tokenContractAddress": "0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+      "platformId": "bstock",
+      "tokenPrice": "230.53000000",
+      "referencePrice": "230.350736",
+      "tokenPriceUpdatedAt": 1791663004630
+    }
+  ]
+}

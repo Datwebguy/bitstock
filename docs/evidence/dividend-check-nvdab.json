@@ -1,0 +1,46 @@
+{
+  "ranAt": "2026-10-10T21:41:33.927Z",
+  "multiplierNow": {
+    "uiMultiplier": "1000778223752807865",
+    "newUIMultiplier": "1000778223752807865",
+    "effectiveAt": "0",
+    "source": "eth_call via bsc-rpc.publicnode.com"
+  },
+  "announced": {
+    "amount": 0.25,
+    "exDate": "2026-09-10",
+    "closeEx": "218.36",
+    "closeBefore": "223.67",
+    "source": "https://query1.finance.yahoo.com/v8/finance/chart/NVDA?interval=1d&range=1y&events=div"
+  },
+  "assumption": "multiplier was 1.0 before the change (not verified: no historical log retrievable)",
+  "scenarios": {
+    "ex-date close": {
+      "price": "218.36",
+      "impliedNetPerShare": "0.169932",
+      "grossIfWithholding30": "0.242761"
+    },
+    "previous close": {
+      "price": "223.67",
+      "impliedNetPerShare": "0.174065",
+      "grossIfWithholding30": "0.248664"
+    }
+  },
+  "verdict": {
+    "verdict": "multiplier_change",
+    "changePercent": null,
+    "impliedNetPerShare": null,
+    "expectedNetPerShare": null,
+    "gapPercent": null,
+    "known": [
+      "The token now stands for 1.000778223752807865 shares (eth_call uiMultiplier()).",
+      "The company announced 0.25 USD per share with ex-date 2026-09-10 (Yahoo Finance chart events)."
+    ],
+    "unknown": [
+      "The multiplier before the change has not been read from the chain.",
+      "The share price used for the reinvestment is not known.",
+      "The withholding rate the issuer applies has not been confirmed."
+    ]
+  },
+  "text": "This is a multiplier change. What is known: The token now stands for 1.000778223752807865 shares (eth_call uiMultiplier()). The company announced 0.25 USD per share with ex-date 2026-09-10 (Yahoo Finance chart events). Not yet confirmed: The multiplier before the change has not been read from the chain. The share price used for the reinvestment is not known. The withholding rate the issuer applies has not been confirmed."
+}

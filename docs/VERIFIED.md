@@ -36,9 +36,8 @@ Hackathon page: the page slug is `tokenized-stocks` on bnbchain.org.
 | Signature | `Base64(HMAC-SHA256(secret, timestamp + METHOD + requestPath + body))`. `requestPath` includes the raw URL-encoded query string, in the order sent. `body` is the raw JSON string for POST, empty for GET. |
 | Envelope | `{ "code": 0, "msg": "success", "data": ..., "timestamp": ..., "success": true }`. `code` 0 is success. |
 | Unauthenticated probe | `GET /build/api/v1/dex/market/rwa/tokens` with no key returns HTTP 401 `{"code":40101,"msg":"API Key is required"}` (observed from the build sandbox, 10 Oct). |
-| Region | IP checks are enforced on **both the Developer Portal and the API server**. Prohibited: US (and Guam, Northern Mariana Islands, Puerto Rico, US Virgin Islands, American Samoa, US Minor Outlying Islands), Canada, Netherlands, Iran, Cuba, North Korea, Crimea, Donetsk, Luhansk, United Kingdom, and Japan unless three conditions hold (Binance login, KYC country not prohibited, server IP in Japan). Create the key from an allowed location and host the server in one. |
-| API key permissions | Keys are bound to capability domains (Trading, Market, Wallet, Transaction, DeFi, B402). Select the domains needed when creating or editing a key; a missing domain returns HTTP 403, code `40104`. Bitstock needs Market (includes RWA Data), Trading, Transaction and Wallet. B402 is optional. |
-| Rate limits | Documented in the Authentication page: per IP 1,200 requests / 60 s; per API key 1,200 / 60 s; per user 6,000 / 60 s; per endpoint 5 requests/s by default. Exceeding returns HTTP 429, code `42900`, with a `Retry-After` header. Cache reads (30 s is enough for status and prices) and back off on 429. |
+| Region | The API refuses requests from restricted regions. Host the server somewhere allowed and test with a signed call before building on it. |
+| Rate limit | Not documented in the pages read. A third-party public log recorded `HTTP 429` with code `42900` on the RWA endpoints. UNVERIFIED for this build: cache responses (30 s is enough for status and prices) and back off on 429. |
 
 ---
 
@@ -51,8 +50,8 @@ Hackathon page: the page slug is `tokenized-stocks` on bnbchain.org.
 | `/api/v1/dex/market/rwa/tokens` | `binanceChainId` (56), `platformId` (`ondo` or `bstock`), `tabId` (sector 1 to 13, e.g. 9 = Magnificent 7, 4 = AI Chips) | per token: `tokenContractAddress`, `platformId`, `assetType` (1 stock, 2 pre-IPO, 3 ETF), `tokenName`, `tokenSymbol`, `tokenLogoUrl`, `decimals`, `underlyingTicker`, `underlyingName`, a **market-status object**, `tokenPrice`, `referencePrice`, `volume24H`, `marketCap`, `peRatioTTM` |
 | `/api/v1/dex/market/rwa/price` | `binanceChainId`, `tokenContractAddresses` (comma-separated, max 100, **required**) | `tokenPrice`, `referencePrice`, `tokenPriceUpdatedAt` |
 | `/api/v1/dex/market/rwa/search` | `keyword`, optional `platformId` | token matches |
-| `/api/v1/dex/market/rwa/underlying-profile` | `binanceChainId`, `tokenContractAddress` | company information. **UNVERIFIED field names.** Probe it and record. |
-| `/api/v1/dex/market/rwa/underlying-market` | `binanceChainId`, `tokenContractAddress` | the market-status object plus market data: `referencePrice`, `high52W`, `low52W`, `avgDailyVolume1Y`, `marketCap`, `turnoverRate`, `amplitude`, `peRatioTTM`, `pbRatio`, `dividendYield`, and a latest-dividend field (exact name UNVERIFIED) |
+| `/api/v1/dex/market/rwa/underlying-profile` | `binanceChainId`, `tokenContractAddress` | company information. Field names verified live 2026-10-10, see section 3a. |
+| `/api/v1/dex/market/rwa/underlying-market` | `binanceChainId`, `tokenContractAddress` | the market-status object plus market data: `referencePrice`, `high52W`, `low52W`, `avgDailyVolume1Y`, `marketCap`, `turnoverRate`, `amplitude`, `peRatioTTM`, `pbRatio`, `dividendYield`, and `latestDividend` (field name verified live 2026-10-10, see section 3a) |
 
 **Market-status object (verified fields):**
 
@@ -68,6 +67,42 @@ The reference pages **do not name the key** of this nested object (they print it
 
 **Important:** `referencePrice` is documented as "a per-share converted price derived from the on-chain token price, not an official quote from the traditional stock market." It is **not independent**. Do not use `tokenPrice` versus `referencePrice` to measure a weekend gap. It will read about zero by construction. See section 6.
 
+### 3a. Live results from a host in an allowed region (2026-10-10, Saturday, about 20:10 UTC)
+
+Run by `GET /v1/admin/probe?n=1|2|3` on the Railway service in `asia-southeast1-eqsg3a` (egress country SG). The same signed call from the build container (egress US) returned `40304` (`docs/evidence/01-rwa-tokens-bstock.json`). Raw responses: `docs/evidence/b1-rwa-tokens-bstock.railway-sg.json`, `b2-rwa-underlying-nvdab.railway-sg.json`, `b3-rwa-price-nvdab.railway-sg.json`.
+
+| Fact | Live result |
+|---|---|
+| Region refusal | `40304 "Service not available due to compliance restriction"` arrives as HTTP 200 with an envelope code (not a 4xx). From Singapore the same signed call returned HTTP 200, code 0. The key, secret and signing are correct. |
+| `/rwa/tokens?binanceChainId=56&platformId=bstock` | A top-level **array** of 46 tokens. `tokenContractAddress` is returned **lower case**. |
+| Market-status object | Its key is **`statusInfo`** (found by shape as designed). Fields: `openState`, `marketStatus`, `reasonCode`, `reasonMsg`, `nextOpenTime`, `nextCloseTime`. |
+| NVDAB status on a Saturday | `openState: true`, `reasonCode: "TRADING"`, `marketStatus: null`, `reasonMsg: null`, `nextOpenTime: null`, `nextCloseTime: null`. So the API did **not** report the market as closed on a weekend, and `marketStatus` is `null` here although the reference lists lower-case values. The guard must treat a null `marketStatus` as "not known" and must not assume weekends read as closed. Whether this holds for quotes is not tested yet (probe 4). |
+| Token fields in the list | `binanceChainId`, `tokenContractAddress`, `platformId`, `assetType` (1), `tokenName` ("NVIDIA (bStocks)"), `tokenSymbol`, `tokenLogoUrl`, `decimals` (string "18"), `underlyingTicker`, `underlyingName`, `underlyingNameZh`, **`tokenToShareRatio`**, `tags` (["alpha"]), `statusInfo`, `tokenPrice`, `referencePrice`, `volume24H`, `marketCap`, `peRatioTTM`. |
+| `tokenToShareRatio` | **Present in the live response** (list and profile) and equal to the on-chain `uiMultiplier()` read earlier: `1.000778223752807865`. AGENTS.md section 12 says this name is not in the API reference; the live response disagrees, so that row needs the owner's review. Bitstock still reads the multiplier from the chain, and treats this field as a cross-check only. |
+| Price fields disagree in meaning between endpoints | List: `tokenPrice` 230.70940392173479711845, `referencePrice` 230.53 (`tokenPrice` / ratio = 230.53 exactly). `/rwa/price`: `tokenPrice` "230.53000000", `referencePrice` "230.350736", `tokenPriceUpdatedAt` 1791663004630 (2026-10-10T20:10:04.630Z); here `referencePrice` = `tokenPrice` / ratio. So `/rwa/price` `tokenPrice` equals the list's `referencePrice`. Which one is the on-chain token price is **not settled**. Do not use either as a token price until it is compared with a live pool price. |
+| `/rwa/underlying-profile` | `binanceChainId`, `tokenContractAddress`, `platformId`, `underlyingTicker`, `underlyingFullName` ("NVIDIA (bStocks)", which is the token's name), `assetType`, `tokenToShareRatio`, `protections.collateralReport {supported, description, url}`, `companyInfo {ceo, website, industry, conceptsEn, conceptsCn, description, descriptionZh}`. |
+| `/rwa/underlying-market` | `statusInfo` plus `marketData {referencePrice (null), high52W, low52W, volumeShares24H, avgDailyVolume1Y (null), totalShares (null), marketCap, turnoverRate (null), amplitude (null), dividendYield, latestDividend, peRatioTTM, pbRatio}`. Several fields are null, so the app must show "unavailable" for them. |
+| Dividend fields | `latestDividend` = "0.250000" and `dividendYield` = "0.00120000" (units and date not stated by the API). Not yet compared with the multiplier change; that check belongs to the explainer step. |
+
+#### Trading probes (probes 4 to 6), Saturday 2026-10-10, about 21:05 UTC
+
+Raw: `docs/evidence/b4-trading-quote-usdt-nvdab.railway-sg.json`, `b5-swap-build-and-simulate.railway-sg.json`, `b6-approve-transaction-usdt.railway-sg.json`. USDT is `0x55d398326f99059fF775485246999027B3197955` (18 decimals), NVDAB `0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436`.
+
+| Fact | Live result |
+|---|---|
+| Quote while the US market is closed (Saturday) | **HTTP 200, code 0. One route, `vendorName` LiquidMesh, `executionMode` SWAP, `isBest` true.** No `40369`, and no PcsXRfq/RFQ route was offered. So `AGENTS.md` section 10, first row applies: a SWAP route is available. |
+| $1 quote | `toTokenAmount` 4334315581714481 (0.004334 NVDAB), `priceImpactPercent` 0.0006252806, `estimateGasFee` 250000, `tradeFee` 0.00975883. Implied price 230.717 USDT per token. Path: USDT to ETH to BTCB to USDC to NVDAB over several pools. |
+| $10 quote | `toTokenAmount` 43340475858576217, `priceImpactPercent` 0.0005158263, implied 230.731 USDT per token. Path: one PancakeSwap V3 hop. |
+| Price agreement | The implied $1 price (230.717) is within 0.01% of the token list's `tokenPrice` (230.709). That suggests the list's `tokenPrice` is the per-token price and the `/rwa/price` `tokenPrice` (230.53) is per share. Supported by this one reading only; not settled. |
+| Quote fields | `quoteId`, `vendorName`, `executionMode`, `binanceChainId`, `fromTokenAmount`, `toTokenAmount`, `tradeFee`, `estimateGasFee`, `priceImpactPercent`, `router`, `fromToken`/`toToken` (`tokenContractAddress`, `tokenSymbol`, `tokenUnitPrice`, `decimal`, `isHoneyPot`, `taxRate`), `dexRouterList`, `approveTarget`, `isBest`, `feeAmount`, `feeToken`, `actualSwapAmount`. The last three are `null` without a fee. |
+| Fee parameters | With `feePercent=0.15` and `feeSource=FROM_TOKEN`: $1 gives `feeAmount` 1500000000000000 (0.0015 USDT), `feeToken` USDT, `actualSwapAmount` 998500000000000000; $10 gives 15000000000000000 and 9985000000000000000. Output drops by 0.15% to match. |
+| Approve spender | `approveTarget` in the quote is `0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5` and it is the same address returned by `/approve-transaction` as `dexContractAddress`. |
+| `/approve-transaction` | Returns an array with one item: `data` (ERC-20 `approve(spender, amount)`, selector `0x095ea7b3`), `dexContractAddress`, `gasLimit` "70000", `gasPrice`. The result was identical in all three orders tried: without vendor and before any quote; with `vendor=LiquidMesh`; with `vendor=LiquidMesh` after a quote. Use the simplest. |
+| `/swap` response | Keys `executionMode`, `routerResult`, `tx`, `rfq`. The transaction object sits under `tx` and is also found by shape (`from`, `to`, `data`). `routerResult` repeats the route and has its own `toTokenAmount` (4334179567267663, slightly different from the quote a moment earlier, so the price moves between calls). |
+| Transaction API `simulate` (no USDT allowance yet) | HTTP 200, code 0, but `status` **FAILED**, `failReason` "execution reverted: BEP20: transfer amount exceeds allowance", `balanceChanges` [] and `allowanceChanges` []. The simulator is stateful and honest: without an approval it does not pretend. So the guard must check the USDT allowance first, require the approve step, and only then expect a SUCCESS simulation. A failed simulation for a missing allowance is not the same as a market problem and must say so. A SUCCESS result with `balanceChanges` showing NVDAB arriving has **not** been seen yet. |
+
+Verified since (2026-10-10 22:01 to 22:12 UTC): a `SUCCESS` simulation with NVDAB arriving (`docs/evidence/guard-nvdab-1usd-after-approval.railway-sg.json`), and a real buy that matched it: 1 USDT in, 0.004333697515150079 NVDAB out, gas used 939279, fee 0.0000490773 BNB (`docs/evidence/mode-a-buy-1usd.json`). The swap API's `tx.gas` (250000) was far below the gas used; size gas from the node's estimate. PublicNode refuses transaction and receipt lookups as archive requests; `bsc-dataseed.bnbchain.org` answers them. Still not verified: the `gas-limit` endpoint and `40369` for NVDAB.
+
 ### Trading (GET, signed)
 
 | Endpoint | Key parameters | Notes |
@@ -80,8 +115,8 @@ The reference pages **do not name the key** of this nested object (they print it
 - **Routing for bStocks (type 3):** LiquidMesh (SWAP) plus PcsXRfq (RFQ), possibly both returned together. Ondo tokens are always RFQ. xStocks are normal AMM swaps. A given token belongs to one type only.
 - **Only SWAP routes can be dry-run.** Refuse RFQ routes in this build.
 - **Custom fee:** parameter is `feePercent`, a decimal string in `(0, 5]` with at most 2 decimals (e.g. `"0.15"`). There is **no** `feeRate` parameter. RFQ routes ignore fee parameters. Quote and swap must agree on direction and percent or you get `SWAP_QUOTE_MISMATCH (40462)`. The response echoes `feeAmount`, `feeToken`, `actualSwapAmount` when a fee is on.
-- **Market hours error:** for bStocks, `/quote` can return **`40369 BSTOCK_INVALID_TRADING_TIME`** ("underlying stock exchange is currently closed"). For Ondo it is `40367`. **UNVERIFIED whether the NVDAB LiquidMesh SWAP route refuses quotes while the US market is closed.** Prompt 1 tests this on a weekend. The answer decides which path the build takes (see `AGENTS.md` section 8).
-- **Docs ambiguity to test:** the integration flow says call `/approve-transaction` before `/quote` (vendor omitted) for regular swaps, while the equity section says `vendor` is required in approve for equity tokens and `vendorName` only exists after a quote. USDT is the sell token here, so the approve is for USDT, not the stock. Test which order works and record it.
+- **Market hours error:** for bStocks, `/quote` can return **`40369 BSTOCK_INVALID_TRADING_TIME`** ("underlying stock exchange is currently closed"); for Ondo it is `40367`. **Tested live on Saturday 2026-10-10: NVDAB quoted normally with a LiquidMesh SWAP route and no `40369`** (section 3a). The `40369` behaviour is still unobserved for NVDAB; keep handling it.
+- **Approve order (tested live, section 3a):** `/approve-transaction` works both before and after the quote, with or without `vendor=LiquidMesh`, and returns the same calldata and spender in each order.
 - Quote expiry error: `QUOTE_EXPIRED (40401)`.
 
 ### Transaction (signed)
@@ -101,18 +136,22 @@ The reference pages **do not name the key** of this nested object (they print it
 
 ---
 
-## 4. NVDAB on-chain facts (read from BSC mainnet, 10 Oct 2026)
+## 4. NVDAB on-chain facts (read from BSC mainnet via `https://bsc-rpc.publicnode.com`, block 126884940, 2026-10-10 19:37 UTC)
+
+Raw results: `docs/evidence/07-onchain-nvdab.json` (reproduce with `node packages/chain/scripts/probe-onchain.ts`). Selectors were computed with the repository's own keccak256, which is tested against published vectors.
 
 | Fact | Value | Source |
 |---|---|---|
 | Address | `0x02Fca66C1D1aFB4E2A7884261eB00F63598a7436` | Matches a third-party public asset list, and the contract answered below |
-| `symbol()` / `name()` | `NVDAB` / `NVIDIA Corp` | `eth_call` |
-| `decimals()` | 18 | `eth_call` |
-| `uiMultiplier()` (selector `0xa60bf13d`) | `1000778223752807865` = **1.0007782237528078** | `eth_call` |
-| `newUIMultiplier()` / `effectiveAt()` | same value / 0 (nothing pending) | `eth_call` |
-| `toUIAmount(1e18)` | same as `uiMultiplier()` | `eth_call` |
-| `totalSupply()` | about 201,305 tokens | `eth_call` |
-| `multiplier()`, `scaledBalanceOf(address)`, `sharesMultiplier()` | **revert**, do not exist | `eth_call` |
+| `symbol()` / `name()` | `NVDAB` / `NVIDIA Corp` | `eth_call`, verified live |
+| `decimals()` | 18 | `eth_call`, verified live |
+| `uiMultiplier()` (selector `0xa60bf13d`) | `1000778223752807865` = **1.000778223752807865** | `eth_call`, verified live |
+| `newUIMultiplier()` (selector `0xdc767007`) / `effectiveAt()` (selector `0x97a4064f`) | same value as `uiMultiplier()` / 0 (nothing pending) | `eth_call`, verified live |
+| `toUIAmount(uint256)` (selector `0x3248d4ff`) with 1e18 | `1000778223752807865`, same as `uiMultiplier()` | `eth_call`, verified live |
+| `totalSupply()` | `201316210011080000000000` raw = about 201,316.21 tokens at this block (the earlier ledger said about 201,305; supply changes, so never hardcode it) | `eth_call`, verified live |
+| `multiplier()` (selector `0x1b3ed722`) | **reverts** ("execution reverted"), does not exist | `eth_call`, verified live |
+| `scaledBalanceOf(address)`, `sharesMultiplier()` | revert, do not exist | Earlier `eth_call`; not re-run in this probe |
+| RPC | `eth_chainId` returns 56; public node latency 45 to 81 ms per call | Same run |
 
 **The function is `uiMultiplier()`, not `multiplier()`.** The standard is **ERC-8056 "Scaled UI Amount"**. "BEP-8056" is not a name that exists. The BNB docs and third-party notes also call the family "BEP-677". Say "ERC-8056 scaled UI amount (BEP-677 in BNB docs)" or just "scaled UI amount".
 
@@ -125,7 +164,12 @@ ERC-8056 interface (from the EIP):
 - Interface IDs: `0xa60bf13d` (`IScaledUIAmount`), `0x4bd27648` (new multiplier), `0x57854fc3` (conversion), `0xd890fd71` (balances).
 - `balanceOf` and `totalSupply` stay **raw**. Wallets and protocols should transfer and account in raw amounts and convert only for display. The multiplier change can be scheduled in advance (`effectiveAt`), which is also the early-warning signal for a corporate action.
 
-**UNVERIFIED:** the history claim "1.000000 to 1.000778 on 10 Sept 2026". Public RPCs refuse historical log queries (archive access needed). Verify with a keyed RPC or BscScan's event log tab before the app or video states it.
+**UNVERIFIED:** the history claim "1.000000 to 1.000778 on 10 Sept 2026". Checked 2026-10-10 (`docs/evidence/nvdab-event-search.json`):
+
+- No free endpoint returned a historical log or historical state. PublicNode serves logs for recent blocks only (5,000 blocks worked; 50,000 refused: "Archive requests require a personal token"); `bsc-dataseed.bnbchain.org` answers "limit exceeded" to every `eth_getLogs` and "missing trie node" to old `eth_call`; blockrazor allows 25-block log ranges and no historical state; drpc, 1rpc and ankr are rate-limited or need a key; BscScan refuses scripted requests. So the log has been **neither found nor ruled out**.
+- NVDAB is a **beacon proxy** (EIP-1967 beacon slot `0x156d6dce9a4f6139a3406f1f021f1a4880de93a3`; beacon `implementation()` = `0xcfed6c4679297ea4889f8183bc057b4a86c64e46`). The implementation's bytecode (10,836 bytes) **contains the `UIMultiplierUpdated` topic hash**, so the code can emit the event. Which parameters are indexed is not known; the decoder accepts both complete layouts and refuses a mixed one.
+- The sentry records a snapshot every run and scans forward for the event from its first run, so future changes are captured with the public RPC. Older history needs a keyed archive RPC (`BSC_LOG_RPC_URL`).
+- Independent dividend data (Yahoo chart events, `docs/evidence/reference-yahoo-nvda-dividends.json`): NVDA paid 0.25 USD per share with ex-date **2026-09-10** (and 0.25 on 2026-06-04, 0.01 on 2026-03-11 and 2025-12-04). Ex-date close 218.36, previous close 223.67. If the multiplier was exactly 1.0 before, the implied net reinvestment is 0.169932 USD per share at the ex-date close or 0.174065 at the previous close (`docs/evidence/dividend-check-nvdab.json`); these would match 0.25 gross only with about 30% withheld, and the issuer's rate is not confirmed. Under the rule in AGENTS.md section 8 the app therefore says "multiplier change", not "dividend".
 
 ### How to explain the multiplier correctly
 
@@ -161,6 +205,20 @@ The RWA `referencePrice` is derived from the token's own price, so it cannot sho
 1. Verify it live and note its limits (some free sources rate-limit). 
 2. Show its name and timestamp in the Guard HUD.
 3. If it is unavailable, show "reference unavailable" and fall back to conservative limits. Never show a divergence number that was not computed from two independent prices.
+
+### 6a. Chosen source (checked live 2026-10-10, about 21:10 UTC)
+
+**Chosen: Yahoo Finance chart API**, `GET https://query1.finance.yahoo.com/v8/finance/chart/NVDA?interval=1d&range=1d`, fields `meta.regularMarketPrice`, `meta.regularMarketTime`, `meta.currency`, `meta.symbol`, `meta.instrumentType`. Raw response: `docs/evidence/reference-yahoo-nvda-chart.json`. Code: `packages/guard/src/reference.ts`, behind an interface so it can be replaced.
+
+| Fact | Live result |
+|---|---|
+| NVDA last price | 229.28 USD, `regularMarketTime` 1791576000 = 2026-10-09T20:00:00Z (Friday 16:00 New York, the close). HTTP 200, `cache-control: public, max-age=10`. |
+| Why it is independent | It is a stock-market price feed, not derived from the BSC token or the Binance pool. |
+| Limits | Unofficial and undocumented endpoint: no SLA, no stated rate limit, terms of use not reviewed for this use (**the owner should decide whether that is acceptable**). Not real-time (treated as a last close when older than 30 minutes). It may refuse some server IPs; when it does, the check is "unavailable", which is a warning and never a pass. |
+| Candidates rejected | **Pyth Hermes** (`hermes.pyth.network`): the feed list works and has `Equity.US.NVDA/USD`, but every price endpoint returned HTTP 401 "unauthorized" for equity and crypto feeds alike, so it needs credentials we do not have. **Nasdaq quote API** (`api.nasdaq.com/api/quote/NVDA/info`): returned the same price, 229.28, but only a date, and the date was "Oct 8, 2026" while the close it reports was on 9 Oct; a price without a reliable time cannot be shown as the guard requires. **Stooq**: the connection was reset from the build container. |
+| Pyth Pro (checked 2026-10-10 21:28 UTC) | Feed `Equity.US.NVDA/USD` is `pyth_lazer_id` 1314 (exponent -5, `min_channel` `fixed_rate@50ms`, state stable), from the public symbols API `https://pyth.dourolabs.app/v1/symbols?query=NVDA` (`docs/evidence/pyth-pro-symbols-nvda.json`). `POST https://pyth-lazer.dourolabs.app/v1/latest_price` with the owner's key returned **HTTP 403 "Not entitled: feed 1314 (no grant accepts this feed (asset type 'equity', instrument type 'spot', exchange 1))"** (`docs/evidence/pyth-pro-latest-nvda.railway-sg.json`). The key is accepted but its plan does not include US equities. Until it does, the guard falls back to Yahoo and its record says so. The Pyth response shape for a successful read is therefore still unverified. |
+| Owner decision (2026-10-10) | Keep Yahoo as the reference source for now, with Pyth Pro tried first and Yahoo as the labelled fallback until Pyth grants US equities. |
+| Weekend gap at test time | Binance quote for $1: 230.717 USDT per token, 230.50 USD per token after the quote's USDT price (0.99904), so 230.32 USD per share after the multiplier, against the 229.28 close: about +0.45%. Computed from two independent prices at one moment; it is not a typical or expected figure. |
 
 ---
 

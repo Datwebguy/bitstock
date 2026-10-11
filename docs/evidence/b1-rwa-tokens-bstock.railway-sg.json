@@ -1,0 +1,1443 @@
+{
+  "probe": 1,
+  "name": "RWA tokens (bstock), NVDAB entry and market-status object",
+  "ranAt": "2026-10-10T20:10:49.298Z",
+  "calls": [
+    {
+      "method": "GET",
+      "path": "/api/v1/dex/market/rwa/tokens",
+      "query": "binanceChainId=56&platformId=bstock",
+      "body": "",
+      "httpStatus": 200,
+      "json": {
+        "code": 0,
+        "msg": "success",
+        "data": [
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x7c26a12f20507e2cee22ceebed9e88fda47f866c",
+            "platformId": "bstock",
+            "assetType": 3,
+            "tokenName": "GraniteShares 2X Long MRVL ETF (bStocks)",
+            "tokenSymbol": "MVLLB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/bd5e5584140045ccaf50e75fab3af8f6.png",
+            "decimals": "18",
+            "underlyingTicker": "MVLL",
+            "underlyingName": "2x Long Marvell Daily ETF - GraniteShares",
+            "underlyingNameZh": "每日2倍做多迈威尔科技ETF-GraniteShares",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "39.03",
+            "referencePrice": "39.03",
+            "volume24H": "59467861",
+            "marketCap": null,
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x80f3d493ebce97e343c53d29a137942416b4ffc0",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Circle Internet Group (bStocks)",
+            "tokenSymbol": "CRCLB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/9fbfbfc1e19f49c09a21b9685175c793.png",
+            "decimals": "18",
+            "underlyingTicker": "CRCL",
+            "underlyingName": "Circle Internet Group, Inc.",
+            "underlyingNameZh": "Circle",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "85.92",
+            "referencePrice": "85.92",
+            "volume24H": "1015980156",
+            "marketCap": "21455050703",
+            "peRatioTTM": "47.54"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x9e82e3da8f1115b73d24bb24113ab836ffdab6b6",
+            "platformId": "bstock",
+            "assetType": 3,
+            "tokenName": "Tradr 2X Long SNDK ETF (bStocks)",
+            "tokenSymbol": "SNXXB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/79a5211d333b4936bba1a612a5514009.png",
+            "decimals": "18",
+            "underlyingTicker": "SNXX",
+            "underlyingName": "2X Long SanDisk Daily ETF - Tradr",
+            "underlyingNameZh": "每日2倍做多闪迪ETF-Tradr",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "13.94",
+            "referencePrice": "13.94",
+            "volume24H": "400492630",
+            "marketCap": null,
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x10343ef7da3301493d7ecb647d68a288c6c1db2f",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Applied Optoelectronics (bStocks)",
+            "tokenSymbol": "AAOIB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/0c23e02afcf0454eb3331d8dd5854ef3.png",
+            "decimals": "18",
+            "underlyingTicker": "AAOI",
+            "underlyingName": "Applied Optoelectronics, Inc.",
+            "underlyingNameZh": "Applied Optoelectronics",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "111.5",
+            "referencePrice": "111.5",
+            "volume24H": "1541548784",
+            "marketCap": "9309125526",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x0bb3fa77e0809f42948e435f04883c25415e8263",
+            "platformId": "bstock",
+            "assetType": 3,
+            "tokenName": "Direxion MU Bull 2X ETF (bStocks)",
+            "tokenSymbol": "MUUB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/610db7e015c44b01b86b71626dbf91bb.png",
+            "decimals": "18",
+            "underlyingTicker": "MUU",
+            "underlyingName": "Daily 2X Long Micron ETF - Direxion",
+            "underlyingNameZh": "每日2倍做多美光科技ETF-Direxion",
+            "tokenToShareRatio": "1.003951968068627743",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "34.3351573079470688106",
+            "referencePrice": "34.2",
+            "volume24H": "568899532",
+            "marketCap": null,
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x1ffad32d69c5fead99f88c25ca0191edc3757636",
+            "platformId": "bstock",
+            "assetType": 3,
+            "tokenName": "South Korea Bull 3X ETF (bStocks)",
+            "tokenSymbol": "KORUB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/bb55d34d6926487093325d1197157ffa.png",
+            "decimals": "18",
+            "underlyingTicker": "KORU",
+            "underlyingName": "Daily MSCI South Korea Bull 3X ETF - Direxion",
+            "underlyingNameZh": "每日3倍做多MSCI韩国ETF-Direxion",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "18.09",
+            "referencePrice": "18.09",
+            "volume24H": "171692236",
+            "marketCap": null,
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xe87afb3076aeb0f9b14e368de8145ae6a2826a14",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Strategy (bStocks)",
+            "tokenSymbol": "MSTRB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/1528983e76954814b60f1f038b14d27c.png",
+            "decimals": "18",
+            "underlyingTicker": "MSTR",
+            "underlyingName": "Strategy Inc",
+            "underlyingNameZh": "Strategy Inc",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "155.97",
+            "referencePrice": "155.97",
+            "volume24H": "2284286520",
+            "marketCap": "61543202331",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x3ee4df61bd4f867e349beae8bfe07bc31b4850fb",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "SanDisk (bStocks)",
+            "tokenSymbol": "SNDKB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/46e35a5623164e07a0db9c1c8dc0bf6c.png",
+            "decimals": "18",
+            "underlyingTicker": "SNDK",
+            "underlyingName": "SanDisk",
+            "underlyingNameZh": "闪迪",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "1596.41",
+            "referencePrice": "1596.41",
+            "volume24H": "8372051438",
+            "marketCap": "228616591286",
+            "peRatioTTM": "20"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x93862d63fd9fd488b1328e9b47717d75e994a84b",
+            "platformId": "bstock",
+            "assetType": 3,
+            "tokenName": "Roundhill Memory ETF (bStocks)",
+            "tokenSymbol": "DRAMB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/6adad59fc0204487936904882e1d0bbb.png",
+            "decimals": "18",
+            "underlyingTicker": "DRAM",
+            "underlyingName": "Roundhill Memory ETF",
+            "underlyingNameZh": "存储芯片ETF-Roundhill",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "57.71",
+            "referencePrice": "57.71",
+            "volume24H": "888286489",
+            "marketCap": "25312840200",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xca750ef65f295bbecd685abf54e82caf297bdb61",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "SK Hynix (bStocks)",
+            "tokenSymbol": "SKHYB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/c02a88c22f45480e98ee1795e8b97048.png",
+            "decimals": "18",
+            "underlyingTicker": "SKHY",
+            "underlyingName": "SK Hynix",
+            "underlyingNameZh": "海力士",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "171.16",
+            "referencePrice": "171.16",
+            "volume24H": "1639186071",
+            "marketCap": "1201930917650",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xcdf2f3e0fa43c47a6662a91c9e4a7c5f69762699",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Micron Technology (bStocks)",
+            "tokenSymbol": "MUB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/24c98e3a631f44d4a2ad67366e26e3eb.png",
+            "decimals": "18",
+            "underlyingTicker": "MU",
+            "underlyingName": "Micron Technology, Inc.",
+            "underlyingNameZh": "美光科技",
+            "tokenToShareRatio": "1.000107512568805603",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "1037.00147870746884169467",
+            "referencePrice": "1036.89",
+            "volume24H": "19420898884",
+            "marketCap": "1164234485148",
+            "peRatioTTM": "13.7"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x16cd4fe7e8880ecc3ba222795229e20489fc2c76",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Marvell Technology (bStocks)",
+            "tokenSymbol": "MRVLB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/ad1c5119a4e64a328c34819038371657.png",
+            "decimals": "18",
+            "underlyingTicker": "MRVL",
+            "underlyingName": "Marvell Technology, Inc.",
+            "underlyingNameZh": "迈威尔科技",
+            "tokenToShareRatio": "1.000153284671603306",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "277.23248897812172039014",
+            "referencePrice": "277.19",
+            "volume24H": "3841043809",
+            "marketCap": "247395405867",
+            "peRatioTTM": "93.71"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x33e7317e17838fee56b10fe8d0b9ca6ca3090c95",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "CoreWeave (bStocks)",
+            "tokenSymbol": "CRWVB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/febe7958a1de4dca9d213c098ae450eb.png",
+            "decimals": "18",
+            "underlyingTicker": "CRWV",
+            "underlyingName": "CoreWeave, Inc.",
+            "underlyingNameZh": "CoreWeave",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "82.93",
+            "referencePrice": "82.93",
+            "volume24H": "1509478335",
+            "marketCap": "45270124292",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x585bde7c54abb5ccd7791f923d6c2187635f3952",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Coinbase (bStocks)",
+            "tokenSymbol": "COINB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/c263f4c302714929996a0c2af29565fd.png",
+            "decimals": "18",
+            "underlyingTicker": "COIN",
+            "underlyingName": "Coinbase Global, Inc.",
+            "underlyingNameZh": "Coinbase Global, Inc.",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "181.08",
+            "referencePrice": "181.08",
+            "volume24H": "1618533746",
+            "marketCap": "47329705617",
+            "peRatioTTM": "53.83"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xe256bc2a4f5297f8ba6f043f180a46300ecbcbb1",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Nebius (bStocks)",
+            "tokenSymbol": "NBISB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/f0b0cf5def0947d5b39464d71ad28b66.png",
+            "decimals": "18",
+            "underlyingTicker": "NBIS",
+            "underlyingName": "Nebius Group",
+            "underlyingNameZh": "Nebius Group",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "223.17",
+            "referencePrice": "223.17",
+            "volume24H": "1802977648",
+            "marketCap": "60099033043.26",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xe81c6bb0266cd68b4f17278531dd03ea1f12da4e",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Cerebras (bStocks)",
+            "tokenSymbol": "CBRSB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/65d044fc65aa4137a2d8bbcb064f59cf.png",
+            "decimals": "18",
+            "underlyingTicker": "CBRS",
+            "underlyingName": "Cerebras Systems Inc.",
+            "underlyingNameZh": "Cerebras Systems",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "165.13",
+            "referencePrice": "165.13",
+            "volume24H": "1019496758",
+            "marketCap": "39000888610.97",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xbe82f76637dba2c114c41df856c2c51e522e2cb8",
+            "platformId": "bstock",
+            "assetType": 3,
+            "tokenName": "iShares MSCI South Korea ETF (bStocks)",
+            "tokenSymbol": "EWYB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/2b3e712d5a4c4b578ca27ba3bfcdee32.png",
+            "decimals": "18",
+            "underlyingTicker": "EWY",
+            "underlyingName": "iShares MSCI South Korea ETF",
+            "underlyingNameZh": "韩国大盘及中盘股-iShares",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "178.24",
+            "referencePrice": "178.24",
+            "volume24H": "1062919988",
+            "marketCap": "23208823300",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xd97d097a89113fa59b76c572e5b2eb647e8eefaf",
+            "platformId": "bstock",
+            "assetType": 3,
+            "tokenName": "Semicon Bull 3X ETF (bStocks)",
+            "tokenSymbol": "SOXLB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/75f563ad51974f7498b9f10ee4cd1a03.png",
+            "decimals": "18",
+            "underlyingTicker": "SOXL",
+            "underlyingName": "Direxion Daily Semiconductor Bull 3X Shares",
+            "underlyingNameZh": "半导体三倍做多ETF-Direxion",
+            "tokenToShareRatio": "1.000441939278863313",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "140.40202175839567734642",
+            "referencePrice": "140.34",
+            "volume24H": "7830117619",
+            "marketCap": "21472097445",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x76682c454467b3a1150ad8b6a92fc5ee2c21d7ed",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Broadcom (bStocks)",
+            "tokenSymbol": "AVGOB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/93600d24b2d34df99c4dd8356443421c.png",
+            "decimals": "18",
+            "underlyingTicker": "AVGO",
+            "underlyingName": "Broadcom Inc.",
+            "underlyingNameZh": "博通",
+            "tokenToShareRatio": "1.001269208611258122",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "364.17162386400069155262",
+            "referencePrice": "363.71",
+            "volume24H": "5027550284",
+            "marketCap": "1725858141392",
+            "peRatioTTM": "45.1"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "NVIDIA (bStocks)",
+            "tokenSymbol": "NVDAB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/9dc00cf6f4c44054b6be2d2e032b76c0.png",
+            "decimals": "18",
+            "underlyingTicker": "NVDA",
+            "underlyingName": "Nvidia Corp",
+            "underlyingNameZh": "英伟达",
+            "tokenToShareRatio": "1.000778223752807865",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "230.70940392173479711845",
+            "referencePrice": "230.53",
+            "volume24H": "17054711459",
+            "marketCap": "5536424160000",
+            "peRatioTTM": "28.7"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x0735d9904b7e34e6fe39b0f66e00c111b3f2b681",
+            "platformId": "bstock",
+            "assetType": 3,
+            "tokenName": "GraniteShares 2X Long INTC ETF (bStocks)",
+            "tokenSymbol": "INTWB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/301fd996c0ef4579b52b7d52b9f4c771.png",
+            "decimals": "18",
+            "underlyingTicker": "INTW",
+            "underlyingName": "2x Long INTC Daily ETF - GraniteShares",
+            "underlyingNameZh": "每日2倍做多英特尔ETF-GraniteShares",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "23.63",
+            "referencePrice": "23.63",
+            "volume24H": "99989791",
+            "marketCap": null,
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xbe9d156892e55e7154bcd3cb0fea677f9d3103e1",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "SpaceX (bStocks)",
+            "tokenSymbol": "SPCXB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/ee1a85a61c204cdc9b0287eb65cd2c94.png",
+            "decimals": "18",
+            "underlyingTicker": "SPCX",
+            "underlyingName": "SpaceX",
+            "underlyingNameZh": "SpaceX",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "163.7",
+            "referencePrice": "163.7",
+            "volume24H": "14622795120",
+            "marketCap": "2142961965658.65",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xa394dcea3fd3847fd793afbfd163e2e3858b7c65",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Robinhood (bStocks)",
+            "tokenSymbol": "HOODB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/9b9e92f75ae04b5d8dd5e3e2df852888.png",
+            "decimals": "18",
+            "underlyingTicker": "HOOD",
+            "underlyingName": "Robinhood Markets, Inc.",
+            "underlyingNameZh": "Robinhood",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "109.55",
+            "referencePrice": "109.55",
+            "volume24H": "1383741258",
+            "marketCap": "98017949402",
+            "peRatioTTM": "47.31"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xd721c192d612db77621df57a9fab38418033c02e",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Quantinuum (bStocks)",
+            "tokenSymbol": "QNTB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/bcedcc5a2ddb412294906196ad57239c.png",
+            "decimals": "18",
+            "underlyingTicker": "QNT",
+            "underlyingName": "Quantinuum Inc.",
+            "underlyingNameZh": "Quantinuum",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "41.58",
+            "referencePrice": "41.58",
+            "volume24H": "41750355",
+            "marketCap": "1621577800.5",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xd42a79ebb7f527f40faecd196ffb47ad5e8d6f8c",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "ARM (bStocks)",
+            "tokenSymbol": "ARMB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/0f80627427c34b06b5e36377c5e31561.png",
+            "decimals": "18",
+            "underlyingTicker": "ARM",
+            "underlyingName": "Arm Holdings plc",
+            "underlyingNameZh": "Arm Holdings plc",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "267.36",
+            "referencePrice": "267.36",
+            "volume24H": "1050765584",
+            "marketCap": "284386658953.32",
+            "peRatioTTM": "283.27658"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x75fd4cf6f8392e41e70391d60c90c0d5211603a1",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Advanced Micro Devices (bStocks)",
+            "tokenSymbol": "AMDB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/df5ab026a69f42fb85eff88bbae9be38.png",
+            "decimals": "18",
+            "underlyingTicker": "AMD",
+            "underlyingName": "Advanced Micro Devices",
+            "underlyingNameZh": "AMD",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "610.48",
+            "referencePrice": "610.48",
+            "volume24H": "7681706962",
+            "marketCap": "992708073040",
+            "peRatioTTM": "154.29"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xe614e2fc6c787035ff51f452e8e826bfd32d5283",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Intel (bStocks)",
+            "tokenSymbol": "INTCB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/1a47b99875f441e9a734dc3157a8bba4.png",
+            "decimals": "18",
+            "underlyingTicker": "INTC",
+            "underlyingName": "Intel Corp",
+            "underlyingNameZh": "英特尔",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "105.07",
+            "referencePrice": "105.07",
+            "volume24H": "7316152394",
+            "marketCap": "553455220931",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x5f7a56e877b9130608bf8be962621011182fefe1",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Qualcomm (bStocks)",
+            "tokenSymbol": "QCOMB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/25c8ffc5c8ed4bc9a81ad10f961b697b.png",
+            "decimals": "18",
+            "underlyingTicker": "QCOM",
+            "underlyingName": "Qualcomm Inc",
+            "underlyingNameZh": "高通",
+            "tokenToShareRatio": "1.003804323223530061",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "176.9707021843083497543",
+            "referencePrice": "176.3",
+            "volume24H": "1015359191",
+            "marketCap": "187405833479",
+            "peRatioTTM": "20.24"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xc8da12cbcce7c45180692a6420b0076e03a5179a",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Rocket Lab (bStocks)",
+            "tokenSymbol": "RKLBB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/bc9e051604bd4ff5bcd117a33787f32f.png",
+            "decimals": "18",
+            "underlyingTicker": "RKLB",
+            "underlyingName": "Rocket Lab",
+            "underlyingNameZh": "火箭实验室",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "68.46",
+            "referencePrice": "68.46",
+            "volume24H": "949791288",
+            "marketCap": "43614223560",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x0ca5d51d0277bd006fd9607d3e560785ebad8222",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Palantir (bStocks)",
+            "tokenSymbol": "PLTRB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/4a9f57d0ecb34ee4b81e340173a48d2c.png",
+            "decimals": "18",
+            "underlyingTicker": "PLTR",
+            "underlyingName": "Palantir Technologies Inc.",
+            "underlyingNameZh": "Palantir Technologies Inc.",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "209.16",
+            "referencePrice": "209.16",
+            "volume24H": "6936031325",
+            "marketCap": "502359375244",
+            "peRatioTTM": "166.53"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x7138b48df7d98d7e3cc221bfe7192d0a178182d8",
+            "platformId": "bstock",
+            "assetType": 3,
+            "tokenName": "SPY (bStocks)",
+            "tokenSymbol": "SPYB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/6bb009e753d049e1b3ca2a6a1c60cc5f.png",
+            "decimals": "18",
+            "underlyingTicker": "SPY",
+            "underlyingName": "SPDR S&P 500 ETF Trust",
+            "underlyingNameZh": "标普500ETF-SPDR",
+            "tokenToShareRatio": "1.001729792036835231",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "780.87842478647416762143",
+            "referencePrice": "779.53",
+            "volume24H": "16594804885",
+            "marketCap": "776964863783",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xebe29695f8047c13d36e7a790ca8c1b239ffad1c",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Western Digital (bStocks)",
+            "tokenSymbol": "WDCB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/5daf8c746221411694add37c957b812a.png",
+            "decimals": "18",
+            "underlyingTicker": "WDC",
+            "underlyingName": "Western Digital",
+            "underlyingNameZh": "西部数据",
+            "tokenToShareRatio": "1.000224983929808861",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "397.01930287125903119673",
+            "referencePrice": "396.93",
+            "volume24H": "2598059027",
+            "marketCap": "148711148308",
+            "peRatioTTM": "15.94"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x7c4d7a180d737dd5a70d8065a90e6746a69c37ea",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Nokia (bStocks)",
+            "tokenSymbol": "NOKB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/8f221ce188b548a8ac5ccc500aec0348.png",
+            "decimals": "18",
+            "underlyingTicker": "NOK",
+            "underlyingName": "Nokia Oyj",
+            "underlyingNameZh": "诺基亚",
+            "tokenToShareRatio": "1.002349416320445721",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "10.36429296475340875514",
+            "referencePrice": "10.34",
+            "volume24H": "493036319",
+            "marketCap": "58001958035.28",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x7425889fe94f9d693e8daefe88bcced6acfef4c0",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Meta (bStocks)",
+            "tokenSymbol": "METAB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/71856b03dcf746f9997d05baacac06ba.png",
+            "decimals": "18",
+            "underlyingTicker": "META",
+            "underlyingName": "Meta Platforms, Inc.",
+            "underlyingNameZh": "Meta",
+            "tokenToShareRatio": "1.00054829041074495",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "719.6043359463118754895",
+            "referencePrice": "719.21",
+            "volume24H": "8119935494",
+            "marketCap": "1830816298721",
+            "peRatioTTM": "26.89"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xab78b89b5bb00236be0b4b20704cbfa04efc711c",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "TSMC (bStocks)",
+            "tokenSymbol": "TSMB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/a7f33097e88a4dd1afacbe032f0916ba.png",
+            "decimals": "18",
+            "underlyingTicker": "TSM",
+            "underlyingName": "Taiwan Semiconductor Manufacturing Co Ltd.",
+            "underlyingNameZh": "台积电",
+            "tokenToShareRatio": "1.002110464141050983",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "454.40698996475956824135",
+            "referencePrice": "453.45",
+            "volume24H": "3853247954",
+            "marketCap": "2351080534833.03",
+            "peRatioTTM": "33.67"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x205812cdbed920aff76c6580abd681a46d11efc7",
+            "platformId": "bstock",
+            "assetType": 3,
+            "tokenName": "Invesco QQQ Trust (bStocks)",
+            "tokenSymbol": "QQQB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/8e6c3f9117344cc69cc0c8dba2b0a06a.png",
+            "decimals": "18",
+            "underlyingTicker": "QQQ",
+            "underlyingName": "Invesco QQQ Trust",
+            "underlyingNameZh": "纳指100ETF-Invesco",
+            "tokenToShareRatio": "1.000724838657573033",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "752.00468725761983137818",
+            "referencePrice": "751.46",
+            "volume24H": "16044291619",
+            "marketCap": "459960798888",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x5b1910eaad6450e50f816082aa078c41f10c292f",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Tesla (bStocks)",
+            "tokenSymbol": "TSLAB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/3f0d2deb79c148d1be92596e3ca827d1.png",
+            "decimals": "18",
+            "underlyingTicker": "TSLA",
+            "underlyingName": "Tesla, Inc.",
+            "underlyingNameZh": "特斯拉",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "382.66",
+            "referencePrice": "382.66",
+            "volume24H": "14069674118",
+            "marketCap": "1511491787684",
+            "peRatioTTM": "397.34"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x4684d9887fc1c71cba7bab8e88835cec217eb598",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Oracle (bStocks)",
+            "tokenSymbol": "ORCLB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/bef7ea4b50b84700a09237520f2c690f.png",
+            "decimals": "18",
+            "underlyingTicker": "ORCL",
+            "underlyingName": "Oracle Corp",
+            "underlyingNameZh": "甲骨文",
+            "tokenToShareRatio": "1.002571827467211643",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "141.68345065766634938876",
+            "referencePrice": "141.32",
+            "volume24H": "3172619705",
+            "marketCap": "428654262469",
+            "peRatioTTM": "22.88"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x80106cb3ead06659a5ad19df39d9b4733863b9b0",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Microsoft (bStocks)",
+            "tokenSymbol": "MSFTB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/ba09db2c5dd94560ab772bd36d124ce9.png",
+            "decimals": "18",
+            "underlyingTicker": "MSFT",
+            "underlyingName": "Microsoft Corp",
+            "underlyingNameZh": "微软",
+            "tokenToShareRatio": "1.001313964833366845",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "535.3625244378079173477",
+            "referencePrice": "534.66",
+            "volume24H": "7607621296",
+            "marketCap": "3973186625869",
+            "peRatioTTM": "29.71"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x462b5f13b7c7748279358962925c5de83bb9e598",
+            "platformId": "bstock",
+            "assetType": 3,
+            "tokenName": "ProShares UltraPro QQQ (bStocks)",
+            "tokenSymbol": "TQQQB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/0365123cc0a1462ca462566d7809f52e.png",
+            "decimals": "18",
+            "underlyingTicker": "TQQQ",
+            "underlyingName": "ProShares UltraPro QQQ",
+            "underlyingNameZh": "纳指100三倍做多ETF-ProShares",
+            "tokenToShareRatio": "1.001347622058686173",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "81.36950776848883841798",
+            "referencePrice": "81.26",
+            "volume24H": "3109640214",
+            "marketCap": "32215363809",
+            "peRatioTTM": null
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x3f53de71c126bdabae20f9cd64848d317f6c3238",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Alphabet (bStocks)",
+            "tokenSymbol": "GOOGLB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/b8817c8f4a4345f8940181efbdff3037.png",
+            "decimals": "18",
+            "underlyingTicker": "GOOGL",
+            "underlyingName": "Alphabet Inc.",
+            "underlyingNameZh": "谷歌A",
+            "tokenToShareRatio": "1.000478058978107511",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "351.45793733841938753919",
+            "referencePrice": "351.29",
+            "volume24H": "5103912817",
+            "marketCap": "4300778882669",
+            "peRatioTTM": "17.62"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0xfa273b076feb8c0fb34e554ae341082323d016a3",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "IBM (bStocks)",
+            "tokenSymbol": "IBMB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/4ae1721a67cc454a8d246c196706aae7.png",
+            "decimals": "18",
+            "underlyingTicker": "IBM",
+            "underlyingName": "International Business Machines Corporation",
+            "underlyingNameZh": "IBM",
+            "tokenToShareRatio": "1.005005801623174456",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "227.70416447376263649592",
+            "referencePrice": "226.57",
+            "volume24H": "616199732",
+            "marketCap": "213986984001",
+            "peRatioTTM": "19.95"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x740e075cbbea22a082b9d6679e65e82767875b6a",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Corning (bStocks)",
+            "tokenSymbol": "GLWB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/62293f305b6848e980b44054d2097b82.png",
+            "decimals": "18",
+            "underlyingTicker": "GLW",
+            "underlyingName": "Corning Incorporated",
+            "underlyingNameZh": "康宁",
+            "tokenToShareRatio": "1.00129026931256489",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "156.1512174992944945955",
+            "referencePrice": "155.95",
+            "volume24H": "936646934",
+            "marketCap": "134962323701",
+            "peRatioTTM": "71.03"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x9bdc8b470dbf89dbcb123587c6f5e49cca3463be",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "AXT (bStocks)",
+            "tokenSymbol": "AXTIB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/afcd0691d1cd4f92a58ac284f90e79e1.png",
+            "decimals": "18",
+            "underlyingTicker": "AXTI",
+            "underlyingName": "AXT, Inc.",
+            "underlyingNameZh": "AXT",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "68.31",
+            "referencePrice": "68.31",
+            "volume24H": "569766719",
+            "marketCap": "4489142094",
+            "peRatioTTM": "1107.34"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x4ef9d3062c7f6eba4aae4990c5036598c6eff4ec",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Alibaba (bStocks)",
+            "tokenSymbol": "BABAB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/d8ecdb9271ed40b193ad479150ba2122.png",
+            "decimals": "18",
+            "underlyingTicker": "BABA",
+            "underlyingName": "Alibaba Group Holding Limited",
+            "underlyingNameZh": "阿里巴巴",
+            "tokenToShareRatio": "1",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "110.53",
+            "referencePrice": "110.53",
+            "volume24H": "1198079890",
+            "marketCap": "277060153856.43",
+            "peRatioTTM": "25"
+          },
+          {
+            "binanceChainId": "56",
+            "tokenContractAddress": "0x64748bea17b6d19e242adf20425de2440c656142",
+            "platformId": "bstock",
+            "assetType": 1,
+            "tokenName": "Lumentum (bStocks)",
+            "tokenSymbol": "LITEB",
+            "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/b992bec708e34afd847b1171447e16e1.png",
+            "decimals": "18",
+            "underlyingTicker": "LITE",
+            "underlyingName": "Lumentum Holdings Inc.",
+            "underlyingNameZh": "Lumentum",
+            "tokenToShareRatio": "1.000000000000000000",
+            "tags": [
+              "alpha"
+            ],
+            "statusInfo": {
+              "openState": true,
+              "marketStatus": null,
+              "reasonCode": "TRADING",
+              "reasonMsg": null,
+              "nextOpenTime": null,
+              "nextCloseTime": null
+            },
+            "tokenPrice": "1091.33",
+            "referencePrice": "1091.33",
+            "volume24H": "5462956867",
+            "marketCap": "99945499996",
+            "peRatioTTM": "178.77"
+          }
+        ],
+        "timestamp": 1791663049407,
+        "success": true
+      }
+    }
+  ],
+  "result": {
+    "count": 46,
+    "nvdab": {
+      "binanceChainId": "56",
+      "tokenContractAddress": "0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+      "platformId": "bstock",
+      "assetType": 1,
+      "tokenName": "NVIDIA (bStocks)",
+      "tokenSymbol": "NVDAB",
+      "tokenLogoUrl": "https://onchainos.bnbstatic.com/images/web3-data/public/token/logos/9dc00cf6f4c44054b6be2d2e032b76c0.png",
+      "decimals": "18",
+      "underlyingTicker": "NVDA",
+      "underlyingName": "Nvidia Corp",
+      "underlyingNameZh": "英伟达",
+      "tokenToShareRatio": "1.000778223752807865",
+      "tags": [
+        "alpha"
+      ],
+      "statusInfo": {
+        "openState": true,
+        "marketStatus": null,
+        "reasonCode": "TRADING",
+        "reasonMsg": null,
+        "nextOpenTime": null,
+        "nextCloseTime": null
+      },
+      "tokenPrice": "230.70940392173479711845",
+      "referencePrice": "230.53",
+      "volume24H": "17054711459",
+      "marketCap": "5536424160000",
+      "peRatioTTM": "28.7"
+    },
+    "marketStatusFoundByShape": {
+      "openState": true,
+      "marketStatus": null,
+      "reasonCode": "TRADING",
+      "reasonMsg": null,
+      "nextOpenTime": null,
+      "nextCloseTime": null
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "savedAt": "2026-10-10T21:28:25.355Z",
+  "ranOn": "Railway asia-southeast1-eqsg3a (egress SG), GET /v1/admin/probe?n=8",
+  "request": {
+    "method": "POST",
+    "url": "https://pyth-lazer.dourolabs.app/v1/latest_price",
+    "auth": "Authorization: Bearer <PYTH_API_KEY, not recorded>",
+    "body": {
+      "priceFeedIds": [
+        1314
+      ],
+      "properties": [
+        "price",
+        "exponent",
+        "confidence",
+        "publisherCount",
+        "feedUpdateTimestamp",
+        "marketSession"
+      ],
+      "formats": [],
+      "channel": "fixed_rate@50ms",
+      "parsed": true,
+      "jsonBinaryEncoding": "hex"
+    }
+  },
+  "httpStatus": 403,
+  "response": "Not entitled: feed 1314 (no grant accepts this feed (asset type 'equity', instrument type 'spot', exchange 1))"
+}

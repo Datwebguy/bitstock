@@ -1,0 +1,84 @@
+{
+  "savedAt": "2026-10-10T21:25:16Z",
+  "request": {
+    "method": "GET",
+    "url": "https://pyth.dourolabs.app/v1/symbols?query=NVDA",
+    "auth": "none"
+  },
+  "httpStatus": 200,
+  "response_entry_for_1314": {
+    "pyth_lazer_id": 1314,
+    "name": "NVDA",
+    "symbol": "Equity.US.NVDA/USD",
+    "description": "NVIDIA CORP / US DOLLAR",
+    "asset_type": "equity",
+    "instrument_type": "spot",
+    "exponent": -5,
+    "min_publishers": 2,
+    "min_channel": "fixed_rate@50ms",
+    "state": "stable",
+    "schedule": "America/New_York;0930-1600,0930-1600,0930-1600,0930-1600,0930-1600,C,C;0907/C,1126/C,1127/0930-1300,1224/0930-1300,1225/C,0101/C,0118/C,0215/C,0326/C,0531/C,0618/C,0705/C",
+    "hermes_id": "b1073854ed24cbc755dc527418f52b7d271f6cc967bbf8d8129112b18860a593",
+    "quote_currency": "USD",
+    "nasdaq_symbol": "NVDA",
+    "market_sessions": {
+      "regular": {
+        "min_pub": 3,
+        "schedule": "America/New_York;0930-1600,0930-1600,0930-1600,0930-1600,0930-1600,C,C;0907/C,1126/C,1127/0930-1300,1224/0930-1300,1225/C,0101/C,0118/C,0215/C,0326/C,0531/C,0618/C,0705/C",
+        "state": "stable"
+      },
+      "pre_market": {
+        "min_pub": 2,
+        "schedule": "America/New_York;0400-0930,0400-0930,0400-0930,0400-0930,0400-0930,C,C;0907/C,1126/C,1225/C,0101/C,0118/C,0215/C,0326/C,0531/C,0618/C,0705/C",
+        "state": "stable"
+      },
+      "post_market": {
+        "min_pub": 2,
+        "schedule": "America/New_York;1600-2000,1600-2000,1600-2000,1600-2000,1600-2000,C,C;0907/C,1126/C,1127/1300-1700,1224/1300-1700,1225/C,0101/C,0118/C,0215/C,0326/C,0531/C,0618/C,0705/C",
+        "state": "stable"
+      },
+      "over_night": {
+        "min_pub": 2,
+        "schedule": "America/New_York;0000-0400&2000-2400,0000-0400&2000-2400,0000-0400&2000-2400,0000-0400&2000-2400,0000-0400,C,2000-2400;0906/C,0907/2000-2400,1125/0000-0400,1126/2000-2400,1224/0000-0400,1225/C,1231/0000-0400,0101/C,0117/C,0118/2000-2400,0214/C,0215/2000-2400,0325/0000-0400,0326/C,0530/C,0531/2000-2400,0617/0000-0400,0618/C,0704/C,0705/2000-2400",
+        "state": "stable"
+      }
+    }
+  },
+  "other_matches": [
+    [
+      1314,
+      "Equity.US.NVDA/USD",
+      "stable"
+    ],
+    [
+      1720,
+      "Equity.US.NVDA/USD.EXT",
+      "inactive"
+    ],
+    [
+      1832,
+      "Crypto.NVDAX/NVDA.RR",
+      "stable"
+    ],
+    [
+      1833,
+      "Crypto.NVDAX/USD",
+      "stable"
+    ],
+    [
+      3127,
+      "Crypto.NVDAON/USD",
+      "stable"
+    ],
+    [
+      3188,
+      "Equity.Index.NVDA/USD",
+      "stable"
+    ],
+    [
+      3696,
+      "Crypto.AI/NVDA",
+      "stable"
+    ]
+  ]
+}

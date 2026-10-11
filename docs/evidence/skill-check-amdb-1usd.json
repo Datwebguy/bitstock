@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "decisionId": "a995d5fc-916a-4a1d-b08d-72ad0c5b7927",
+  "outcome": "LIMIT",
+  "reason": "The stock's own price is not live right now; its latest price is from 2026-10-09T20:00:01.000Z. You would pay +0.27% compared with it, and the stock can move before normal trading.",
+  "slippagePercent": "0.1000",
+  "recheckAt": null,
+  "token": {
+    "symbol": "AMDB",
+    "ticker": "AMD",
+    "company": "Advanced Micro Devices",
+    "address": "0x75fd4cf6f8392e41e70391d60c90c0d5211603a1"
+  },
+  "payToken": {
+    "symbol": "USDT",
+    "address": "0x55d398326f99059fF775485246999027B3197955"
+  },
+  "amountUsd": "1",
+  "checks": [
+    {
+      "name": "Stock market",
+      "result": "pass",
+      "reason": "Binance shows this stock as open for trading."
+    },
+    {
+      "name": "Shares per token",
+      "result": "pass",
+      "reason": "Each token stands for 1.000000 shares, and no change is planned."
+    },
+    {
+      "name": "Price vs the real stock",
+      "result": "warn",
+      "reason": "The stock's own price is not live right now; its latest price is from 2026-10-09T20:00:01.000Z. You would pay +0.27% compared with it, and the stock can move before normal trading."
+    },
+    {
+      "name": "Price impact",
+      "result": "pass",
+      "reason": "Your buy would move the price by less than 0.01%."
+    },
+    {
+      "name": "Test run",
+      "result": "pass",
+      "reason": "Bitstock tested this exact trade, and the stock arrives in your wallet."
+    }
+  ],
+  "checkedAt": "2026-10-11T00:01:22.099Z"
+}
