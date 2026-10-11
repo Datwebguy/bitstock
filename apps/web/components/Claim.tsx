@@ -11,6 +11,7 @@ interface GiftStatus {
 }
 
 const bnb = (wei: string | null) => (wei ? units18(wei, 8) : null);
+const CLAIM_STATUS: Record<string, string> = { confirmed: "Delivered", sending: "On its way", reverted: "Not delivered", failed: "Not sent" };
 
 export function ClaimView({ region }: { region: string | null }) {
   const w = useWallet();
@@ -92,7 +93,7 @@ export function ClaimView({ region }: { region: string | null }) {
         <h2 id="boxes">The boxes</h2>
         <p className="small">The gift is {g.fundedUsd ? `$${g.fundedUsd}` : "a small amount"} of {symbol}, split into ten boxes of different sizes. You receive the stock token itself, not dollars. The order claims take them was fixed and committed before the gift opened, and is revealed after it closes.</p>
         <ul className="list small">
-          {g.boxes?.map((b, i) => <li key={i}><span>{g.boxesUsd?.[i] ? `About $${g.boxesUsd[i]} worth` : ["Largest", "Large", "Large", "Medium", "Medium", "Medium", "Small", "Small", "Small", "Small"][i]}</span><span className="num">{units18(b, 8)} {symbol}</span></li>)}
+          {g.boxes?.map((b, i) => <li key={i}><span>{g.boxesUsd?.[i] ? `About $${g.boxesUsd[i]} worth` : `Box ${i + 1}`}</span><span className="num">{units18(b, 8)} {symbol}</span></li>)}
         </ul>
         <span className="source">Commitment: <span className="mono">{g.commitment}</span></span>
         {g.fundTx ? <span className="source">Bought with <a href={`https://bscscan.com/tx/${g.fundTx}`} target="_blank" rel="noopener noreferrer">this swap</a>.</span> : null}
@@ -104,7 +105,7 @@ export function ClaimView({ region }: { region: string | null }) {
           <ul className="list small">
             {g.claims.map((c) => (
               <li key={`${c.box}-${c.at}`}>
-                <span>Box {c.box} · {units18(c.amount, 8)} {symbol} to {c.wallet}<span className="source">{c.status === "confirmed" ? `Network fee paid by Bitstock: ${bnb(c.feeWei)} BNB` : c.status}</span></span>
+                <span>Box {c.box} · {units18(c.amount, 8)} {symbol} to {c.wallet}<span className="source">{c.status === "confirmed" ? `Network fee paid by Bitstock: ${bnb(c.feeWei)} BNB` : (CLAIM_STATUS[c.status] ?? "Unavailable")}</span></span>
                 {c.txHash ? <a href={`https://bscscan.com/tx/${c.txHash}`} target="_blank" rel="noopener noreferrer">BscScan</a> : null}
               </li>
             ))}
@@ -119,7 +120,7 @@ function Reveal({ g }: { g: GiftStatus }) {
   return (
     <>
       <h3>The draw, revealed</h3>
-      <p className="small">Check it yourself: sha256 of the order below followed by the secret equals the commitment published before the gift opened.</p>
+      <p className="small">You can check this yourself. Before the gift opened, Bitstock published a fingerprint of the order and a secret together (the commitment). Hash the order followed by the secret with SHA-256 and you get the same fingerprint, which shows nothing was changed afterwards.</p>
       <span className="source">Commitment: <span className="mono">{g.commitment}</span></span>
       <span className="source">Order: <span className="mono">{g.reveal?.assignment}</span></span>
       <span className="source">Secret: <span className="mono">{g.reveal?.secret}</span></span>

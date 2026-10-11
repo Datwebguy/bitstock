@@ -33,3 +33,9 @@ export const RESTRICTED_PLACES = [
   "Donetsk",
   "Luhansk",
 ] as const;
+
+/** The restricted places as one sentence fragment: "A, B or C". */
+export function restrictedList(): string {
+  const p = RESTRICTED_PLACES;
+  return `${p.slice(0, -1).join(", ")} or ${p[p.length - 1]}`;
+}

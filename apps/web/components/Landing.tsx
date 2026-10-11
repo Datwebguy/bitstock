@@ -54,7 +54,7 @@ function CheckConsole({ m, err }: { m: MarketView | null; err: boolean }) {
     { k: "Stock market", v: m ? s.text : "reading…", cls: m ? s.cls : "idle" },
     { k: "Shares per token", v: mult ? `${mult}${pending ? " · change planned" : " · no change planned"}` : m ? "unavailable" : "reading…", cls: mult ? (pending ? "warn" : "good") : "idle" },
     { k: `${m?.token.ticker ?? "Stock"} real price`, v: ref ? `$${trimDecimal(ref.pricePerShare, 2)} · ${ref.session === "regular" ? "live" : "last close"}` : m ? "unavailable" : "reading…", cls: ref ? (ref.session === "regular" ? "good" : "warn") : "idle" },
-    { k: "Token vs stock", v: gap ? `${gap.startsWith("-") ? "" : "+"}${gap}%` : m ? "unavailable" : "reading…", cls: gap ? (ref?.session === "regular" && Math.abs(Number(gap)) <= 0.5 ? "good" : "warn") : "idle" },
+    { k: "Token vs stock", v: gap ? `${gap.startsWith("-") ? "" : "+"}${gap}%` : m ? "unavailable" : "reading…", cls: "idle" },
     { k: "Test run of your trade", v: "runs when you check a buy", cls: "idle" },
   ];
   return (

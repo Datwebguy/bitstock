@@ -69,13 +69,14 @@ export function BuyFlow() {
       /* keep polling */
     }
     if (tries > 0) setTimeout(() => void poll(id, tries - 1), 3000);
+    else setBuyMsg("Your buy is taking longer than usual to confirm. It may still go through: look it up on BscScan with the link above, and it will appear under Holdings once it does.");
   };
 
   const buy = async () => {
     const p = d?.prepared;
     if (!d || !p || !w.account) return;
     if (Date.now() > p.expiresAt) {
-      setBuyMsg("This check is more than 90 seconds old. Check again so Bitstock reads the market fresh.");
+      setBuyMsg("This check has expired. Check again so Bitstock reads the market fresh.");
       return;
     }
     if (w.account.toLowerCase() !== p.from.toLowerCase()) {
@@ -156,7 +157,7 @@ export function BuyFlow() {
               </li>
             ))}
           </ol>
-          <p className="source">Checked {when(d.at)} · saved so you can look it up later (number {d.id.slice(0, 8)})</p>
+          <p className="source">Checked {when(d.at)} · saved so you can look it up later (reference {d.id.slice(0, 8)})</p>
 
           {p && (d.outcome === "GO" || d.outcome === "LIMIT") ? (
             <>
@@ -180,7 +181,7 @@ export function BuyFlow() {
               ) : (
                 <button className="btn btn-ghost" type="button" onClick={() => void check()}>Check again</button>
               )}
-              {hash ? <p className="msg info">Your buy on BscScan: <a className="mono" href={`https://bscscan.com/tx/${hash}`} target="_blank" rel="noopener noreferrer">{hash}</a></p> : null}
+              {hash ? <p className="msg info"><a href={`https://bscscan.com/tx/${hash}`} target="_blank" rel="noopener noreferrer">See your buy on BscScan</a></p> : null}
               {phase === "confirmed" ? <p className="msg ok" role="status">Done. Your {symbol} has arrived. See it under Holdings.</p> : null}
               {phase === "reverted" ? <p className="msg error" role="alert">Your buy was cancelled, for example because the price moved past your limit. Your USDT was not spent; only the network fee was.</p> : null}
               {buyMsg ? <p className="msg error" role="alert">{buyMsg}</p> : null}

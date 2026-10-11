@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, fromLine, when, type MarketView } from "@/lib/api";
+import { api, fromLine, when, type AgentConfig, type MarketView } from "@/lib/api";
 import { StockPicker, useSelectedSymbol, useTokens } from "./Stocks";
 
 // The repository the skill is installed from (owner/name), set at build time. Nothing is baked in.
@@ -61,7 +61,7 @@ function OpenWindow({ address, ticker }: { address: string; ticker: string }) {
       <p className="small">
         {regular
           ? `Binance reports ${ticker} in its regular trading session. A scheduled buy runs its checks a set delay after the open.`
-          : `A scheduled buy of ${ticker} waits until Binance reports a regular trading session${next ? ` (Binance says it opens ${next})` : ""}, then waits a short delay (15 minutes unless you change it) and runs every check again before asking you.`}
+          : `A scheduled buy of ${ticker} waits until Binance reports a regular trading session${next ? ` (Binance says it opens ${next})` : ""}, then waits a short, set delay and runs every check again before asking you.`}
       </p>
       <span className="source">{fromLine(m.session.source, m.session.asOf)}</span>
     </>
@@ -73,13 +73,19 @@ export function AutopilotView() {
   const [symbol, setSymbol] = useSelectedSymbol(list ?? null);
   const t = list?.tokens.find((x) => x.symbol === symbol) ?? null;
   const ticker = t?.ticker ?? symbol;
+  // Example amounts are the real most-per-buy limit from the server, never a number typed here.
+  const [maxUsd, setMaxUsd] = useState<string | null>(null);
+  useEffect(() => {
+    api<AgentConfig>("/config").then((c) => setMaxUsd(c.maxBuyUsd)).catch(() => setMaxUsd(null));
+  }, []);
+  const howMuch = maxUsd ? `$${maxUsd}` : "a small amount";
   return (
     <div className="grid">
       <section className="card" aria-labelledby="ap-how">
         <h2 id="ap-how">How it works</h2>
         <ol className="ap-steps">
           <li><b>You set the limits</b> in the Binance App: how much your Agentic Wallet may spend a day and which tokens it may trade. Bitstock can read them and can never change them.</li>
-          <li><b>You ask your AI agent</b>, for example: “Buy $2 of {ticker} with Bitstock at the next market open.”</li>
+          <li><b>You ask your AI agent</b>, for example: “Buy {howMuch} of {ticker} with Bitstock at the next market open.”</li>
           <li><b>Bitstock waits and checks.</b> At the open it reads the market, the token, the real stock&apos;s price, the price impact and a test run, and shows you every result.</li>
           <li><b>You say yes</b>, and your Agentic Wallet buys within your limits, at the price limit the checks allow.</li>
           <li><b>You see it</b> on BscScan and under Holdings, explained in shares.</li>
@@ -94,12 +100,12 @@ export function AutopilotView() {
 
       <section className="card" aria-labelledby="ap-setup">
         <h2 id="ap-setup">Set it up</h2>
-        <p className="small">You need a Binance Agentic Wallet, created and signed in through the Binance App, and an AI agent that can use skills. Add {INSTALL.length > 1 ? "the two skills" : "the Binance Agentic Wallet skill"}:</p>
-        {!REPO ? <p className="msg info">The Bitstock skill is not published yet, so there is nothing to install for it.</p> : null}
+        <p className="small">You need a Binance Agentic Wallet, created and signed in through the Binance App, and an AI agent that can take extra abilities, called skills. Paste {INSTALL.length > 1 ? "each of these two lines" : "this line"} into your agent&apos;s terminal to add {INSTALL.length > 1 ? "them" : "it"}:</p>
+        {!REPO ? <p className="msg info">The Bitstock skill is not published yet, so there is nothing to add for it.</p> : null}
         {INSTALL.map((c) => <Copy key={c} text={c} />)}
         <p className="small">Then ask your agent:</p>
-        <Copy text={`Buy $1 of ${ticker} with Bitstock now.`} />
-        <Copy text={`Buy $2 of ${ticker} with Bitstock at the next market open.`} />
+        <Copy text={`Buy ${howMuch} of ${ticker} with Bitstock now.`} />
+        <Copy text={`Buy ${howMuch} of ${ticker} with Bitstock at the next market open.`} />
       </section>
 
       <section className="card" aria-labelledby="ap-never">
@@ -111,7 +117,7 @@ export function AutopilotView() {
           <li>Swap a price-drop order for a market buy on its own.</li>
           <li>Trade for anyone who has not set it up in their own wallet.</li>
         </ul>
-        <p className="small muted">Status: the skill is built and its checks run live; the first buy through a real Agentic Wallet has not been made yet.</p>
+        <p className="small muted">This part is new: its checks run on live data, but no real purchase has gone through an Agentic Wallet yet.</p>
       </section>
     </div>
   );
