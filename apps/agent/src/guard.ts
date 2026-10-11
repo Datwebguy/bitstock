@@ -1,12 +1,12 @@
 import { join } from "node:path";
 import { BinanceApi, BinanceClient } from "@bitstock/binance";
-import { FallbackReferenceSource, guardConfigFromEnv, JsonlDecisionStore, PythProSource, runGuard, YahooChartSource, type DecisionRecord, type ReferencePriceSource } from "@bitstock/guard";
+import { FallbackReferenceSource, guardConfigFromEnv, JsonlDecisionStore, PythProSource, runGuard, ChartPriceSource, type DecisionRecord, type ReferencePriceSource } from "@bitstock/guard";
 import { USDT } from "./probes.ts";
 
-/** Pyth Pro first when its key is configured, then Yahoo as a labelled fallback. */
+/** Pyth Pro first when its key is configured, then the market chart feed as a labelled fallback. */
 export function referenceSource(env: NodeJS.ProcessEnv): ReferencePriceSource {
   const key = env["PYTH_API_KEY"];
-  return key ? new FallbackReferenceSource([new PythProSource({ apiKey: key }), new YahooChartSource()]) : new YahooChartSource();
+  return key ? new FallbackReferenceSource([new PythProSource({ apiKey: key }), new ChartPriceSource()]) : new ChartPriceSource();
 }
 
 /** Runs the guard once against live data and stores the decision record. */

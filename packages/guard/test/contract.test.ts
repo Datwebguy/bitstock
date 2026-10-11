@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { findMarketStatus } from "@bitstock/binance";
 import { DEFAULT_GUARD_CONFIG as cfg } from "../src/config.ts";
-import { parseYahooChart } from "../src/reference.ts";
+import { parseChartPrice } from "../src/reference.ts";
 import { checkExecution, checkSession, checkSimulation, quotePricePerToken, type MarketStatusObs, type Route } from "../src/rules.ts";
 
 // Replays real responses saved in docs/evidence/ (AGENTS.md section 4, item 9).
@@ -29,13 +29,13 @@ describe("contract: recorded live responses", () => {
     expect(c.result).toBe("fail");
     expect(c.reason).toContain("Approve USDT");
   });
-  it("parses the real Yahoo chart response for NVDA", () => {
-    const r = parseYahooChart(ev("reference-yahoo-nvda-chart.json").response, "NVDA");
+  it("parses the real chart-feed response for NVDA", () => {
+    const r = parseChartPrice(ev("reference-chart-nvda-chart.json").response, "NVDA");
     expect(r).toEqual({ pricePerShare: "229.28", currency: "USD", priceTime: "2026-10-09T20:00:00.000Z" });
   });
-  it("refuses a Yahoo response for the wrong symbol or with an error", () => {
-    const body = ev("reference-yahoo-nvda-chart.json").response;
-    expect(() => parseYahooChart(body, "TSLA")).toThrow(/symbol mismatch/);
-    expect(() => parseYahooChart({ chart: { error: { code: "Not Found" } } }, "NVDA")).toThrow();
+  it("refuses a chart-feed response for the wrong symbol or with an error", () => {
+    const body = ev("reference-chart-nvda-chart.json").response;
+    expect(() => parseChartPrice(body, "TSLA")).toThrow(/symbol mismatch/);
+    expect(() => parseChartPrice({ chart: { error: { code: "Not Found" } } }, "NVDA")).toThrow();
   });
 });

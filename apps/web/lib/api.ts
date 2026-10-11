@@ -82,7 +82,7 @@ export function when(iso: string | null | undefined): string {
 /** Plain-language names for data sources; the full technical source stays in the stored decision record. */
 export function friendlySource(source: string): string {
   const s = source.toLowerCase();
-  if (s.includes("yahoo")) return "Yahoo Finance";
+  if (s.includes("chart feed")) return "a separate market feed";
   if (s.includes("pyth")) return "Pyth";
   if (s.includes("simulate")) return "Binance test run";
   if (s.includes("quote")) return "Binance live price";

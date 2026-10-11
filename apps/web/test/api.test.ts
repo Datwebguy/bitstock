@@ -6,7 +6,7 @@ describe("web display helpers", () => {
     expect(friendlySource("Binance Web3 API rwa/underlying-market")).toBe("Binance");
     expect(friendlySource("BSC eth_call uiMultiplier/newUIMultiplier/effectiveAt")).toBe("the token on BNB Smart Chain");
     expect(friendlySource("BNB Smart Chain: uiMultiplier, newUIMultiplier, effectiveAt")).toBe("the token on BNB Smart Chain");
-    expect(friendlySource("Yahoo Finance chart API (regularMarketPrice) (fallback; earlier source failed: Pyth Pro …)")).toBe("Yahoo Finance");
+    expect(friendlySource("Market chart feed (regularMarketPrice) (fallback; earlier source failed: Pyth Pro …)")).toBe("a separate market feed");
     expect(friendlySource("Binance Web3 API pre-transaction/simulate")).toBe("Binance test run");
     expect(friendlySource("Binance Web3 API aggregator/quote")).toBe("Binance live price");
     expect(friendlySource("something internal")).toBe("Bitstock");

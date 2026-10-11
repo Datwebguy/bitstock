@@ -1,6 +1,6 @@
 /**
  * Independent reference price (docs/adr/0003). The source sits behind this interface so it can be replaced.
- * Current source: Yahoo Finance chart API. See docs/VERIFIED.md section 6 for its verified behaviour and limits.
+ * Current source: a public market-chart feed. See docs/VERIFIED.md section 6 for its verified behaviour and limits.
  */
 import type { ReferenceObs } from "./rules.ts";
 
@@ -9,10 +9,10 @@ export interface ReferencePriceSource {
   read(ticker: string): Promise<ReferenceObs>;
 }
 
-export const YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart/";
+export const CHART_API_URL = "https://query1.finance.yahoo.com/v8/finance/chart/";
 
-/** Parse a Yahoo chart response. Throws on anything that is not a usable, timestamped USD equity price. */
-export function parseYahooChart(json: unknown, ticker: string): ReferenceObs {
+/** Parse a chart-feed response. Throws on anything that is not a usable, timestamped USD equity price. */
+export function parseChartPrice(json: unknown, ticker: string): ReferenceObs {
   const chart = (json as { chart?: { result?: Array<{ meta?: Record<string, unknown> }>; error?: unknown } })?.chart;
   if (!chart) throw new Error("response has no chart object");
   if (chart.error) throw new Error(`source error: ${JSON.stringify(chart.error)}`);
@@ -28,8 +28,8 @@ export function parseYahooChart(json: unknown, ticker: string): ReferenceObs {
   return { pricePerShare: String(price), currency: String(meta["currency"] ?? ""), priceTime: new Date(time * 1000).toISOString() };
 }
 
-export class YahooChartSource implements ReferencePriceSource {
-  readonly name = "Yahoo Finance chart API (regularMarketPrice)";
+export class ChartPriceSource implements ReferencePriceSource {
+  readonly name = "Market chart feed (regularMarketPrice)";
   readonly #fetch: typeof fetch;
   readonly #timeoutMs: number;
   constructor(options: { fetch?: typeof fetch; timeoutMs?: number } = {}) {
@@ -38,11 +38,11 @@ export class YahooChartSource implements ReferencePriceSource {
   }
   async read(ticker: string): Promise<ReferenceObs> {
     if (!/^[A-Z.]{1,10}$/.test(ticker)) throw new Error(`invalid ticker: ${ticker}`);
-    const res = await this.#fetch(`${YAHOO_CHART_URL}${ticker}?interval=1d&range=1d`, {
+    const res = await this.#fetch(`${CHART_API_URL}${ticker}?interval=1d&range=1d`, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; bitstock-guard)", Accept: "application/json" },
       signal: AbortSignal.timeout(this.#timeoutMs),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return parseYahooChart(await res.json(), ticker);
+    return parseChartPrice(await res.json(), ticker);
   }
 }
