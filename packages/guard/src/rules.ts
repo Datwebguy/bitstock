@@ -51,6 +51,9 @@ export interface SimulationObs {
   balanceChanges?: Array<{ contractAddress?: string; change?: string; owner?: string }>;
 }
 
+/** An integer amount from an upstream response, or undefined when it is missing or malformed. */
+const intOrUndefined = (v: string | undefined): bigint | undefined => (typeof v === "string" && /^\d+$/.test(v) ? BigInt(v) : undefined);
+
 const toIso = (t: number | string | null | undefined): string | null => {
   if (t === null || t === undefined || t === "") return null;
   const n = typeof t === "number" ? t : Number(t);
@@ -188,7 +191,8 @@ const MARKET_HOURS_CODES = new Set([40369, 40367]);
 /** The route the guard would use: the best SWAP route. RFQ routes cannot be dry-run and are never chosen. */
 export function chooseRoute(routes: Route[]): Route | undefined {
   const swaps = routes.filter((r) => r.executionMode === "SWAP");
-  return swaps.find((r) => r.isBest) ?? [...swaps].sort((a, b) => (BigInt(b.toTokenAmount ?? "0") > BigInt(a.toTokenAmount ?? "0") ? 1 : -1))[0];
+  const out = (r: Route) => intOrUndefined(r.toTokenAmount) ?? 0n;
+  return swaps.find((r) => r.isBest) ?? [...swaps].sort((a, b) => (out(b) > out(a) ? 1 : out(b) < out(a) ? -1 : 0))[0];
 }
 
 export function checkExecution(q: Sourced<QuoteObs>, cfg: GuardConfig): Check {
@@ -208,7 +212,8 @@ export function checkExecution(q: Sourced<QuoteObs>, cfg: GuardConfig): Check {
   if (!route) {
     return { ...base, result: "fail", rawValue: routes.map((r) => `${r.vendorName}:${r.executionMode}`).join(", "), reason: "Binance only offered a kind of trade that cannot be tested first, so Bitstock will not use it." };
   }
-  const out = BigInt(route.toTokenAmount ?? "0");
+  const out = intOrUndefined(route.toTokenAmount);
+  if (out === undefined) return { ...base, result: "unavailable", rawValue: `toTokenAmount=${route.toTokenAmount}`, reason: "The price offered did not say how much you would receive, so Bitstock cannot use it.", retryAt: null };
   if (out <= 0n) return { ...base, result: "fail", rawValue: `toTokenAmount=${route.toTokenAmount}`, reason: "The price offered would give you nothing." };
   const impact = tryParseDecimal(route.priceImpactPercent);
   if (impact === undefined) return { ...base, result: "unavailable", rawValue: `priceImpactPercent=${route.priceImpactPercent}`, reason: "The price offered did not say how much your buy would move the price.", retryAt: null };
@@ -223,8 +228,8 @@ export function checkExecution(q: Sourced<QuoteObs>, cfg: GuardConfig): Check {
 /** USD per token implied by a route: amount paid × the pay token's USD price ÷ tokens received. */
 export function quotePricePerToken(route: Route | undefined): bigint | undefined {
   if (!route) return undefined;
-  const paid = route.fromTokenAmount ? BigInt(route.fromTokenAmount) : undefined;
-  const got = route.toTokenAmount ? BigInt(route.toTokenAmount) : undefined;
+  const paid = intOrUndefined(route.fromTokenAmount);
+  const got = intOrUndefined(route.toTokenAmount);
   const unitPrice = tryParseDecimal(route.fromToken?.tokenUnitPrice);
   const fromDec = Number(route.fromToken?.decimal ?? NaN);
   const toDec = Number(route.toToken?.decimal ?? NaN);
@@ -252,7 +257,7 @@ export function checkSimulation(sim: Sourced<SimulationObs> & { skipped?: string
       return { ...base, result: "fail", rawValue: raw, reason: "The trade Binance prepared does not go where its price offer said, so Bitstock will not use it." };
     }
     if (pin.tx.from.toLowerCase() !== wallet.toLowerCase()) return { ...base, result: "fail", rawValue: raw, reason: "The trade Binance prepared is not from your wallet, so Bitstock will not use it." };
-    if (BigInt(pin.tx.value || "0") !== 0n) return { ...base, result: "fail", rawValue: raw, reason: "The trade Binance prepared would also send BNB, which buying with USDT never needs, so Bitstock will not use it." };
+    if (!/^\d+$/.test(pin.tx.value || "0") || BigInt(pin.tx.value || "0") !== 0n) return { ...base, result: "fail", rawValue: raw, reason: "The trade Binance prepared would also send BNB, which buying with USDT never needs, so Bitstock will not use it." };
   }
   if (sim.skipped) return { ...base, result: "unavailable", rawValue: sim.skipped, reason: "Bitstock could not prepare this trade for a test run right now.", retryAt: null };
   const v = sim.value;
@@ -273,7 +278,7 @@ export function checkSimulation(sim: Sourced<SimulationObs> & { skipped?: string
     return { ...base, result: "fail", rawValue: `status=${v.status}, failReason=${why}`, reason: "The test run of this trade failed, so Bitstock will not send it." };
   }
   const arriving = (v.balanceChanges ?? []).find(
-    (c) => c.contractAddress?.toLowerCase() === stockToken.toLowerCase() && c.owner?.toLowerCase() === wallet.toLowerCase() && BigInt(c.change ?? "0") > 0n,
+    (c) => c.contractAddress?.toLowerCase() === stockToken.toLowerCase() && c.owner?.toLowerCase() === wallet.toLowerCase() && /^\d+$/.test(c.change ?? "0") && BigInt(c.change ?? "0") > 0n,
   );
   if (!arriving) return { ...base, result: "fail", rawValue: `status=SUCCESS, balanceChanges=${JSON.stringify(v.balanceChanges ?? [])}`, reason: "The test run worked but showed no stock arriving in your wallet, so Bitstock will not send it." };
   return { ...base, result: "pass", rawValue: `status=SUCCESS, stock change +${arriving.change}`, reason: "Bitstock tested this exact trade, and the stock arrives in your wallet." };

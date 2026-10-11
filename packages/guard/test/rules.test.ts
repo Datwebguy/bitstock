@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_GUARD_CONFIG as cfg } from "../src/config.ts";
 import { parseDecimal } from "../src/decimal.ts";
 import {
-  checkExecution, checkMultiplier, checkReference, checkSession, checkSimulation, decide, limitSlippage, quotePricePerToken,
+  checkExecution, checkMultiplier, checkReference, checkSession, checkSimulation, chooseRoute, decide, limitSlippage, quotePricePerToken,
   type MarketStatusObs, type Route,
 } from "../src/rules.ts";
 import type { Check } from "../src/types.ts";
@@ -138,6 +138,21 @@ describe("4. execution", () => {
   });
   it("fails on zero output", () => {
     expect(ex([swap("0", { toTokenAmount: "0" })]).result).toBe("fail");
+  });
+  it("reads a malformed amount from upstream as unavailable instead of throwing", () => {
+    for (const bad of ["abc", "1.5", "-5", "0x10", " "]) {
+      expect(() => ex([swap("0", { toTokenAmount: bad })])).not.toThrow();
+      expect(ex([swap("0", { toTokenAmount: bad })]).result).toBe("unavailable");
+    }
+    expect(() => chooseRoute([swap("0", { isBest: false, toTokenAmount: "oops" }), swap("0", { isBest: false })])).not.toThrow();
+    expect(quotePricePerToken({ fromTokenAmount: "x", toTokenAmount: "5", fromToken: { tokenUnitPrice: "1", decimal: "18" }, toToken: { decimal: "18" } })).toBeUndefined();
+  });
+  it("fails closed on a malformed BNB value or token change in the test run", () => {
+    const pin = { tx: { from: WALLET, to: "0x" + "ab".repeat(20), value: "1.5" }, expectedTo: "0x" + "ab".repeat(20) };
+    expect(() => checkSimulation({ source: "test", asOf: null, value: { status: "SUCCESS" } }, STOCK, WALLET, pin)).not.toThrow();
+    expect(checkSimulation({ source: "test", asOf: null, value: { status: "SUCCESS" } }, STOCK, WALLET, pin).result).toBe("fail");
+    const bad = { status: "SUCCESS", balanceChanges: [{ contractAddress: STOCK, owner: WALLET, change: "12abc" }] };
+    expect(checkSimulation({ source: "test", asOf: null, value: bad }, STOCK, WALLET).result).toBe("fail");
   });
   it("is unavailable when Binance refuses to quote while the exchange is closed (40369)", () => {
     const c = checkExecution({ source: "test", asOf: null, value: { errorCode: 40369, errorMessage: "closed" } }, cfg);
