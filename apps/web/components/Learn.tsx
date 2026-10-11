@@ -14,8 +14,15 @@ export function CompanyNote() {
   const address = token?.address ?? null;
   useEffect(() => {
     if (!address) return;
+    let alive = true;
     setM(null);
-    api<MarketView>(`/market?token=${address}`).then(setM).catch((e: Error) => setErr(e.message));
+    setErr(null);
+    api<MarketView>(`/market?token=${address}`)
+      .then((v) => alive && setM(v))
+      .catch((e: Error) => alive && setErr(e.message));
+    return () => {
+      alive = false;
+    };
   }, [address]);
   const mult = m?.multiplier.value ? trimDecimal(m.multiplier.value.current, 6) : null;
   const company = token?.company ?? token?.ticker ?? symbol;

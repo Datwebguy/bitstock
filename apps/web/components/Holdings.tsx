@@ -37,12 +37,18 @@ export function HoldingsView() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    setH(null);
+    setErr(null);
     if (!w.account) return;
+    let alive = true;
     setLoading(true);
     api<Holdings>(`/holdings?wallet=${w.account}`)
-      .then((v) => (setH(v), setErr(null)))
-      .catch((e: Error) => setErr(e.message))
-      .finally(() => setLoading(false));
+      .then((v) => alive && (setH(v), setErr(null)))
+      .catch((e: Error) => alive && setErr(e.message))
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
+    };
   }, [w.account]);
 
   if (!w.account) {
