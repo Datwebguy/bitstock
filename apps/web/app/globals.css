@@ -471,3 +471,9 @@ html:not([lang="en"]) .sr-only:has(~ [aria-hidden="true"]) { position: static; w
 .pill-btn { border: 0; cursor: pointer; font: inherit; font-size: 0.8rem; font-weight: 700; }
 .pill-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .disconnect { margin-top: 8px; }
+
+/* Language picker states: translating, and the service not answering */
+.lang-busy select { border-color: var(--brand); animation: lang-pulse 1.1s ease-in-out infinite; }
+.lang-failed select { border-color: var(--warn, #d9a441); }
+@keyframes lang-pulse { 50% { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .lang-busy select { animation: none; } }

@@ -44,6 +44,7 @@ function saveCache(lang: Lang, m: Map<string, string>): void {
 /** The picker, and the translator it drives: page text is swapped in place and restored for English. */
 export function LanguagePicker() {
   const [lang, setLang] = useState<Lang>("en");
+  const [status, setStatus] = useState<"idle" | "busy" | "failed">("idle");
   const state = useRef({ originals: new WeakMap<Text, string>(), ours: new WeakMap<Text, string>(), touched: new Set<Text>(), attrs: new Set<HTMLInputElement>() });
 
   useEffect(() => setLang(initialLang()), []);
@@ -55,11 +56,15 @@ export function LanguagePicker() {
       for (const n of s.touched) { const o = s.originals.get(n); if (o !== undefined && n.isConnected) n.nodeValue = o; }
       for (const el of s.attrs) { const o = el.dataset.ph; if (o) el.placeholder = o; }
       s.touched.clear(); s.attrs.clear();
+      setStatus("idle");
       return;
     }
     const cache = loadCache(lang);
     const pending = new Set<string>();
-    let alive = true, timer: ReturnType<typeof setTimeout> | undefined, inflight = false;
+    // Sentences already sent in this language. A sentence the service returns unchanged (or could not translate)
+    // is not asked for again, so the page never loops on the service.
+    const tried = new Set<string>();
+    let alive = true, timer: ReturnType<typeof setTimeout> | undefined, retry: ReturnType<typeof setTimeout> | undefined, inflight = false;
 
     const apply = (n: Text, src: string) => {
       const tr = cache.get(src.trim());
@@ -80,42 +85,48 @@ export function LanguagePicker() {
         const src = v; const key = src.trim();
         if (key.length < 2 || key.length > 700 || !/\p{L}{2}/u.test(key)) continue;
         s.originals.set(n, src);
-        if (!apply(n, src)) pending.add(key);
+        if (!apply(n, src) && !tried.has(key)) pending.add(key);
       }
       document.querySelectorAll<HTMLInputElement>("input[placeholder]").forEach((el) => {
         const src = el.dataset.ph ?? el.placeholder; el.dataset.ph = src;
-        const tr = cache.get(src); if (tr) { el.placeholder = tr; s.attrs.add(el); } else if (/\p{L}{2}/u.test(src)) pending.add(src);
+        const tr = cache.get(src); if (tr) { el.placeholder = tr; s.attrs.add(el); } else if (/\p{L}{2}/u.test(src) && !tried.has(src)) pending.add(src);
       });
       if (pending.size) void flush();
     };
     const flush = async () => {
       if (inflight || !AGENT_URL) return;
       inflight = true;
+      setStatus("busy");
+      let failed = false;
       try {
         while (alive && pending.size) {
-          const batch = [...pending].slice(0, 60); batch.forEach((b) => pending.delete(b));
+          const batch = [...pending].slice(0, 60);
+          batch.forEach((b) => { pending.delete(b); tried.add(b); });
           const res = await fetch(`${AGENT_URL}/v1/translate`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ lang, texts: batch }) }).catch(() => null);
-          if (!res?.ok) break;
-          const body = (await res.json()) as { enabled?: boolean; translations?: string[] };
+          if (!res?.ok) { batch.forEach((b) => tried.delete(b)); failed = true; break; }
+          const body = (await res.json().catch(() => ({}))) as { enabled?: boolean; translations?: string[] };
           if (!body.enabled) break; // translation is not switched on: English stays
           batch.forEach((src, i) => { const t = body.translations?.[i]; if (t && t !== src) cache.set(src, t); });
           saveCache(lang, cache);
+          if (alive) scan(); // show each batch as it arrives
         }
       } finally {
         inflight = false;
       }
-      if (alive) scan();
+      if (!alive) return;
+      setStatus(failed ? "failed" : "idle");
+      if (failed) retry = setTimeout(() => { setStatus("idle"); scan(); }, 20_000); // try again later, not at once
     };
     const schedule = () => { if (timer) clearTimeout(timer); timer = setTimeout(scan, 120); };
     const mo = new MutationObserver(schedule);
     mo.observe(document.body, { childList: true, subtree: true, characterData: true });
     scan();
-    return () => { alive = false; mo.disconnect(); if (timer) clearTimeout(timer); };
+    return () => { alive = false; mo.disconnect(); if (timer) clearTimeout(timer); if (retry) clearTimeout(retry); setStatus("idle"); };
   }, [lang]);
 
   return (
-    <label className="lang" data-no-translate>
-      <span className="sr-only">Language</span>
+    <label className={`lang${status === "busy" ? " lang-busy" : status === "failed" ? " lang-failed" : ""}`} data-no-translate aria-busy={status === "busy"} title={status === "failed" ? "Translation is unavailable right now. It will try again shortly." : undefined}>
+      <span className="sr-only">Language{status === "busy" ? ", translating" : status === "failed" ? ", translation unavailable right now" : ""}</span>
       <select
         value={lang}
         onChange={(e) => {

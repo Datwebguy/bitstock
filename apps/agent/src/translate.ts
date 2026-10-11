@@ -90,7 +90,10 @@ export class CachedTranslator implements Translator {
         const put = this.#db.prepare("INSERT OR REPLACE INTO translations (lang, key, source, text, at) VALUES (?, ?, ?, ?, ?)");
         missing.forEach((src, i) => {
           const tr = typeof list[i] === "string" ? (list[i] as string) : "";
-          if (keepsFacts(src, tr)) put.run(lang, key(src), src, tr, new Date().toISOString());
+          if (!tr.trim()) return; // the model gave nothing: ask again next time
+          // A translation that changed a number or name is refused and the English is kept. Keeping it on record stops
+          // the same sentence from being sent to the model again and again.
+          put.run(lang, key(src), src, keepsFacts(src, tr) ? tr : src, new Date().toISOString());
         });
       } catch {
         /* the English text stays */

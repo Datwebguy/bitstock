@@ -8,6 +8,7 @@ All notable changes are recorded here. The format follows Keep a Changelog and t
 - Languages: English, 简体中文, Español, Português, Türkçe and Tiếng Việt, chosen in the header. The agent translates on-screen text through `/v1/translate` (OpenAI, `OPENAI_API_KEY`), caches each sentence, and keeps the English wherever a number, amount, address or name would change. Without the key the site stays in English.
 
 ### Fixed
+- Languages: the page no longer asks the translation service for the same sentences over and over. A sentence that comes back unchanged is remembered, so the service stays under its rate limit and translation keeps working. Each batch appears as it arrives, the picker shows when it is translating, and if the service does not answer it says so and tries again later.
 - Gift: a wallet that already claimed is recognised when it comes back. The Gift page asks the agent (`GET /v1/gift/claim?wallet=`), shows the wallet's box and transaction, and keeps the claim button off. Before, the button came back after a refresh or reconnect and the previous wallet's result stayed on screen after switching wallets.
 - People can disconnect their wallet: a Disconnect wallet button on Buy, Holdings and Gift, and the header wallet pill opens the wallet menu. Buy clears its check when the wallet changes.
 - Gift claims: a claim that failed before it was sent can be retried; a sent claim that is slow to confirm is settled from its receipt and never sent twice.

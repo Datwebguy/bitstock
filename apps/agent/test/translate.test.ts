@@ -36,6 +36,9 @@ describe("cached translator", () => {
     const again = await t.translate("es", ["Connect wallet"]);
     expect(again).toEqual(["Conectar billetera"]);
     expect(calls).toBe(1);
+    // the refused sentence is on record too, so it is not sent to the model again
+    expect(await t.translate("es", ["Up to $5 per buy."])).toEqual(["Up to $5 per buy."]);
+    expect(calls).toBe(1);
   });
   it("keeps English when the service fails or answers nonsense", async () => {
     const down = new CachedTranslator(dir(), async () => { throw new Error("down"); });
