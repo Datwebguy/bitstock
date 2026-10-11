@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, fromLine, humanize, when, type Holdings, type Position } from "@/lib/api";
-import { useWallet } from "@/lib/wallet";
+import { short, useWallet } from "@/lib/wallet";
+import { DisconnectButton } from "./DisconnectButton";
 import { StockLogo } from "./Stocks";
 
 const OUTCOME_WORD: Record<string, string> = { GO: "Go", LIMIT: "Go, tighter limit", WAIT: "Wait", BLOCK: "Do not buy now" };
@@ -65,6 +66,7 @@ export function HoldingsView() {
 
   return (
     <div className="grid">
+      <p className="small">Wallet <span className="mono">{short(w.account)}</span> <DisconnectButton /></p>
       <p className="small muted">Bitstock looked for all {h.checked} tokenized stocks in your wallet {when(h.asOf)}.{h.unread.length ? ` It could not read ${h.unread.length} of them right now (${h.unread.join(", ")}).` : ""}</p>
       {h.positions.length === 0 ? (
         <section className="card">

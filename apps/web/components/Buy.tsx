@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api, fromLine, type AgentConfig, humanize, RESULT_LABEL, units18, when, type Decision } from "@/lib/api";
 import { short, useWallet, walletMessage } from "@/lib/wallet";
+import { DisconnectButton } from "./DisconnectButton";
 import { StockPicker, useSelectedSymbol, useTokens } from "./Stocks";
 
 const TITLES: Record<Decision["outcome"], string> = { GO: "Go", LIMIT: "Go, with a tighter limit", WAIT: "Wait", BLOCK: "Do not buy now" };
@@ -32,6 +33,15 @@ export function BuyFlow() {
   const [buyMsg, setBuyMsg] = useState<string | null>(null);
   const [hash, setHash] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
+
+  // A different wallet, or none, means any earlier check and buy no longer apply.
+  useEffect(() => {
+    setD(null);
+    setPhase("idle");
+    setHash(null);
+    setBuyMsg(null);
+    setCheckErr(null);
+  }, [w.account]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
@@ -106,7 +116,10 @@ export function BuyFlow() {
       <section className="card" aria-labelledby="s1">
         <h2 id="s1">1 · Your wallet</h2>
         {w.account ? (
-          <p className="small">Connected <span className="mono">{short(w.account)}</span>{w.onBsc ? " on BNB Smart Chain." : ". Switch to BNB Smart Chain in your wallet."}</p>
+          <>
+            <p className="small">Connected <span className="mono">{short(w.account)}</span>{w.onBsc ? " on BNB Smart Chain." : ". Switch to BNB Smart Chain in your wallet."}</p>
+            <DisconnectButton />
+          </>
         ) : (
           <>
             <p className="small muted">Bitstock never holds your keys. You sign every buy yourself.</p>

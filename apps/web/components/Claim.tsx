@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api, units18, when } from "@/lib/api";
 import { short, useWallet, walletMessage } from "@/lib/wallet";
+import { DisconnectButton } from "./DisconnectButton";
 import { StockLogo, useTokens } from "./Stocks";
 
 interface GiftClaim { box: number; amount: string; status: string; txHash: string | null; gasUsed: string | null; feeWei: string | null; at: string; wallet: string }
@@ -77,6 +78,7 @@ export function ClaimView({ region }: { region: string | null }) {
         ) : (
           <>
             <p className="small">Wallet <span className="mono">{short(w.account)}</span></p>
+            <DisconnectButton />
             <button className="btn btn-primary" type="button" onClick={() => void claim()} disabled={phase === "working" || phase === "done" || region === "unknown" || g.remaining === 0}>
               {phase === "working" ? "Testing and sending your slice…" : phase === "done" ? "Claimed" : `Claim my free ${symbol}`}
             </button>

@@ -466,3 +466,8 @@ html:not([lang="en"]) .sr-only:has(~ [aria-hidden="true"]) { position: static; w
   .lang select { font-size: 0.8rem; padding-left: 8px; }
   .topbar-in .pill { padding-left: 8px; padding-right: 8px; font-size: 0.75rem; }
 }
+
+/* wallet controls */
+.pill-btn { border: 0; cursor: pointer; font: inherit; font-size: 0.8rem; font-weight: 700; }
+.pill-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.disconnect { margin-top: 8px; }

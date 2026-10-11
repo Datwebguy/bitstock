@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { createAppKit, useAppKit, useAppKitAccount, useAppKitEvents, useAppKitNetwork, useAppKitProvider } from "@reown/appkit/react";
+import { createAppKit, useAppKit, useAppKitAccount, useAppKitEvents, useAppKitNetwork, useAppKitProvider, useDisconnect } from "@reown/appkit/react";
 import { bsc } from "@reown/appkit/networks";
 import { EthersAdapter } from "@reown/appkit-adapter-ethers";
 
@@ -18,6 +18,7 @@ interface WalletState {
   connecting: boolean;
   error: string | null;
   connect: () => Promise<void>;
+  disconnect: () => Promise<void>;
   send: (tx: Record<string, string>) => Promise<string>;
 }
 
@@ -68,6 +69,7 @@ function Inert({ children, missing }: { children: ReactNode; missing: boolean })
       connecting: false,
       error: missing ? NOT_CONFIGURED : null,
       connect: async () => undefined,
+      disconnect: async () => undefined,
       send: async () => {
         throw new Error(missing ? NOT_CONFIGURED : "No wallet is connected.");
       },
@@ -79,6 +81,7 @@ function Inert({ children, missing }: { children: ReactNode; missing: boolean })
 
 function Connected({ children }: { children: ReactNode }) {
   const { open } = useAppKit();
+  const { disconnect: appKitDisconnect } = useDisconnect();
   const { address, isConnected, status } = useAppKitAccount({ namespace: "eip155" });
   const { chainId } = useAppKitNetwork();
   const { walletProvider } = useAppKitProvider<Eip1193>("eip155");
@@ -104,6 +107,15 @@ function Connected({ children }: { children: ReactNode }) {
     }
   }, [open, account]);
 
+  const disconnect = useCallback(async () => {
+    setError(null);
+    try {
+      await appKitDisconnect({ namespace: "eip155" });
+    } catch (e) {
+      setError(walletMessage(e, "Your wallet could not be disconnected. Try again."));
+    }
+  }, [appKitDisconnect]);
+
   const send = useCallback(
     async (tx: Record<string, string>) => {
       if (!walletProvider || !account) throw new Error("No wallet is connected.");
@@ -114,8 +126,8 @@ function Connected({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<WalletState>(
-    () => ({ account, onBsc, available: true, connecting: status === "connecting", error, connect, send }),
-    [account, onBsc, status, error, connect, send],
+    () => ({ account, onBsc, available: true, connecting: status === "connecting", error, connect, disconnect, send }),
+    [account, onBsc, status, error, connect, disconnect, send],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

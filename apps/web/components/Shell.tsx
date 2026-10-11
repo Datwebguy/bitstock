@@ -82,7 +82,7 @@ export function Shell({ children }: { children: ReactNode }) {
             ))}
           </nav>
           <span className="spacer" />
-          {w.account ? <span className="pill good" title={w.account}>{short(w.account)}</span> : null}
+          {w.account ? <button type="button" className="pill good pill-btn" title={w.account} aria-label={`Wallet ${short(w.account)}. Open the wallet menu`} onClick={() => void w.connect()}>{short(w.account)}</button> : null}
           <LanguagePicker />
           <ThemeToggle />
         </div>
