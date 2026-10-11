@@ -6,7 +6,7 @@ import { StockLogo, useTokens } from "./Stocks";
 
 interface GiftClaim { box: number; amount: string; status: string; txHash: string | null; gasUsed: string | null; feeWei: string | null; at: string; wallet: string }
 interface GiftStatus {
-  open: boolean; configured: boolean; token: string; received?: string; boxes?: string[]; remaining?: number; commitment?: string; expiresAt?: string;
+  open: boolean; configured: boolean; fundedUsd?: string | null; boxesUsd?: string[] | null; token: string; received?: string; boxes?: string[]; remaining?: number; commitment?: string; expiresAt?: string;
   fundTx?: string | null; claims?: GiftClaim[]; reveal?: { assignment: string; secret: string; check: string };
 }
 
@@ -90,9 +90,9 @@ export function ClaimView({ region }: { region: string | null }) {
 
       <section className="card" aria-labelledby="boxes">
         <h2 id="boxes">The boxes</h2>
-        <p className="small">Ten boxes, cut from the {symbol} the gift actually bought: 20%, 15%, 15%, three of 10% and four of 5%. The order claims take them was fixed and committed before the gift opened, and is revealed after it closes.</p>
+        <p className="small">The gift is {g.fundedUsd ? `$${g.fundedUsd}` : "a small amount"} of {symbol}, split into ten boxes of different sizes. You receive the stock token itself, not dollars. Shares of the pot: 20%, 15%, 15%, three of 10% and four of 5%. The order claims take them was fixed and committed before the gift opened, and is revealed after it closes.</p>
         <ul className="list small">
-          {g.boxes?.map((b, i) => <li key={i}><span>{["Largest", "Large", "Large", "Medium", "Medium", "Medium", "Small", "Small", "Small", "Small"][i]}</span><span className="num">{units18(b, 8)} {symbol}</span></li>)}
+          {g.boxes?.map((b, i) => <li key={i}><span>{g.boxesUsd?.[i] ? `About $${g.boxesUsd[i]} worth` : ["Largest", "Large", "Large", "Medium", "Medium", "Medium", "Small", "Small", "Small", "Small"][i]}</span><span className="num">{units18(b, 8)} {symbol}</span></li>)}
         </ul>
         <span className="source">Commitment: <span className="mono">{g.commitment}</span></span>
         {g.fundTx ? <span className="source">Bought with <a href={`https://bscscan.com/tx/${g.fundTx}`} target="_blank" rel="noopener noreferrer">this swap</a>.</span> : null}

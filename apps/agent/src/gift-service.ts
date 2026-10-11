@@ -14,7 +14,7 @@ import {
 } from "@bitstock/chain";
 import { chooseRoute, parseDecimal, type Route } from "@bitstock/guard";
 import type { AgentContext } from "./context.ts";
-import { assignmentText, boxAmounts, commitment, newSecret, shuffle } from "./gift.ts";
+import { BOX_WEIGHTS, assignmentText, boxAmounts, commitment, newSecret, shuffle } from "./gift.ts";
 import { killState } from "./killswitch.ts";
 import { NVDAB, USDT } from "./probes.ts";
 
@@ -39,7 +39,7 @@ export function giftConfigFromEnv(env: NodeJS.ProcessEnv): GiftConfig {
   if (relayerKey && !KEY_RE.test(relayerKey)) throw new Error("GIFT_RELAYER_PRIVATE_KEY is not a 32-byte hex key");
   const token = env["GIFT_TOKEN"] || NVDAB;
   if (!isAddress(token)) throw new Error("GIFT_TOKEN must be a token address");
-  const maxCampaignUsd = env["GIFT_CAMPAIGN_MAX_USD"] || "10";
+  const maxCampaignUsd = env["GIFT_CAMPAIGN_MAX_USD"] || "1";
   if (!/^\d{1,4}(\.\d{1,2})?$/.test(maxCampaignUsd)) throw new Error("GIFT_CAMPAIGN_MAX_USD must be a dollar amount");
   const maxBnb = env["GIFT_RELAYER_MAX_BNB"] || "0.01";
   if (!/^\d+(\.\d{1,18})?$/.test(maxBnb) || parseDecimal(maxBnb) > parseDecimal("0.01")) throw new Error("GIFT_RELAYER_MAX_BNB must be at most 0.01 (AGENTS.md 0.4)");
@@ -260,6 +260,12 @@ export class GiftService {
     });
   }
 
+  #fundedUsd(): string | null {
+    const last = this.#db.prepare("SELECT record FROM gift_funding ORDER BY at DESC LIMIT 1").get() as { record: string } | undefined;
+    const usd = last ? (JSON.parse(last.record) as { usd?: unknown }).usd : null;
+    return typeof usd === "string" ? usd : null;
+  }
+
   #publicClaim(c: Claim): Record<string, unknown> {
     return { box: c.box_index + 1, amount: c.amount, status: c.status, txHash: c.tx_hash, gasUsed: c.gas_used, feeWei: c.fee_wei, at: c.created_at, wallet: `${c.wallet.slice(0, 6)}…${c.wallet.slice(-4)}` };
   }
@@ -290,6 +296,9 @@ export class GiftService {
     if (!cur) return { open: false, configured, token: this.cfg.token };
     const claims = (this.#db.prepare("SELECT * FROM gift_claims WHERE campaign_id = ? ORDER BY created_at").all(cur.id) as unknown as Claim[]).map((c) => this.#publicClaim(c));
     const order = JSON.parse(cur.boxes) as string[];
+    // Each box is a fixed share of the dollars spent on the funding swap, shown in cents.
+    const fundedUsd = this.#fundedUsd();
+    const boxesUsd = fundedUsd ? BOX_WEIGHTS.map((w) => ((parseDecimal(fundedUsd) * BigInt(w)) / 100n / 10n ** 14n).toString()) : null;
     const active = claims.filter((c) => c.status !== "failed").length;
     return {
       open: cur.status === "open" && Date.parse(cur.expires_at) > Date.now(),
@@ -299,6 +308,8 @@ export class GiftService {
       received: cur.received,
       boxes: [...order].sort((a, b) => (BigInt(b) > BigInt(a) ? 1 : -1)),
       remaining: order.length - active,
+      fundedUsd,
+      boxesUsd: boxesUsd ? boxesUsd.map((v) => `${v.slice(0, -4) || "0"}.${v.slice(-4).padStart(4, "0").slice(0, 2)}`) : null,
       commitment: cur.commitment,
       expiresAt: cur.expires_at,
       fundTx: cur.fund,
