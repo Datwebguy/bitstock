@@ -105,7 +105,7 @@ sequenceDiagram
 | Web app: home, live check, buy, holdings, learn, about, claim notice | Built, deployed at https://trybitstock.xyz |
 | Wallet connection through Reown AppKit (WalletConnect), BNB Smart Chain only | Built, deployed; the wallet list and the relay pairing were checked in a 360 px browser; a full connect and send from a phone is not yet recorded here |
 | Restricted-jurisdiction block on the claim page | Built, tested from a US connection |
-| Free first slice ($1 in ten boxes, network fee paid for the recipient) | Built, deployed; not yet funded or claimed |
+| Free first slice ($1 in ten boxes, network fee paid for the recipient) | Funded and open until 18 Oct 2026 ([funding swap](https://bscscan.com/tx/0x8513376541801cfa8a8f24c71aaac198e03df19735c863c45877b784b0ca0170), block 126,966,466); no claims yet as of 11 Oct 2026 |
 | Checked buys through the user's own Binance Agentic Wallet (wallet skill, Mode B) | Built; first real swap not yet made. It runs inside the limits the user sets in the Binance App, and the team demonstrates it with its own wallet |
 | Agent on BNB Agent Studio | Built, hosted, registered on-chain (ERC-8004 agent 370988) |
 
