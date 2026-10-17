@@ -62,6 +62,8 @@ export interface DecisionRecord {
   limits: SlippageLimit | null;
   /** WAIT only: when the full guard runs again. */
   recheckAt: string | null;
+  /** WAIT only: the saved request that is checked again at recheckAt. */
+  intentId?: string | null;
   /** GO or LIMIT: the final transaction the user is asked to sign, after its own dry run. */
   prepared?: PreparedTx | null;
   txHash: string | null;

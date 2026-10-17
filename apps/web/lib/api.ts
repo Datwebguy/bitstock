@@ -27,9 +27,12 @@ export interface Check { id: string; name: string; result: "pass" | "warn" | "fa
 
 export interface Decision {
   id: string; at: string; rulesVersion: string; outcome: "GO" | "LIMIT" | "WAIT" | "BLOCK"; reason: string; recheckAt: string | null;
-  limits: { slippagePercent: string; why: string } | null; checks: Check[]; status?: string; txHash: string | null;
+  limits: { slippagePercent: string; why: string } | null; checks: Check[]; status?: string; txHash: string | null; intentId?: string | null;
   prepared?: { from: string; to: string; value: string; data: string; gas: string; gasPrice: string; slippagePercent: string; minReceiveAmount: string | null; simulation: { status: string; stockArriving: string | null }; expiresAt: number } | null;
 }
+
+/** A buy that waited: the agent checks it again in full at recheckAt. Nothing is bought without the user. */
+export interface Intent { id: string; status: "waiting" | "ready" | "blocked" | "cancelled"; reason: string; recheckAt: string; attempts: number; lastDecisionId: string }
 
 /** A USDT approval for exactly one buy's amount, prepared and tested by the agent; the user signs it. */
 export interface Approval {

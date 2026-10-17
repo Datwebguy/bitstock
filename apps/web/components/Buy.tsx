@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, fromLine, type AgentConfig, type Approval, humanize, needsApproval, RESULT_LABEL, units18, when, type Decision } from "@/lib/api";
+import { api, fromLine, type AgentConfig, type Approval, humanize, type Intent, needsApproval, RESULT_LABEL, units18, when, type Decision } from "@/lib/api";
 import { short, useWallet, walletMessage } from "@/lib/wallet";
 import { DisconnectButton } from "./DisconnectButton";
 import { StockPicker, useSelectedSymbol, useTokens } from "./Stocks";
@@ -36,6 +36,22 @@ export function BuyFlow() {
   const [approval, setApproval] = useState<"idle" | "preparing" | "signing" | "waiting" | "failed">("idle");
   const [approvalMsg, setApprovalMsg] = useState<string | null>(null);
   const [approvalHash, setApprovalHash] = useState<string | null>(null);
+  const [intent, setIntent] = useState<Intent | null>(null);
+
+  // A WAIT is saved and checked again by the agent. While this page is open, show what that later check found.
+  const intentId = d?.outcome === "WAIT" ? (d.intentId ?? null) : null;
+  useEffect(() => {
+    setIntent(null);
+    if (!intentId) return;
+    let stop = false;
+    const load = () => api<Intent>(`/intents/${intentId}`).then((i) => !stop && setIntent(i)).catch(() => undefined);
+    void load();
+    const t = setInterval(() => void load(), 60_000);
+    return () => {
+      stop = true;
+      clearInterval(t);
+    };
+  }, [intentId]);
 
   // A different wallet, or none, means any earlier check and buy no longer apply.
   useEffect(() => {
@@ -209,7 +225,7 @@ export function BuyFlow() {
             <span className="badge" aria-hidden="true">{BADGE[d.outcome]}</span>
             <div>
               <p className="outcome-title">{TITLES[d.outcome]}</p>
-              <p className="small">{humanize(d.reason)}{d.recheckAt ? ` Bitstock will check again ${when(d.recheckAt)}.` : ""}</p>
+              <p className="small">{humanize(d.reason)}{d.recheckAt ? ` Bitstock will check again ${when(d.recheckAt)}. Nothing is bought without you.` : ""}</p>
             </div>
           </div>
           <ol className="checks">
@@ -224,6 +240,15 @@ export function BuyFlow() {
             ))}
           </ol>
           <p className="source">Checked {when(d.at)} · saved so you can look it up later (reference {d.id.slice(0, 8)})</p>
+
+          {intent ? (
+            <div className="msg info" role="status">
+              {intent.status === "waiting" ? <p className="small">Saved. {intent.attempts > 0 ? `Checked again ${intent.attempts} time${intent.attempts === 1 ? "" : "s"}; still waiting: ${humanize(intent.reason)} ` : ""}Next check {when(intent.recheckAt)}.</p> : null}
+              {intent.status === "ready" ? <p className="small">The later check found nothing stopping this buy. Check again to get a fresh, tested trade to sign.</p> : null}
+              {intent.status === "blocked" ? <p className="small">The later check found a reason not to buy: {humanize(intent.reason)}</p> : null}
+              {intent.status === "ready" ? <button className="btn btn-primary" type="button" onClick={() => void check()}>Check again</button> : null}
+            </div>
+          ) : null}
 
           {needsApproval(d) ? (
             <>

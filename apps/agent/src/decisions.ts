@@ -59,9 +59,11 @@ export async function makeDecision(ctx: AgentContext, req: DecisionRequest, idem
       }
     }
   }
+  const intentId = record.outcome === "WAIT" ? randomUUID() : null;
+  if (intentId) record.intentId = intentId;
   ctx.repo.saveDecision(record, idemKey);
-  if (record.outcome === "WAIT") {
-    ctx.repo.createIntent({ id: randomUUID(), createdAt: record.at, request: record.request, reason: record.reason, recheckAt: record.recheckAt ?? new Date(Date.now() + ctx.cfg.waitRecheckMinutes * 60_000).toISOString(), status: "waiting", lastDecisionId: record.id, attempts: 0 });
+  if (intentId) {
+    ctx.repo.createIntent({ id: intentId, createdAt: record.at, request: record.request, reason: record.reason, recheckAt: record.recheckAt ?? new Date(Date.now() + ctx.cfg.waitRecheckMinutes * 60_000).toISOString(), status: "waiting", lastDecisionId: record.id, attempts: 0 });
   }
   return record;
 }

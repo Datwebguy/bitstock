@@ -192,6 +192,7 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
 
   const im = /^\/v1\/intents\/([0-9a-f-]{36})$/.exec(path);
   if (im && method === "GET") {
+    if (!readLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many requests." });
     const i = ctx.repo.intent(im[1]!);
     return i ? send(res, 200, i) : send(res, 404, { error: "No such intent." });
   }
