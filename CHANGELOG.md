@@ -5,9 +5,18 @@ All notable changes are recorded here. The format follows Keep a Changelog and t
 ## [Unreleased]
 
 ### Added
+- Buy: a wallet that has not approved USDT yet can approve from the Buy page. The approval is for exactly the buy's amount, never more; the agent (`POST /v1/approvals`) only prepares it when Binance's quote and its approval endpoint name the same contract, and tests it first. Once it is confirmed, the buy is checked again automatically. Before, a first buy stopped at "Approve USDT in your wallet first" with no way to do that in the app.
+- Buy: a buy that has to wait now shows what Bitstock's later check found (still waiting, ready to check again, or a reason not to buy). WAIT decisions carry the `intentId` of that saved check.
 - Languages: English, 简体中文, Español, Português, Türkçe and Tiếng Việt, chosen in the header. The agent translates on-screen text through `/v1/translate` (OpenAI, `OPENAI_API_KEY`), caches each sentence, and keeps the English wherever a number, amount, address or name would change. Without the key the site stays in English.
 
 ### Fixed
+- Guard (rules version 2): the test run must also show USDT leaving the wallet by no more than the chosen amount, for the check and again for the final transaction. The gift's funding swap follows the same rule. See `docs/METHOD.md`.
+- Guard: quotes and swaps are no longer served from the 30-second read cache, so a check never rests on a reused quote, and the final trade is not built from an expired one.
+- Buy: if the node cannot estimate the network fee, Bitstock does not prepare the trade. Before, it fell back to the swap API's figure, which was about a quarter of what real swaps used, so the trade would likely have run out of gas.
+- Gift: a claim whose transfer was refused on chain no longer uses up its box and the wallet's claim; it is kept in a history with its real fee and the wallet can try again. A claim is treated as dropped only once the relayer's confirmed nonce has passed it with no receipt, so a box can never be paid twice. The largest-box cap is now worked out from what the funding swap received, and the vault refuses to fund or open while it holds more USDT than the campaign plus a test pool (`GIFT_TEST_POOL_USD`).
+- Languages: a translation that adds a number the English did not have is refused. `/v1/translate` keeps at most `TRANSLATE_MAX_ROWS` sentences and makes at most `TRANSLATE_MAX_CALLS_PER_DAY` model calls a day.
+- Rate limits trust `X-Real-IP` only on Railway, whose edge sets it, or when `TRUST_X_REAL_IP=1`. `/v1/intents/{id}` is now rate limited.
+- `/healthz` reports the gift cap variables the code reads, instead of two names nothing used.
 - Languages: the page no longer asks the translation service for the same sentences over and over. A sentence that comes back unchanged is remembered, so the service stays under its rate limit and translation keeps working. Each batch appears as it arrives, the picker shows when it is translating, and if the service does not answer it says so and tries again later.
 - Gift: a wallet that already claimed is recognised when it comes back. The Gift page asks the agent (`GET /v1/gift/claim?wallet=`), shows the wallet's box and transaction, and keeps the claim button off. Before, the button came back after a refresh or reconnect and the previous wallet's result stayed on screen after switching wallets.
 - People can disconnect their wallet: a Disconnect wallet button on Buy, Holdings and Gift, and the header wallet pill opens the wallet menu. Buy clears its check when the wallet changes.
