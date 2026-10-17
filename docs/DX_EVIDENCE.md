@@ -61,7 +61,7 @@ These came from reading the documentation. They are questions, not findings. Eac
 | Time from docs to first successful signed call | | | |
 | NVDAB main pool liquidity and 24 h volume at test time | | | |
 | Price impact for $1 and $10 buys | | | |
-| Gas used and BNB cost of one gasless claim transfer | | | |
+| Gas used and BNB cost of one gasless claim transfer | 100,903 to 105,703 gas; 0.0000050452 to 0.0000052852 BNB (ten transfers) | 11 Oct 2026 | `docs/evidence/gift-claims-2026-10-11.railway-sg.json` |
 | Latency of RWA, quote, swap, simulate calls (median, worst) | | | `docs/evidence/calls.jsonl` |
 | Closed-market quote result | | | |
 | Multiplier at test time and any scheduled change | | | |

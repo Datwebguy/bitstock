@@ -24,13 +24,14 @@ Built for BNB Hack: Tokenized Stocks Edition. BSC mainnet only. Spot only. Not i
 
 ## Live figures
 
-Read on 11 Oct 2026 from the live agent's [`/healthz`](https://agent-production-6403.up.railway.app/healthz) and from the repository. These are counts of things that happened, not claims about returns.
+Read on 17 Oct 2026 from the live agent's [`/healthz`](https://agent-production-6403.up.railway.app/healthz) and from the repository. These are counts of things that happened, not claims about returns.
 
 | | |
 |---|---|
-| Guard decisions recorded by the live agent | 17: 15 LIMIT, 2 BLOCK (the counters reset when the agent restarts) |
+| Guard decisions recorded by the live agent | 27: 15 LIMIT, 12 BLOCK (stored on the agent's volume, so they survive restarts) |
 | Real buys on BSC mainnet | 1 (see below) |
-| Tests | 198 passing, 79 of them in the guard |
+| Free first slices claimed | 10 of 10, every transfer confirmed on chain, network fee paid by Bitstock (see below) |
+| Tests | 221 passing, 83 of them in the guard |
 | Binance Web3 API endpoints used | 8 (listed below), called from Singapore |
 
 ## Proof on BSC mainnet
@@ -45,6 +46,8 @@ Every row is a real transaction or a real recorded response. Nothing here is sim
 | The guard refusing to proceed before the approval existed: BLOCK, "approve first" | [`docs/evidence/guard-nvdab-1usd.railway-sg.json`](docs/evidence/guard-nvdab-1usd.railway-sg.json) |
 | Signed Binance Web3 API calls from an allowed region, and the same call refused from a US connection (`40304`) | [`docs/evidence/`](docs/evidence/) · [`docs/VERIFIED.md`](docs/VERIFIED.md) section 3a |
 | Live on-chain reads of NVDAB's ERC-8056 multiplier | [`docs/evidence/07-onchain-nvdab.json`](docs/evidence/07-onchain-nvdab.json) |
+| The free first slice: 1 USDT swapped into NVDAB, split into ten boxes committed in advance, and all ten claimed on 11 Oct 2026 by wallets that paid no network fee. The relayer paid 100,903 to 105,703 gas per transfer, 0.0000050452 to 0.0000052852 BNB each, 0.0000526091 BNB in all. | [funding swap](https://bscscan.com/tx/0x8513376541801cfa8a8f24c71aaac198e03df19735c863c45877b784b0ca0170) · [box 1](https://bscscan.com/tx/0x707b2d925f2d27c052aeb18e9d588a7e60b31811e333f1c4788ffebbdd3572c1) · [box 10](https://bscscan.com/tx/0xe9c220e1ab3db4f6254350ae6824ed223c5433c14d7a02d372b27922811549f8) · [`docs/evidence/gift-claims-2026-10-11.railway-sg.json`](docs/evidence/gift-claims-2026-10-11.railway-sg.json) (all ten) |
+| A new wallet's first step: the agent prepares and tests a USDT approval for exactly the buy amount, to the spender both Binance answers agree on (rules version 2 live) | [`docs/evidence/approval-and-rules-v2-nvdab-1usd.railway-sg.json`](docs/evidence/approval-and-rules-v2-nvdab-1usd.railway-sg.json) |
 | The claim page refusing a request from the United States with HTTP 451 | Tested on the Vercel deployment from a US connection; see [`docs/screenshots/phone-claim-dark.jpg`](docs/screenshots/phone-claim-dark.jpg) |
 
 ## Architecture
@@ -99,13 +102,13 @@ sequenceDiagram
 |---|---|
 | Signed Binance Web3 API client (RWA Data, Trading, Transaction) | Built, used live |
 | Guard: five checks, four outcomes, stored decision records, written method | Built, used live |
-| Protected buy (Mode A): decision API, prepared and re-simulated transaction, signed in the web app | Built; one real buy on mainnet |
+| Protected buy (Mode A): decision API, prepared and re-simulated transaction, signed in the web app | Built; one real buy on mainnet. A new wallet approves exactly the buy's USDT from the Buy page (prepared and tested live on 17 Oct 2026; not yet signed by a user) |
 | Chain package: unit conversions, EIP-155 signing, ERC-20 transfer with dry run, multiplier events | Built, tested |
 | Explainer and multiplier sentry | Built; the sentry records snapshots on the server |
 | Web app: home, live check, buy, holdings, learn, about, claim notice | Built, deployed at https://trybitstock.xyz |
 | Wallet connection through Reown AppKit (WalletConnect), BNB Smart Chain only | Built, deployed; the wallet list and the relay pairing were checked in a 360 px browser; a full connect and send from a phone is not yet recorded here |
 | Restricted-jurisdiction block on the claim page | Built, tested from a US connection |
-| Free first slice ($1 in ten boxes, network fee paid for the recipient) | Funded and open until 18 Oct 2026 ([funding swap](https://bscscan.com/tx/0x8513376541801cfa8a8f24c71aaac198e03df19735c863c45877b784b0ca0170), block 126,966,466); no claims yet as of 11 Oct 2026 |
+| Free first slice ($1 in ten boxes, network fee paid for the recipient) | Funded ([funding swap](https://bscscan.com/tx/0x8513376541801cfa8a8f24c71aaac198e03df19735c863c45877b784b0ca0170), block 126,966,466); all ten boxes claimed and confirmed on 11 Oct 2026. The draw is revealed after the gift closes on 18 Oct 2026 |
 | Checked buys through the user's own Binance Agentic Wallet (wallet skill, Mode B) | Built; first real swap not yet made. It runs inside the limits the user sets in the Binance App, and the team demonstrates it with its own wallet |
 | Agent on BNB Agent Studio | Built, hosted, registered on-chain (ERC-8004 agent 370988) |
 
@@ -144,7 +147,7 @@ The defaults are conservative starting values, not measured ones; `docs/METHOD.m
 | RWA Data | `GET /api/v1/dex/market/rwa/price` | Probed and recorded |
 | Trading | `GET /api/v1/dex/aggregator/quote` | Live quote at the exact size |
 | Trading | `GET /api/v1/dex/aggregator/swap` | The transaction to dry-run and sign |
-| Trading | `GET /api/v1/dex/aggregator/approve-transaction` | Probed: approval order verified |
+| Trading | `GET /api/v1/dex/aggregator/approve-transaction` | Confirms the spender before Bitstock prepares a USDT approval |
 | Transaction | `POST /api/v1/dex/pre-transaction/simulate` | Dry run of every swap |
 
 Also used: BNB Smart Chain JSON-RPC (multiplier, allowance, balances, gas estimates, receipts) and Yahoo Finance's chart API as the independent stock price (Pyth Pro is tried first when its key is entitled to US equities; see [`docs/VERIFIED.md`](docs/VERIFIED.md) section 6a).

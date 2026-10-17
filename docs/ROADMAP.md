@@ -12,7 +12,7 @@ Order matters: the live probes decide how closed-market behaviour is built.
 - [x] Live probes: RWA status, quote and swap while the market is closed, simulate, approve ordering, on-chain multiplier reads
 - [x] Guard: five checks, four outcomes, stored decision records, `docs/METHOD.md`
 - [x] Chain package and multiplier sentry (snapshots, event logs where a log-capable RPC exists; historical logs not reachable with free RPCs)
-- [ ] Front door: fund, commit, gasless claim with real proof
+- [x] Front door: fund, commit, gasless claim with real proof (all ten boxes claimed on 11 Oct 2026, `docs/evidence/gift-claims-2026-10-11.railway-sg.json`; the draw is revealed after the gift closes on 18 Oct)
 - [x] Web app: Guard HUD, Buy (Mode A), Holdings and Explain, Learn (the Claim page only explains that the gift is not open and refuses restricted regions)
 - [ ] Wallet skill for Mode B with one real Agentic Wallet swap
 - [ ] Studio agent: identity, `guard_check`, `multiplier_status`

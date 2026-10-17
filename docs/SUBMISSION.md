@@ -20,8 +20,8 @@ Cut order if time runs short, from the bottom: Studio agent, Mode B skill, Learn
 
 | Item | Done |
 |---|---|
-| Public repo, accessible through judging (12 to 23 Oct) | [ ] The work is on the working branch; merge it into `main` and confirm the repository is public |
-| Deployed link that loads without a login | [x] https://bitstock-lilac.vercel.app (also https://bitstock-algo-dao-30577dec.vercel.app and https://web-production-37d6.up.railway.app), every page HTTP 200 without login (checked 10 Oct 23:20 UTC) |
+| Public repo, accessible through judging (12 to 23 Oct) | [x] https://github.com/usebitstock/bitstock, public, all work on `main` (the only branch), checked 17 Oct 14:00 UTC |
+| Deployed link that loads without a login | [x] https://trybitstock.xyz (also https://bitstock-lilac.vercel.app and https://web-production-37d6.up.railway.app), every page HTTP 200 without login (checked 17 Oct 13:59 UTC) |
 | Demo video, 4 minutes or less, link works | [ ] |
 | Project submission form: https://forms.gle/yToDUzaDMwWnq6R6A | [ ] |
 | Developer Experience Report form (own words): https://forms.gle/EUQ39xf54GHjC2ys5 | [ ] |

@@ -1,0 +1,145 @@
+{
+  "ranOn": "GET /v1/gift on the Railway agent (asia-southeast1-eqsg3a, egress SG), commit 615099e, 2026-10-17 about 14:00 UTC",
+  "note": "The gift as the agent records it: funded with 1 USDT, ten boxes committed in advance, all ten claimed and confirmed on 11 Oct 2026, each transfer's gas paid by the relayer. Wallets are shortened by the API. Receipts for box 1 (0x707b2d92...) and box 10 (0xe9c220e1...) were read again from bsc-dataseed.bnbchain.org on 2026-10-17 and match: status 0x1, gas used 105691 and 100903, fee 5284550000000 and 5045150000000 wei, sent to the NVDAB contract. The draw is revealed after the gift closes (expiresAt).",
+  "gift": {
+    "open": true,
+    "configured": true,
+    "id": "569b4ca2-ac8c-44c2-996b-dec5dec35b64",
+    "token": "0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+    "received": "4335700126930953",
+    "boxes": [
+      "867140000000000",
+      "650350000000000",
+      "650350000000000",
+      "433570000000000",
+      "433570000000000",
+      "433570000000000",
+      "216780000000000",
+      "216780000000000",
+      "216780000000000",
+      "216780000000000"
+    ],
+    "remaining": 0,
+    "fundedUsd": "1",
+    "boxesUsd": [
+      "0.20",
+      "0.15",
+      "0.15",
+      "0.10",
+      "0.10",
+      "0.10",
+      "0.05",
+      "0.05",
+      "0.05",
+      "0.05"
+    ],
+    "commitment": "4f0f972e557f181597c4f809cba15e3cb0af829e28076e9d85c4fa553f68a4f1",
+    "expiresAt": "2026-10-18T05:49:05.828Z",
+    "fundTx": "0x8513376541801cfa8a8f24c71aaac198e03df19735c863c45877b784b0ca0170",
+    "approveTx": "0xeb971e94533439007dbdd3f99dfc005c2e8cfc473f70c8417f913a1e81979d90",
+    "vault": "0x492f0e1c2c32a524884b891f1b37a171c1a03764",
+    "relayer": "0x67471d8d542111f15481e599e5ff89529efe60ca",
+    "claims": [
+      {
+        "box": 1,
+        "amount": "216780000000000",
+        "status": "confirmed",
+        "txHash": "0x707b2d925f2d27c052aeb18e9d588a7e60b31811e333f1c4788ffebbdd3572c1",
+        "gasUsed": "105691",
+        "feeWei": "5284550000000",
+        "at": "2026-10-11T13:39:56.585Z",
+        "wallet": "0x75a0\u20266b19"
+      },
+      {
+        "box": 2,
+        "amount": "650350000000000",
+        "status": "confirmed",
+        "txHash": "0xd40847533d38e1a19ced01e99ee2fb21031364d5bf72e57bfb9783ad6fd43404",
+        "gasUsed": "105703",
+        "feeWei": "5285150000000",
+        "at": "2026-10-11T14:32:39.940Z",
+        "wallet": "0x1de5\u2026cd30"
+      },
+      {
+        "box": 3,
+        "amount": "216780000000000",
+        "status": "confirmed",
+        "txHash": "0xb3cd973a6717b70d114738968304225e0c44e85f198f82d768c25d1c423f5c61",
+        "gasUsed": "105691",
+        "feeWei": "5284550000000",
+        "at": "2026-10-11T14:33:11.856Z",
+        "wallet": "0xdb33\u202621b8"
+      },
+      {
+        "box": 4,
+        "amount": "650350000000000",
+        "status": "confirmed",
+        "txHash": "0x174ffec1c840b9198b5b15eeb2bea46d0ed80a9ea3e1e0b338df1c797a020120",
+        "gasUsed": "105703",
+        "feeWei": "5285150000000",
+        "at": "2026-10-11T14:33:30.048Z",
+        "wallet": "0x9a8d\u2026c447"
+      },
+      {
+        "box": 5,
+        "amount": "433570000000000",
+        "status": "confirmed",
+        "txHash": "0x61654b07fc524433418114133b7bd583af2c152baa153a604294af817c4383d1",
+        "gasUsed": "105703",
+        "feeWei": "5285150000000",
+        "at": "2026-10-11T14:33:47.358Z",
+        "wallet": "0x21d1\u20264026"
+      },
+      {
+        "box": 6,
+        "amount": "216780000000000",
+        "status": "confirmed",
+        "txHash": "0x70d5c6cf85d4d85b02aec5fa95b78f734ea66961b832d1e724e18acb752b5844",
+        "gasUsed": "105691",
+        "feeWei": "5284550000000",
+        "at": "2026-10-11T14:34:02.850Z",
+        "wallet": "0x19b1\u202621ef"
+      },
+      {
+        "box": 7,
+        "amount": "216780000000000",
+        "status": "confirmed",
+        "txHash": "0xa43d92ffa1cad853d81320ebd289eeaca6938c03023a743f35574d06c805e4c5",
+        "gasUsed": "105691",
+        "feeWei": "5284550000000",
+        "at": "2026-10-11T14:34:23.827Z",
+        "wallet": "0xcd48\u20264d06"
+      },
+      {
+        "box": 8,
+        "amount": "433570000000000",
+        "status": "confirmed",
+        "txHash": "0xc47e9e485b1bf2c6d55923543e66d72d24240ec4c1e399b1a620bc7904afe669",
+        "gasUsed": "105703",
+        "feeWei": "5285150000000",
+        "at": "2026-10-11T14:36:10.900Z",
+        "wallet": "0x223a\u2026cf29"
+      },
+      {
+        "box": 9,
+        "amount": "867140000000000",
+        "status": "confirmed",
+        "txHash": "0xfedaf548152530c8df86ffe4f9d1299cd7e1aa6cd246c5b52193b67bc04fd68b",
+        "gasUsed": "105703",
+        "feeWei": "5285150000000",
+        "at": "2026-10-11T15:09:46.480Z",
+        "wallet": "0xdde1\u2026c21f"
+      },
+      {
+        "box": 10,
+        "amount": "433570000000000",
+        "status": "confirmed",
+        "txHash": "0xe9c220e1ab3db4f6254350ae6824ed223c5433c14d7a02d372b27922811549f8",
+        "gasUsed": "100903",
+        "feeWei": "5045150000000",
+        "at": "2026-10-11T15:10:41.171Z",
+        "wallet": "0xa39b\u2026e1cd"
+      }
+    ]
+  }
+}
