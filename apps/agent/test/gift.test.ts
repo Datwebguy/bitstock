@@ -52,6 +52,11 @@ describe("gift config and region", () => {
     expect(c.relayer).toBeNull();
     expect(c.maxRelayerBnbWei).toBe(10n ** 16n);
   });
+  it("reads the vault's test pool, with a $1 default, and refuses one that is not a dollar amount", () => {
+    expect(giftConfigFromEnv({}).testPoolUsd).toBe("1");
+    expect(giftConfigFromEnv({ GIFT_TEST_POOL_USD: "2.50" }).testPoolUsd).toBe("2.50");
+    expect(() => giftConfigFromEnv({ GIFT_TEST_POOL_USD: "lots" })).toThrow(/GIFT_TEST_POOL_USD/);
+  });
   it("refuses restricted and unknown places", () => {
     for (const c of ["US", "CA", "NL", "GB", "JP", "IR", "CU", "KP", "PR"]) expect(claimRegionAllowed(c, null)).toBe(false);
     expect(claimRegionAllowed("UA", "43")).toBe(false);

@@ -12,7 +12,7 @@ interface GiftStatus {
 }
 
 const bnb = (wei: string | null) => (wei ? units18(wei, 8) : null);
-const CLAIM_STATUS: Record<string, string> = { confirmed: "Delivered", sending: "On its way", reverted: "Not delivered", failed: "Not sent" };
+const CLAIM_STATUS: Record<string, string> = { confirmed: "Delivered", sending: "On its way", reverted: "Refused by the network; box free again", dropped: "Dropped by the network; box free again", failed: "Not sent" };
 
 export function ClaimView({ region }: { region: string | null }) {
   const w = useWallet();
@@ -55,8 +55,15 @@ export function ClaimView({ region }: { region: string | null }) {
     setMsg(null);
     try {
       const res = await fetch("/api/claim", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ wallet: w.account }) });
-      const out = (await res.json().catch(() => ({}))) as GiftClaim & { error?: string; already?: boolean };
+      const out = (await res.json().catch(() => ({}))) as GiftClaim & { error?: string; already?: boolean; retry?: boolean };
       if (!res.ok) throw new Error(out.error ?? "The claim did not go through.");
+      if (out.retry) {
+        // The network refused the transfer, so nothing was sent and the box is free again. Bitstock paid the fee.
+        setPhase("failed");
+        setMsg("The network refused this transfer, so nothing was sent and your wallet can try again. If it is refused again, the stock's issuer may not allow this wallet to receive it.");
+        void load();
+        return;
+      }
       setMine(out);
       setPhase(out.status === "confirmed" ? "done" : "failed");
       void load();

@@ -11,6 +11,7 @@ import { randomUUID, timingSafeEqual } from "node:crypto";
 import { findSwapTx, type SimulationResult } from "@bitstock/binance";
 import {
   addressFromPrivateKey, approveCalldata, erc20Allowance, erc20BalanceOf, getReceipt, isAddress, prepareCall, rpcCall, sendRawTransaction, simulateCall, transferFromCalldata, waitForReceipt,
+  type Receipt,
 } from "@bitstock/chain";
 import { chooseRoute, parseDecimal, type Route } from "@bitstock/guard";
 import type { AgentContext } from "./context.ts";
@@ -26,6 +27,8 @@ export interface GiftConfig {
   relayerKey: string | null;
   proxySecret: string | null;
   maxCampaignUsd: string;
+  /** USDT the vault may hold beyond the campaign, for test sends (AGENTS.md 0.4). */
+  testPoolUsd: string;
   maxRelayerBnbWei: bigint;
   claimDays: number;
 }
@@ -43,6 +46,8 @@ export function giftConfigFromEnv(env: NodeJS.ProcessEnv): GiftConfig {
   if ((vaultKey || relayerKey) && !token) throw new Error("GIFT_TOKEN must name the stock the gift gives");
   const maxCampaignUsd = env["GIFT_CAMPAIGN_MAX_USD"] || "1";
   if (!/^\d{1,4}(\.\d{1,2})?$/.test(maxCampaignUsd)) throw new Error("GIFT_CAMPAIGN_MAX_USD must be a dollar amount");
+  const testPoolUsd = env["GIFT_TEST_POOL_USD"] || "1";
+  if (!/^\d{1,4}(\.\d{1,2})?$/.test(testPoolUsd)) throw new Error("GIFT_TEST_POOL_USD must be a dollar amount");
   const maxBnb = env["GIFT_RELAYER_MAX_BNB"] || "0.01";
   if (!/^\d+(\.\d{1,18})?$/.test(maxBnb) || parseDecimal(maxBnb) > parseDecimal("0.01")) throw new Error("GIFT_RELAYER_MAX_BNB must be at most 0.01 (AGENTS.md 0.4)");
   const claimDays = Number(env["GIFT_CLAIM_DAYS"] || "7");
@@ -56,6 +61,7 @@ export function giftConfigFromEnv(env: NodeJS.ProcessEnv): GiftConfig {
     relayerKey: relayerKey ? k(relayerKey) : null,
     proxySecret: env["GIFT_PROXY_SECRET"] || null,
     maxCampaignUsd,
+    testPoolUsd,
     maxRelayerBnbWei: parseDecimal(maxBnb), // 18-decimal fixed point equals wei
     claimDays,
   };
@@ -75,7 +81,7 @@ interface Campaign {
 }
 interface Claim {
   id: string; campaign_id: string; box_index: number; wallet: string; amount: string; status: string; tx_hash: string | null;
-  gas_used: string | null; fee_wei: string | null; created_at: string; error: string | null;
+  gas_used: string | null; fee_wei: string | null; created_at: string; error: string | null; nonce: string | null;
 }
 
 /** Restricted places, the same list the web app blocks (AGENTS.md 0.5). */
@@ -115,7 +121,63 @@ export class GiftService {
         UNIQUE(campaign_id, wallet), UNIQUE(campaign_id, box_index)
       );
       CREATE TABLE IF NOT EXISTS gift_funding (id TEXT PRIMARY KEY, at TEXT NOT NULL, record TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS gift_claim_history (
+        id TEXT PRIMARY KEY, campaign_id TEXT NOT NULL, box_index INTEGER NOT NULL, wallet TEXT NOT NULL, amount TEXT NOT NULL,
+        status TEXT NOT NULL, tx_hash TEXT, gas_used TEXT, fee_wei TEXT, created_at TEXT NOT NULL, error TEXT, nonce TEXT, settled_at TEXT NOT NULL
+      );
     `);
+    // The relayer nonce of each claim, so a claim the network dropped is told apart from one still on its way.
+    const cols = (this.#db.prepare("PRAGMA table_info(gift_claims)").all() as Array<{ name: string }>).map((c) => c.name);
+    if (!cols.includes("nonce")) this.#db.exec("ALTER TABLE gift_claims ADD COLUMN nonce TEXT");
+  }
+
+  /** Close the database handle (tests, shutdown). */
+  dispose(): void {
+    this.#db.close();
+  }
+
+  /** The vault may hold at most the campaign cap plus the test pool in USDT (AGENTS.md 0.4). */
+  #vaultCapWei(): bigint {
+    return parseDecimal(this.cfg.maxCampaignUsd) + parseDecimal(this.cfg.testPoolUsd); // USDT on BSC has 18 decimals, like the fixed point
+  }
+
+  async #checkVaultCap(vault: string): Promise<bigint> {
+    const bal = (await erc20BalanceOf(this.ctx.rpcUrl, USDT, vault)).value;
+    if (bal > this.#vaultCapWei()) {
+      throw new GiftError(`The vault holds more USDT than its cap of $${this.cfg.maxCampaignUsd} plus a $${this.cfg.testPoolUsd} test pool, so it will not send until that is fixed.`, 503);
+    }
+    return bal;
+  }
+
+  /**
+   * A claim whose transfer reverted moved nothing. It leaves the live table, so its box and its wallet are free
+   * again, and is kept in the history with its real network fee.
+   */
+  #retire(id: string, status: string, gasUsed: string | null, feeWei: string | null): Claim | undefined {
+    this.#db.exec("BEGIN IMMEDIATE");
+    try {
+      const c = this.#db.prepare("SELECT * FROM gift_claims WHERE id = ?").get(id) as unknown as Claim | undefined;
+      if (c) {
+        this.#db.prepare("INSERT INTO gift_claim_history (id, campaign_id, box_index, wallet, amount, status, tx_hash, gas_used, fee_wei, created_at, error, nonce, settled_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+          .run(c.id, c.campaign_id, c.box_index, c.wallet, c.amount, status, c.tx_hash, gasUsed, feeWei, c.created_at, c.error, c.nonce ?? null, new Date().toISOString());
+        this.#db.prepare("DELETE FROM gift_claims WHERE id = ?").run(id);
+      }
+      this.#db.exec("COMMIT");
+      return c ? { ...c, status, gas_used: gasUsed, fee_wei: feeWei } : undefined;
+    } catch (e) {
+      this.#db.exec("ROLLBACK");
+      throw e;
+    }
+  }
+
+  /** Record a claim's receipt: confirmed stays; reverted is retired so the box can be claimed again. */
+  #settle(id: string, r: Receipt): Claim | undefined {
+    const fee = (r.gasUsed * r.effectiveGasPrice).toString();
+    if (r.status === "success") {
+      this.#db.prepare("UPDATE gift_claims SET status = 'confirmed', gas_used = ?, fee_wei = ? WHERE id = ?").run(r.gasUsed.toString(), fee, id);
+      return this.#db.prepare("SELECT * FROM gift_claims WHERE id = ?").get(id) as unknown as Claim | undefined;
+    }
+    return this.#retire(id, "reverted", r.gasUsed.toString(), fee);
   }
 
   /** One send at a time, so nonces and box picks never race. */
@@ -160,7 +222,7 @@ export class GiftService {
       if (!/^\d{1,4}(\.\d{1,2})?$/.test(usd) || parseDecimal(usd) <= 0n) throw new GiftError("usd must be a dollar amount above zero.");
       if (parseDecimal(usd) > parseDecimal(this.cfg.maxCampaignUsd)) throw new GiftError(`The campaign cap is $${this.cfg.maxCampaignUsd}.`);
       const amount = parseDecimal(usd); // USDT on BSC has 18 decimals, like the fixed point
-      const usdtBal = (await erc20BalanceOf(this.ctx.rpcUrl, USDT, vault)).value;
+      const usdtBal = await this.#checkVaultCap(vault);
       if (usdtBal < amount) throw new GiftError("The vault does not hold enough USDT.");
       const routes = (await this.ctx.api.quote({ fromTokenAddress: USDT, toTokenAddress: this.#token(), amount: amount.toString(), userWalletAddress: vault })) as Route[];
       const route = Array.isArray(routes) ? chooseRoute(routes) : undefined;
@@ -179,9 +241,14 @@ export class GiftService {
       const tx = findSwapTx(swap);
       if (!tx || tx.to.toLowerCase() !== route.approveTarget.toLowerCase() || tx.from.toLowerCase() !== vault || BigInt(tx.value || "0") !== 0n) throw new GiftError("The swap Binance built does not match its quote, so it was not sent.", 502);
       const sim = (await this.ctx.api.simulate({ from: tx.from, to: tx.to, value: "0", data: tx.data })) as SimulationResult;
-      const arriving = sim.balanceChanges?.find((c) => c.contractAddress.toLowerCase() === this.#token() && c.owner.toLowerCase() === vault && BigInt(c.change) > 0n);
-      record["simulation"] = { status: sim.status, arriving: arriving?.change ?? null };
+      const arriving = sim.balanceChanges?.find((c) => c.contractAddress.toLowerCase() === this.#token() && c.owner.toLowerCase() === vault && /^\d+$/.test(c.change) && BigInt(c.change) > 0n);
+      // The swap must also take no more USDT than the amount asked for: the vault's approval may be larger.
+      const usdtLines = (sim.balanceChanges ?? []).filter((c) => c.contractAddress.toLowerCase() === USDT.toLowerCase() && c.owner.toLowerCase() === vault);
+      const usdtValid = usdtLines.length > 0 && usdtLines.every((c) => /^-?\d+$/.test(c.change));
+      const usdtSpent = usdtValid ? -usdtLines.reduce((sum, c) => sum + BigInt(c.change), 0n) : null;
+      record["simulation"] = { status: sim.status, arriving: arriving?.change ?? null, usdtSpent: usdtSpent?.toString() ?? null };
       if (sim.status !== "SUCCESS" || !arriving) throw new GiftError("The funding swap failed its test run, so it was not sent.", 502);
+      if (usdtSpent === null || usdtSpent <= 0n || usdtSpent > amount) throw new GiftError("The funding swap's test run would not take exactly the USDT asked for, so it was not sent.", 502);
       const before = (await erc20BalanceOf(this.ctx.rpcUrl, this.#token(), vault)).value;
       const s = await this.#send(vaultKey, vault, tx.to, tx.data, tx.gas ? (BigInt(tx.gas) * 125n) / 100n : undefined);
       const after = (await erc20BalanceOf(this.ctx.rpcUrl, this.#token(), vault)).value;
@@ -199,6 +266,7 @@ export class GiftService {
       const { vault, vaultKey, relayer } = this.#requireKeys();
       const cur = this.current();
       if (cur && cur.status === "open") throw new GiftError("A gift is already open.", 409);
+      await this.#checkVaultCap(vault);
       const last = this.#db.prepare("SELECT record FROM gift_funding ORDER BY at DESC LIMIT 1").get() as { record: string } | undefined;
       const funded = last ? (JSON.parse(last.record) as { swap?: { received?: string; status?: string; tx?: string } }) : null;
       if (!funded?.swap?.received || funded.swap.status !== "success") throw new GiftError("Fund the vault first; boxes come from what was actually received.", 409);
@@ -245,8 +313,10 @@ export class GiftService {
       const index = order.findIndex((_, i) => !taken.has(i));
       if (index < 0) throw new GiftError("Every box has been claimed.", 409);
       const amount = order[index]!;
-      const largest = order.reduce((a, b) => (b > a ? b : a), 0n);
-      if (amount > largest) throw new GiftError("The box is larger than the cap.", 500); // the cap: never more than the largest box
+      // The cap: never more than the largest box. It is worked out again from what the funding swap received,
+      // not from the stored order, so a wrong or altered order cannot raise it.
+      const largest = boxAmounts(BigInt(cur.received)).reduce((a, b) => (b > a ? b : a), 0n);
+      if (amount <= 0n || amount > largest) throw new GiftError("The box is larger than the cap, so nothing was sent.", 500);
       const bnb = BigInt((await rpcCall<string>(this.ctx.rpcUrl, "eth_getBalance", [relayer, "latest"])).result);
       if (bnb > this.cfg.maxRelayerBnbWei) throw new GiftError("The relayer holds more BNB than its cap, so it will not send until that is fixed.", 503);
       const data = transferFromCalldata(vault, w, amount);
@@ -258,11 +328,12 @@ export class GiftService {
       let broadcast = false;
       try {
         const prepared = await prepareCall(this.ctx.rpcUrl, relayerKey, relayer, this.#token(), data);
-        this.#db.prepare("UPDATE gift_claims SET tx_hash = ? WHERE id = ?").run(prepared.signed.hash, id);
+        this.#db.prepare("UPDATE gift_claims SET tx_hash = ?, nonce = ? WHERE id = ?").run(prepared.signed.hash, prepared.nonce.toString(), id);
         await sendRawTransaction(this.ctx.txRpcUrl, prepared.signed.raw);
         broadcast = true;
         const r = await waitForReceipt(this.ctx.txRpcUrl, prepared.signed.hash, 120_000);
-        this.#db.prepare("UPDATE gift_claims SET status = ?, gas_used = ?, fee_wei = ? WHERE id = ?").run(r.status === "success" ? "confirmed" : "reverted", r.gasUsed.toString(), (r.gasUsed * r.effectiveGasPrice).toString(), id);
+        const settled = this.#settle(id, r);
+        if (settled && settled.status === "reverted") return { retry: true, ...this.#publicClaim(settled) };
       } catch (e) {
         const why = e instanceof Error ? e.message.slice(0, 300) : String(e);
         if (!broadcast) {
@@ -290,22 +361,33 @@ export class GiftService {
   }
 
   /**
-   * Settle every claim still marked sending from its receipt (run at start and on a timer). A transaction the node
-   * has never heard of, an hour after it was signed, was dropped: its box and wallet are freed.
+   * Settle every claim still marked sending from its receipt (run at start and on a timer). A claim is freed as
+   * dropped only when the relayer's confirmed nonce has moved past it and it still has no receipt: then another
+   * transaction used that nonce and this one can never land, so its box cannot be paid twice. A node that merely
+   * has not heard of a transaction proves nothing.
    */
   async reconcileClaims(log: (o: Record<string, unknown>) => void): Promise<void> {
     const rows = this.#db.prepare("SELECT * FROM gift_claims WHERE status = 'sending' AND tx_hash IS NOT NULL").all() as unknown as Claim[];
+    if (rows.length === 0) return;
+    // Read the confirmed nonce before any receipt: a transaction that lands in between then shows its receipt.
+    let confirmedNonce: bigint | null = null;
+    if (this.cfg.relayer) {
+      try {
+        confirmedNonce = BigInt((await rpcCall<string>(this.ctx.txRpcUrl, "eth_getTransactionCount", [this.cfg.relayer, "latest"])).result);
+      } catch (e) {
+        log({ level: "warn", msg: "relayer nonce unavailable; no claim is freed this round", error: e instanceof Error ? e.message : String(e) });
+      }
+    }
     for (const c of rows) {
       try {
         const r = await getReceipt(this.ctx.txRpcUrl, c.tx_hash as string);
         if (r) {
-          this.#db.prepare("UPDATE gift_claims SET status = ?, gas_used = ?, fee_wei = ? WHERE id = ?").run(r.status === "success" ? "confirmed" : "reverted", r.gasUsed.toString(), (r.gasUsed * r.effectiveGasPrice).toString(), c.id);
+          this.#settle(c.id, r);
           log({ level: "info", msg: "gift claim settled", box: c.box_index + 1, status: r.status });
           continue;
         }
-        const known = (await rpcCall<unknown>(this.ctx.txRpcUrl, "eth_getTransactionByHash", [c.tx_hash])).result;
-        if (!known && Date.now() - Date.parse(c.created_at) > 3_600_000) {
-          this.#db.prepare("DELETE FROM gift_claims WHERE id = ?").run(c.id);
+        if (confirmedNonce !== null && c.nonce !== null && /^\d+$/.test(c.nonce) && confirmedNonce > BigInt(c.nonce)) {
+          this.#retire(c.id, "dropped", null, null);
           log({ level: "warn", msg: "gift claim dropped by the network; box freed", box: c.box_index + 1 });
         }
       } catch (e) {
@@ -348,12 +430,14 @@ export class GiftService {
     const cur = this.current();
     const configured = Boolean(this.cfg.vault && this.cfg.relayer);
     if (!cur) return { open: false, configured, token: this.cfg.token };
-    const claims = (this.#db.prepare("SELECT * FROM gift_claims WHERE campaign_id = ? ORDER BY created_at").all(cur.id) as unknown as Claim[]).map((c) => this.#publicClaim(c));
+    const live = (this.#db.prepare("SELECT * FROM gift_claims WHERE campaign_id = ? ORDER BY created_at").all(cur.id) as unknown as Claim[]).map((c) => this.#publicClaim(c));
+    const retired = (this.#db.prepare("SELECT * FROM gift_claim_history WHERE campaign_id = ? ORDER BY created_at").all(cur.id) as unknown as Claim[]).map((c) => this.#publicClaim(c));
+    const claims = [...live, ...retired].sort((a, b) => String(a["at"]).localeCompare(String(b["at"])));
     const order = JSON.parse(cur.boxes) as string[];
     // Each box is a fixed share of the dollars spent on the funding swap, shown in cents.
     const fundedUsd = this.#fundedUsd();
     const boxesUsd = fundedUsd ? BOX_WEIGHTS.map((w) => ((parseDecimal(fundedUsd) * BigInt(w)) / 100n / 10n ** 14n).toString()) : null;
-    const active = claims.filter((c) => c.status !== "failed").length;
+    const active = live.filter((c) => c["status"] !== "failed").length;
     return {
       open: cur.status === "open" && Date.parse(cur.expires_at) > Date.now(),
       configured,
