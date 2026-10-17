@@ -29,6 +29,8 @@ const translateLimiter = new RateLimiter(60, 60_000);
 /** Browser origins allowed to call the API (comma-separated): the web app's hosts, nothing else. */
 const allowedOrigins = new Set((process.env["PUBLIC_WEB_ORIGIN"] ?? "").split(",").map((o) => o.trim().replace(/\/+$/, "")).filter(Boolean));
 
+const trustRealIp = Boolean(process.env["RAILWAY_PUBLIC_DOMAIN"]) || process.env["TRUST_X_REAL_IP"] === "1";
+
 const json = (v: unknown) => JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? x.toString() : x), 2);
 
 function send(res: ServerResponse, status: number, body: unknown): void {
@@ -41,8 +43,10 @@ function send(res: ServerResponse, status: number, body: unknown): void {
  * so it is never trusted; the platform proxy's own header, or the last hop it appended, is used.
  */
 function clientKey(req: IncomingMessage): string {
+  // X-Real-IP is trusted only behind a proxy known to set it: Railway's edge does
+  // (docs.railway.com/networking/public-networking/specs-and-limits). Anywhere else a client could send its own.
   const real = req.headers["x-real-ip"];
-  if (typeof real === "string" && real) return real;
+  if (trustRealIp && typeof real === "string" && real) return real;
   const fwd = req.headers["x-forwarded-for"];
   const hops = typeof fwd === "string" ? fwd.split(",").map((h) => h.trim()).filter(Boolean) : [];
   return hops[hops.length - 1] || req.socket.remoteAddress || "unknown";
