@@ -220,6 +220,30 @@ describe("5. simulation", () => {
     expect(pinned(ROUTER, "0x2222222222222222222222222222222222222222").result).toBe("fail");
     expect(pinned(ROUTER, WALLET, "1").result).toBe("fail");
   });
+  describe("pay-token outflow", () => {
+    const USDT = "0x55d398326f99059fF775485246999027B3197955";
+    const ONE_USDT = 10n ** 18n;
+    const spent = (changes: Array<{ contractAddress: string; owner: string; change: string }>) =>
+      checkSimulation({ source: "t", asOf: null, value: { status: "SUCCESS", balanceChanges: [{ contractAddress: STOCK, owner: WALLET, change: "5" }, ...changes] } }, STOCK, WALLET, undefined, { spend: { token: USDT, maxUnits: ONE_USDT } });
+    it("passes when exactly the chosen amount leaves the wallet", () => {
+      const c = spent([{ contractAddress: USDT.toLowerCase(), owner: WALLET, change: "-1000000000000000000" }]);
+      expect(c.result).toBe("pass");
+      expect(c.rawValue).toContain("pay-token change -1000000000000000000");
+    });
+    it("fails when more than the chosen amount would leave the wallet", () => {
+      const c = spent([{ contractAddress: USDT, owner: WALLET, change: "-1000000000000000001" }]);
+      expect(c.result).toBe("fail");
+      expect(c.reason).toContain("more USDT");
+      // Split across lines it is still added up.
+      expect(spent([{ contractAddress: USDT, owner: WALLET, change: "-600000000000000000" }, { contractAddress: USDT, owner: WALLET, change: "-600000000000000000" }]).result).toBe("fail");
+    });
+    it("fails closed when the outflow is missing, positive or malformed", () => {
+      expect(spent([]).result).toBe("fail");
+      expect(spent([{ contractAddress: USDT, owner: "0x2222222222222222222222222222222222222222", change: "-1" }]).result).toBe("fail");
+      expect(spent([{ contractAddress: USDT, owner: WALLET, change: "5" }]).result).toBe("fail");
+      expect(spent([{ contractAddress: USDT, owner: WALLET, change: "-1e18" }]).result).toBe("fail");
+    });
+  });
   it("is unavailable when skipped or unreachable", () => {
     expect(checkSimulation({ source: "t", asOf: null, skipped: "no route" }, STOCK, WALLET).result).toBe("unavailable");
     expect(checkSimulation({ source: "t", asOf: null, error: "timeout" }, STOCK, WALLET).result).toBe("unavailable");

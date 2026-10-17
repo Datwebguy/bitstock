@@ -29,7 +29,7 @@ export interface GuardConfig {
 }
 
 export const DEFAULT_GUARD_CONFIG: GuardConfig = {
-  rulesVersion: "1",
+  rulesVersion: "2",
   multiplierWindowHours: 24,
   priceImpactWarnPercent: "0.3",
   priceImpactMaxPercent: "1.0",

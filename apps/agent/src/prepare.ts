@@ -28,7 +28,7 @@ export async function prepareTransaction(api: BinanceApi, rpcUrl: string, run: G
   const tx = findSwapTx(swap);
   if (!tx) throw new PrepareError("Binance did not return the trade to sign");
   const sim = (await api.simulate({ from: tx.from, to: tx.to, value: String(tx.value ?? "0"), data: tx.data })) as SimulationResult;
-  const check = checkSimulation({ source: "final", asOf: new Date().toISOString(), value: sim }, req.token, req.wallet, { tx: { from: tx.from, to: tx.to, value: String(tx.value ?? "0") }, expectedTo: route.approveTarget });
+  const check = checkSimulation({ source: "final", asOf: new Date().toISOString(), value: sim }, req.token, req.wallet, { tx: { from: tx.from, to: tx.to, value: String(tx.value ?? "0") }, expectedTo: route.approveTarget }, { spend: { token: payToken, maxUnits: amountUnits } });
   if (check.result !== "pass") throw new PrepareError("the final trade failed its test run, so Bitstock will not send it");
 
   // Gas: never the swap's own figure alone (it can be below what the swap really needs).

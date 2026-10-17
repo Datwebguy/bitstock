@@ -29,6 +29,18 @@ describe("contract: recorded live responses", () => {
     expect(c.result).toBe("fail");
     expect(c.reason).toContain("Approve USDT");
   });
+  it("passes the real successful simulation for 1 USDT, and fails it against a smaller spend", () => {
+    const record = ev("guard-nvdab-1usd-after-approval.railway-sg.json");
+    const input = (record.decision.inputs as Array<{ name: string; value: unknown }>).find((i) => i.name === "simulation");
+    const sim = input!.value as { balanceChanges: Array<{ owner: string }> };
+    const wallet = "0x0000000000000000000000000000000000000001";
+    // The evidence redacts the probe wallet's address; put a stand-in back so the owner matches.
+    const value = { ...sim, balanceChanges: sim.balanceChanges.map((c) => ({ ...c, owner: wallet })) };
+    const USDT = "0x55d398326f99059fF775485246999027B3197955";
+    const run = (maxUnits: bigint) => checkSimulation({ source: "evidence", asOf: null, value }, NVDAB, wallet, undefined, { spend: { token: USDT, maxUnits } });
+    expect(run(10n ** 18n).result).toBe("pass");
+    expect(run(10n ** 18n - 1n).result).toBe("fail");
+  });
   it("parses the real Yahoo chart response for NVDA", () => {
     const r = parseYahooChart(ev("reference-yahoo-nvda-chart.json").response, "NVDA");
     expect(r).toEqual({ pricePerShare: "229.28", currency: "USD", priceTime: "2026-10-09T20:00:00.000Z" });

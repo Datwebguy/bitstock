@@ -247,7 +247,19 @@ export interface SwapPin {
   expectedTo: string | undefined;
 }
 
-export function checkSimulation(sim: Sourced<SimulationObs> & { skipped?: string }, stockToken: string, wallet: string, pin?: SwapPin, opts: { approvalByWallet?: boolean } = {}): Check {
+/** The most of the pay token the buyer agreed to spend, in its smallest units. */
+export interface SpendLimit {
+  token: string;
+  maxUnits: bigint;
+}
+
+export function checkSimulation(
+  sim: Sourced<SimulationObs> & { skipped?: string },
+  stockToken: string,
+  wallet: string,
+  pin?: SwapPin,
+  opts: { approvalByWallet?: boolean; spend?: SpendLimit } = {},
+): Check {
   const base = { id: "simulation" as const, name: "Test run", source: sim.source, asOf: sim.asOf, threshold: "SUCCESS and the stock arrives" };
   // Pin the transaction before trusting any dry run of it: it must come from the buyer, go to the
   // contract the quote named as the spender, and carry no BNB.
@@ -281,6 +293,18 @@ export function checkSimulation(sim: Sourced<SimulationObs> & { skipped?: string
     (c) => c.contractAddress?.toLowerCase() === stockToken.toLowerCase() && c.owner?.toLowerCase() === wallet.toLowerCase() && /^\d+$/.test(c.change ?? "0") && BigInt(c.change ?? "0") > 0n,
   );
   if (!arriving) return { ...base, result: "fail", rawValue: `status=SUCCESS, balanceChanges=${JSON.stringify(v.balanceChanges ?? [])}`, reason: "The test run worked but showed no stock arriving in your wallet, so Bitstock will not send it." };
+  if (opts.spend) {
+    // The stock arriving is not enough: the trade must also take no more USDT than the buyer asked to spend.
+    // A wallet that approved a larger amount earlier would otherwise let a wrong trade take more.
+    const lines = (v.balanceChanges ?? []).filter((c) => c.contractAddress?.toLowerCase() === opts.spend!.token.toLowerCase() && c.owner?.toLowerCase() === wallet.toLowerCase());
+    const valid = lines.every((c) => /^-?\d+$/.test(c.change ?? ""));
+    const net = valid ? lines.reduce((sum, c) => sum + BigInt(c.change!), 0n) : 0n;
+    const spent = -net;
+    const raw = `status=SUCCESS, stock change +${arriving.change}, pay-token change ${valid && lines.length ? net.toString() : "not shown"}, allowed ${opts.spend.maxUnits}`;
+    if (!valid || spent <= 0n) return { ...base, result: "fail", rawValue: raw, reason: "The test run did not show how much USDT would leave your wallet, so Bitstock will not send it." };
+    if (spent > opts.spend.maxUnits) return { ...base, result: "fail", rawValue: raw, reason: "The test run would take more USDT from your wallet than the amount you chose, so Bitstock will not send it." };
+    return { ...base, result: "pass", rawValue: raw, reason: "Bitstock tested this exact trade: the stock arrives in your wallet and no more than your amount of USDT leaves it." };
+  }
   return { ...base, result: "pass", rawValue: `status=SUCCESS, stock change +${arriving.change}`, reason: "Bitstock tested this exact trade, and the stock arrives in your wallet." };
 }
 

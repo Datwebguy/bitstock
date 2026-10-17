@@ -1,6 +1,6 @@
 # METHOD.md: how the guard decides
 
-This file explains, in plain words, the rules the guard applies before any buy, and the numbers it uses. The code is `packages/guard/src/rules.ts`; the numbers live in `packages/guard/src/config.ts` and every one of them can be overridden by configuration. Rules version: **1**.
+This file explains, in plain words, the rules the guard applies before any buy, and the numbers it uses. The code is `packages/guard/src/rules.ts`; the numbers live in `packages/guard/src/config.ts` and every one of them can be overridden by configuration. Rules version: **2**.
 
 The guard is deterministic (ADR 0002): the same inputs and the same rules version always give the same decision. Every decision is stored with its inputs, each input's source and time, every check's result and the rules version, so any decision can be replayed later.
 
@@ -29,7 +29,7 @@ Each check returns pass, warn, fail or unavailable, with the value it looked at,
    - If it is older, it is the last close and the stock can move before it trades again: this is **never a pass**; warn up to 10%, fail beyond 10%.
    - If no independent price can be read, the check is unavailable. It still counts as a warning, never a pass (ADR 0003).
 4. **Price and route.** Uses the live quote for the exact amount. Only a direct swap route (`executionMode = SWAP`) is used, because only it can be dry-run; a quote-on-request route alone is refused. Warns above 0.3% price impact, fails above 1%, fails if the quote would deliver nothing. If Binance will not quote because the stock's exchange is closed (`40369`), the check is unavailable and the guard waits.
-5. **Dry run (shown to people as "Test run").** Builds the swap and runs it through Binance's simulator. Passes only if the simulation succeeds **and** shows the stock arriving in the buyer's wallet. Fails otherwise. The simulator checks the wallet's real USDT approval, so a wallet that has not approved USDT yet fails with a message saying to approve first. One exception (ADR 0007): when the buyer is a Binance Agentic Wallet (Mode B), which approves inside its own swap, a failure caused only by the missing approval is a warning, never a pass, so the buy can go ahead only with the tighter LIMIT slippage.
+5. **Dry run (shown to people as "Test run").** Builds the swap and runs it through Binance's simulator. Passes only if the simulation succeeds, shows the stock arriving in the buyer's wallet, **and** shows USDT leaving the wallet by no more than the amount the buyer chose (rules version 2). Fails otherwise, including when the simulation does not show the USDT leaving at all. The final transaction the buyer signs is tested again under the same rule. The simulator checks the wallet's real USDT approval, so a wallet that has not approved USDT yet fails with a message saying to approve first. One exception (ADR 0007): when the buyer is a Binance Agentic Wallet (Mode B), which approves inside its own swap, a failure caused only by the missing approval is a warning, never a pass, so the buy can go ahead only with the tighter LIMIT slippage.
 
 ## The four outcomes
 
@@ -79,3 +79,4 @@ Every default below is a deliberately conservative starting value chosen before 
 |---|---|---|
 | 1 | 2026-10-10 | First version. |
 | 1 | 2026-10-11 | Wording only: reasons are written for people (test run, shares per token, price impact rounded, with "less than 0.01%" for tiny figures; the exact figure stays in the record). Agentic Wallet exception to check 5 (ADR 0007); no threshold changed. |
+| 2 | 2026-10-17 | Check 5 also requires the test run to show USDT leaving the wallet by no more than the chosen amount. Before, only the stock arriving was checked, so a wallet that had approved more USDT earlier could have been asked to sign a trade that took more. No threshold changed. Recorded real simulation (`docs/evidence/guard-nvdab-1usd-after-approval.railway-sg.json`): a $1 buy shows exactly `-1000000000000000000` USDT. |
