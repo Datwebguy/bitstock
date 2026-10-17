@@ -31,13 +31,14 @@ export async function prepareTransaction(api: BinanceApi, rpcUrl: string, run: G
   const check = checkSimulation({ source: "final", asOf: new Date().toISOString(), value: sim }, req.token, req.wallet, { tx: { from: tx.from, to: tx.to, value: String(tx.value ?? "0") }, expectedTo: route.approveTarget }, { spend: { token: payToken, maxUnits: amountUnits } });
   if (check.result !== "pass") throw new PrepareError("the final trade failed its test run, so Bitstock will not send it");
 
-  // Gas: never the swap's own figure alone (it can be below what the swap really needs).
+  // Gas: never the swap's own figure alone. It was 250000 where the swap used 939279 (docs/DX_EVIDENCE.md),
+  // so without the node's estimate the trade would likely run out of gas and the buyer would pay for nothing.
   const fromSwap = tx.gas ? BigInt(tx.gas) : 0n;
   const estimated = await rpcCall<string>(rpcUrl, "eth_estimateGas", [{ from: tx.from, to: tx.to, data: tx.data, value: "0x0" }])
     .then((r) => BigInt(r.result))
     .catch(() => null);
-  const base = estimated !== null && estimated > fromSwap ? estimated : fromSwap;
-  if (base === 0n) throw new PrepareError("the network fee for the final trade could not be worked out");
+  if (estimated === null || estimated <= 0n) throw new PrepareError("the network fee for the final trade could not be worked out, so Bitstock will not ask you to sign it");
+  const base = estimated > fromSwap ? estimated : fromSwap;
   const gas = (base * GAS_HEADROOM_PERCENT) / 100n;
   const nodePrice = BigInt((await rpcCall<string>(rpcUrl, "eth_gasPrice", [])).result);
   const swapPrice = tx.gasPrice ? BigInt(tx.gasPrice) : 0n;
@@ -55,7 +56,7 @@ export async function prepareTransaction(api: BinanceApi, rpcUrl: string, run: G
     slippagePercent: record.limits.slippagePercent,
     minReceiveAmount: typeof tx["minReceiveAmount"] === "string" ? (tx["minReceiveAmount"] as string) : null,
     simulation: { status: sim.status, stockArriving: arriving?.change ?? null },
-    gasSources: { swapResponse: tx.gas ?? null, nodeEstimate: estimated?.toString() ?? null, headroomPercent: "25" },
+    gasSources: { swapResponse: tx.gas ?? null, nodeEstimate: estimated.toString(), headroomPercent: "25" },
     expiresAt: Date.now() + PREPARED_TTL_MS,
   };
 }
