@@ -4,7 +4,7 @@
  * becomes a default value.
  */
 import { BinanceApi, findMarketStatus, findSwapTx, type SimulationResult } from "@bitstock/binance";
-import { erc20Allowance, isAddress, readMultiplierState } from "@bitstock/chain";
+import { erc20Allowance, erc20BalanceOf, isAddress, readMultiplierState } from "@bitstock/chain";
 import type { GuardConfig } from "./config.ts";
 import { parseDecimal, tryParseDecimal } from "./decimal.ts";
 import { buildRecord } from "./record.ts";
@@ -93,10 +93,15 @@ export async function runGuardWithContext(deps: GuardDeps, req: GuardRequest, cf
   // 5. simulation: allowance first (the simulator is stateful), then build and dry-run the swap
   let simObs: Sourced<SimulationObs> & { skipped?: string } = { source: `${BINANCE} pre-transaction/simulate`, asOf: null };
   let pin: SwapPin | undefined;
+  let heldUnits: bigint | undefined;
   if (!route) {
     simObs = { ...simObs, skipped: "there is no swap route to test." };
   } else {
     const spender = route.approveTarget;
+    // The balance is read with the allowance, so a failed test run can say how much USDT the wallet holds.
+    const balance = await timed(() => erc20BalanceOf(deps.rpcUrl, deps.payToken, req.wallet));
+    if (balance.ok) heldUnits = balance.value.value;
+    add({ name: "pay-token balance", value: balance.ok ? { balance: balance.value.value.toString(), needed: amountUnits.toString() } : null, source: "BSC eth_call balanceOf", asOf: balance.at, status: balance.ok ? "ok" : "unavailable", ...(!balance.ok ? { error: balance.error } : {}) });
     if (spender && isAddress(spender)) {
       const allowance = await timed(() => erc20Allowance(deps.rpcUrl, deps.payToken, req.wallet, spender));
       add({ name: "pay-token allowance", value: allowance.ok ? { spender, allowance: allowance.value.value.toString(), needed: amountUnits.toString() } : null, source: "BSC eth_call allowance", asOf: allowance.at, status: allowance.ok ? "ok" : "unavailable", ...(!allowance.ok ? { error: allowance.error } : {}) });
@@ -122,7 +127,7 @@ export async function runGuardWithContext(deps: GuardDeps, req: GuardRequest, cf
     checkMultiplier(multObs, now, cfg),
     checkReference(refObs, quotePricePerToken(route), mult.ok ? mult.value.uiMultiplier : undefined, now, cfg),
     checkExecution(quoteObs, cfg),
-    checkSimulation(simObs, req.token, req.wallet, pin, { approvalByWallet: req.executor === "agentic-wallet", spend: { token: deps.payToken, maxUnits: amountUnits } }),
+    checkSimulation(simObs, req.token, req.wallet, pin, { approvalByWallet: req.executor === "agentic-wallet", spend: { token: deps.payToken, maxUnits: amountUnits, decimals: deps.payDecimals }, ...(heldUnits !== undefined ? { heldUnits } : {}) }),
   ];
   const impact = tryParseDecimal(route?.priceImpactPercent);
   const decision = decide(checks, impact, now, cfg);

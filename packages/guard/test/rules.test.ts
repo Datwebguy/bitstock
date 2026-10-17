@@ -192,6 +192,15 @@ describe("5. simulation", () => {
     // Any other failure still fails for an Agentic Wallet.
     expect(checkSimulation({ ...failed, value: { ...failed.value, failReason: "execution reverted: paused" } }, STOCK, WALLET, undefined, { approvalByWallet: true }).result).toBe("fail");
   });
+  it("says how much USDT the wallet holds and how much the buy needs", () => {
+    const failed = { source: "t", asOf: null, value: { status: "FAILED", failReason: "execution reverted: BEP20: transfer amount exceeds balance", balanceChanges: [] } };
+    const USDT = "0x55d398326f99059fF775485246999027B3197955";
+    const c = checkSimulation(failed, STOCK, WALLET, undefined, { spend: { token: USDT, maxUnits: 10n ** 18n, decimals: 18 }, heldUnits: 0n });
+    expect(c.result).toBe("fail");
+    expect(c.reason).toBe("Your wallet holds 0.00 USDT on BNB Smart Chain, and this buy needs 1.00 USDT. Add USDT on BNB Smart Chain, then check again.");
+    // A shortfall is never rounded away: 0.999 USDT reads 0.99.
+    expect(checkSimulation(failed, STOCK, WALLET, undefined, { spend: { token: USDT, maxUnits: 10n ** 18n }, heldUnits: 999n * 10n ** 15n }).reason).toContain("holds 0.99 USDT");
+  });
   it("says plainly when the wallet lacks USDT", () => {
     const c = sim({ status: "FAILED", failReason: "execution reverted: BEP20: transfer amount exceeds balance", balanceChanges: [] });
     expect(c.result).toBe("fail");

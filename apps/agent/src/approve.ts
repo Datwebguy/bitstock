@@ -4,8 +4,8 @@
  * first buy can never pass the guard. Nothing is signed here: the user signs in their own wallet.
  */
 import type { BinanceApi } from "@bitstock/binance";
-import { approveCalldata, erc20Allowance, isAddress, rpcCall, simulateCall } from "@bitstock/chain";
-import { chooseRoute, parseDecimal, type Route } from "@bitstock/guard";
+import { approveCalldata, erc20Allowance, erc20BalanceOf, isAddress, rpcCall, simulateCall } from "@bitstock/chain";
+import { chooseRoute, parseDecimal, payAmountText, type Route } from "@bitstock/guard";
 
 const APPROVAL_TTL_MS = 90_000;
 const GAS_HEADROOM_PERCENT = 125n;
@@ -38,6 +38,12 @@ export function findApproveSpender(resp: unknown): string | undefined {
 export async function prepareApproval(api: BinanceApi, rpcUrl: string, payToken: string, payDecimals: number, req: { token: string; amountUsd: string; wallet: string }): Promise<PreparedApproval> {
   const amount = (parseDecimal(req.amountUsd) * 10n ** BigInt(payDecimals)) / 10n ** 18n;
   if (amount <= 0n) throw new ApprovalError("the amount must be above zero");
+
+  // An approval is useless without the USDT to spend, and it costs a network fee. Say so before asking for it.
+  const held = (await erc20BalanceOf(rpcUrl, payToken, req.wallet)).value;
+  if (held < amount) {
+    throw new ApprovalError(`your wallet holds ${payAmountText(held, payDecimals)} USDT on BNB Smart Chain, and this buy needs ${payAmountText(amount, payDecimals)} USDT. Add USDT on BNB Smart Chain first; there is nothing to approve until then`);
+  }
 
   // Two answers from Binance must agree on the spender before the user is asked to trust it: the route the
   // guard will use, and Binance's own approval endpoint.

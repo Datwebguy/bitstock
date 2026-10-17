@@ -251,6 +251,13 @@ export interface SwapPin {
 export interface SpendLimit {
   token: string;
   maxUnits: bigint;
+  /** The pay token's decimals, for showing amounts to the buyer. Defaults to 18 (USDT on BSC). */
+  decimals?: number;
+}
+
+/** A pay-token amount for people: whole units with two decimals, truncated (so a shortfall is never rounded away). */
+export function payAmountText(units: bigint, decimals = 18): string {
+  return formatDecimal(rescale(units, decimals, 18), 2);
 }
 
 export function checkSimulation(
@@ -258,7 +265,7 @@ export function checkSimulation(
   stockToken: string,
   wallet: string,
   pin?: SwapPin,
-  opts: { approvalByWallet?: boolean; spend?: SpendLimit } = {},
+  opts: { approvalByWallet?: boolean; spend?: SpendLimit; /** The pay token the wallet holds, read from the chain. */ heldUnits?: bigint } = {},
 ): Check {
   const base = { id: "simulation" as const, name: "Test run", source: sim.source, asOf: sim.asOf, threshold: "SUCCESS and the stock arrives" };
   // Pin the transaction before trusting any dry run of it: it must come from the buyer, go to the
@@ -285,7 +292,11 @@ export function checkSimulation(
       return { ...base, result: "fail", rawValue: `status=${v.status}, failReason=${why}`, reason: "The test run failed because your wallet has not yet allowed this trade to use your USDT. Approve USDT in your wallet first, then check again." };
     }
     if (/exceeds balance|insufficient balance/i.test(why)) {
-      return { ...base, result: "fail", rawValue: `status=${v.status}, failReason=${why}`, reason: "Your wallet does not hold enough USDT for this buy. Add USDT on BNB Smart Chain, then check again." };
+      const amounts = opts.heldUnits !== undefined && opts.spend
+        ? `Your wallet holds ${payAmountText(opts.heldUnits, opts.spend.decimals)} USDT on BNB Smart Chain, and this buy needs ${payAmountText(opts.spend.maxUnits, opts.spend.decimals)} USDT. `
+        : "Your wallet does not hold enough USDT for this buy. ";
+      const raw = `status=${v.status}, failReason=${why}${opts.heldUnits !== undefined ? `, held ${opts.heldUnits}` : ""}`;
+      return { ...base, result: "fail", rawValue: raw, reason: `${amounts}Add USDT on BNB Smart Chain, then check again.` };
     }
     return { ...base, result: "fail", rawValue: `status=${v.status}, failReason=${why}`, reason: "The test run of this trade failed, so Bitstock will not send it." };
   }

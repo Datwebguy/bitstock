@@ -10,6 +10,7 @@ All notable changes are recorded here. The format follows Keep a Changelog and t
 - Languages: English, 简体中文, Español, Português, Türkçe and Tiếng Việt, chosen in the header. The agent translates on-screen text through `/v1/translate` (OpenAI, `OPENAI_API_KEY`), caches each sentence, and keeps the English wherever a number, amount, address or name would change. Without the key the site stays in English.
 
 ### Fixed
+- Buy: when the test run fails for lack of USDT, Bitstock says how much USDT the wallet holds on BNB Smart Chain and how much the buy needs, instead of only "not enough". The approval step now refuses, before any network fee, when the wallet does not hold the buy's USDT: an approval cannot help until the USDT is there.
 - Guard (rules version 2): the test run must also show USDT leaving the wallet by no more than the chosen amount, for the check and again for the final transaction. The gift's funding swap follows the same rule. See `docs/METHOD.md`.
 - Guard: quotes and swaps are no longer served from the 30-second read cache, so a check never rests on a reused quote, and the final trade is not built from an expired one.
 - Buy: if the node cannot estimate the network fee, Bitstock does not prepare the trade. Before, it fell back to the swap API's figure, which was about a quarter of what real swaps used, so the trade would likely have run out of gas.

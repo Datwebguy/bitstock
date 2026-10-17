@@ -17,7 +17,7 @@ function fakeApi(spenderFromQuote: string | undefined, spenderFromApprove: strin
   } as unknown as BinanceApi;
 }
 
-function stubRpc(opts: { allowance: bigint; approveOk?: boolean; estimate?: string | null }): Array<{ method: string; params: unknown[] }> {
+function stubRpc(opts: { allowance: bigint; approveOk?: boolean; estimate?: string | null; balance?: bigint }): Array<{ method: string; params: unknown[] }> {
   const seen: Array<{ method: string; params: unknown[] }> = [];
   vi.stubGlobal("fetch", async (_url: string, init: { body: string }) => {
     const { method, params } = JSON.parse(init.body) as { method: string; params: Array<{ data?: string }> };
@@ -26,6 +26,7 @@ function stubRpc(opts: { allowance: bigint; approveOk?: boolean; estimate?: stri
     if (method === "eth_call") {
       const data = params[0]?.data ?? "";
       if (data.startsWith("0xdd62ed3e")) return reply({ result: word(opts.allowance) });
+      if (data.startsWith("0x70a08231")) return reply({ result: word(opts.balance ?? 10n ** 20n) });
       if (data.startsWith("0x095ea7b3")) return opts.approveOk === false ? reply({ error: { code: 3, message: "execution reverted" } }) : reply({ result: word(1n) });
     }
     if (method === "eth_estimateGas") return opts.estimate === null ? reply({ error: { code: -32000, message: "cannot estimate" } }) : reply({ result: opts.estimate ?? "0xb5b0" });
@@ -66,6 +67,11 @@ describe("preparing a USDT approval", () => {
     await expect(prepareApproval(fakeApi(ROUTER, ROUTER), "http://rpc.test", USDT, 18, req)).rejects.toThrow(/test run/);
     stubRpc({ allowance: 0n, estimate: null });
     await expect(prepareApproval(fakeApi(ROUTER, ROUTER), "http://rpc.test", USDT, 18, req)).rejects.toThrow(/network fee/);
+  });
+  it("refuses before any fee when the wallet does not hold the USDT to spend", async () => {
+    const seen = stubRpc({ allowance: 0n, balance: 0n });
+    await expect(prepareApproval(fakeApi(ROUTER, ROUTER), "http://rpc.test", USDT, 18, req)).rejects.toThrow("your wallet holds 0.00 USDT on BNB Smart Chain, and this buy needs 1.00 USDT");
+    expect(seen.some((s) => s.method === "eth_estimateGas")).toBe(false);
   });
   it("finds the spender in the live approve-transaction shape", () => {
     expect(findApproveSpender([{ data: "0x", dexContractAddress: ROUTER }])).toBe(ROUTER);
