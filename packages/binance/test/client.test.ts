@@ -66,6 +66,17 @@ describe("BinanceClient", () => {
     expect(calls).toHaveLength(3);
   });
 
+  it("never caches quotes or swaps, which expire in about 30 seconds", async () => {
+    const { client, calls } = make([ok([{ quoteId: "q1" }]), ok([{ quoteId: "q2" }]), ok({ tx: 1 }), ok({ tx: 2 })]);
+    const api = new BinanceApi(client);
+    const p = { fromTokenAddress: "0x1", toTokenAddress: "0x2", amount: "1", userWalletAddress: "0x3" };
+    expect(await api.quote(p)).toEqual([{ quoteId: "q1" }]);
+    expect(await api.quote(p)).toEqual([{ quoteId: "q2" }]);
+    await api.swap({ ...p, quoteId: "q2" });
+    expect(await api.swap({ ...p, quoteId: "q2" })).toEqual({ tx: 2 });
+    expect(calls).toHaveLength(4);
+  });
+
   it("refetches after the cache expires", async () => {
     let t = 0;
     const { client, calls } = make([ok(1), ok(2)], { now: () => t, cacheTtlMs: 30_000 });

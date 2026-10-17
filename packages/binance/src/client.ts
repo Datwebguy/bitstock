@@ -95,6 +95,14 @@ export class BinanceClient {
     return this.#request<T>("GET", apiPath, buildQuery(params), "", true);
   }
 
+  /**
+   * Signed GET that is never cached. For prices and trades: a quote lives about 30 seconds and a
+   * decision must never rest on a reused one.
+   */
+  getFresh<T>(apiPath: string, params: Record<string, string | number | boolean | undefined> = {}): Promise<T> {
+    return this.#request<T>("GET", apiPath, buildQuery(params), "", false);
+  }
+
   /** Signed POST with a JSON body. Never cached. */
   post<T>(apiPath: string, body: unknown): Promise<T> {
     return this.#request<T>("POST", apiPath, "", JSON.stringify(body), false);

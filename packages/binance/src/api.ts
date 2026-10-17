@@ -114,15 +114,15 @@ export class BinanceApi {
   }
 
   quote(p: QuoteParams): Promise<unknown> {
-    return this.client.get(`${AGG}/quote`, { binanceChainId: BSC_CHAIN_ID, ...p });
+    return this.client.getFresh(`${AGG}/quote`, { binanceChainId: BSC_CHAIN_ID, ...p });
   }
 
   swap(p: SwapParams): Promise<unknown> {
-    return this.client.get(`${AGG}/swap`, { binanceChainId: BSC_CHAIN_ID, ...p });
+    return this.client.getFresh(`${AGG}/swap`, { binanceChainId: BSC_CHAIN_ID, ...p });
   }
 
   quoteAndSwap(p: QuoteParams & { slippagePercent?: string; autoSlippage?: boolean }): Promise<unknown> {
-    return this.client.get(`${AGG}/quote-and-swap`, { binanceChainId: BSC_CHAIN_ID, vendor: "LiquidMesh", ...p });
+    return this.client.getFresh(`${AGG}/quote-and-swap`, { binanceChainId: BSC_CHAIN_ID, vendor: "LiquidMesh", ...p });
   }
 
   approveTransaction(p: { tokenContractAddress: string; approveAmount: string; vendor?: string }): Promise<unknown> {
@@ -142,6 +142,6 @@ export class BinanceApi {
   }
 
   transactionDetail(txHash: string): Promise<unknown> {
-    return this.client.get("/api/v1/dex/post-transaction/transaction-detail-by-txhash", { binanceChainId: BSC_CHAIN_ID, txHash });
+    return this.client.getFresh("/api/v1/dex/post-transaction/transaction-detail-by-txhash", { binanceChainId: BSC_CHAIN_ID, txHash });
   }
 }
