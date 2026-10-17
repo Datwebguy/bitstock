@@ -1,0 +1,239 @@
+{
+  "ranOn": "Railway agent service, asia-southeast1-eqsg3a (egress SG), commit 615099e, 2026-10-17 about 13:42 UTC",
+  "note": "Read-only checks for the burn address 0x...dEaD, which holds no USDT allowance. POST /v1/decisions shows rules version 2 live and a BLOCK caused only by the missing allowance; POST /v1/approvals prepares and tests an approval for exactly 1 USDT to the spender recorded in docs/VERIFIED.md section 3a. Nothing was signed or sent.",
+  "decision": {
+    "id": "31e6da8d-f0a7-4dc2-b79f-122b6363c2b8",
+    "at": "2026-10-17T13:42:22.374Z",
+    "rulesVersion": "2",
+    "request": {
+      "token": "0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+      "side": "buy",
+      "amountUsd": "1",
+      "wallet": "0x000000000000000000000000000000000000dEaD",
+      "executor": "own-wallet"
+    },
+    "inputs": [
+      {
+        "name": "market status",
+        "value": {
+          "openState": true,
+          "marketStatus": null,
+          "reasonCode": "TRADING",
+          "reasonMsg": null,
+          "nextOpenTime": null,
+          "nextCloseTime": null
+        },
+        "source": "Binance Web3 API rwa/underlying-market",
+        "asOf": "2026-10-17T13:42:21.551Z",
+        "status": "ok"
+      },
+      {
+        "name": "multiplier state",
+        "value": {
+          "uiMultiplier": "1000778223752807865",
+          "newUIMultiplier": "1000778223752807865",
+          "effectiveAt": "0"
+        },
+        "source": "BSC eth_call uiMultiplier/newUIMultiplier/effectiveAt",
+        "asOf": "2026-10-17T13:42:21.791Z",
+        "status": "ok"
+      },
+      {
+        "name": "quote",
+        "value": [
+          {
+            "quoteId": "9dfed6df71f040e4b199b893ec650887",
+            "vendorName": "LiquidMesh",
+            "executionMode": "SWAP",
+            "binanceChainId": "56",
+            "fromTokenAmount": "1000000000000000000",
+            "toTokenAmount": "4652368763608909",
+            "tradeFee": "0.01492927",
+            "estimateGasFee": "250000",
+            "priceImpactPercent": "0.0008144973",
+            "router": "0x55d398326f99059ff775485246999027b3197955--0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+            "fromToken": {
+              "tokenContractAddress": "0x55d398326f99059fF775485246999027B3197955",
+              "tokenSymbol": "USDT",
+              "tokenUnitPrice": "0.9985985525413036",
+              "decimal": "18",
+              "isHoneyPot": false,
+              "taxRate": "0"
+            },
+            "toToken": {
+              "tokenContractAddress": "0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+              "tokenSymbol": "NVDAB",
+              "tokenUnitPrice": "214.80703794630268014360000000",
+              "decimal": "18",
+              "isHoneyPot": false,
+              "taxRate": "0"
+            },
+            "dexRouterList": [
+              {
+                "dexProtocol": {
+                  "dexName": "Pancakeswap V4",
+                  "percent": "100.00"
+                },
+                "poolAddress": "0x98e5ed25d8637d772b3568c86452b987d5d54c4f0c8c231325144a759cee55b7",
+                "fromToken": {
+                  "tokenContractAddress": "0x55d398326f99059ff775485246999027b3197955",
+                  "tokenSymbol": "USDT",
+                  "tokenUnitPrice": "0.9985985525413036",
+                  "decimal": "18",
+                  "isHoneyPot": false,
+                  "taxRate": "0"
+                },
+                "fromTokenIndex": "0",
+                "toToken": {
+                  "tokenContractAddress": "0x02fca66c1d1afb4e2a7884261eb00f63598a7436",
+                  "tokenSymbol": "NVDAB",
+                  "tokenUnitPrice": "214.80703794630268014360000000",
+                  "decimal": "18",
+                  "isHoneyPot": false,
+                  "taxRate": "0"
+                },
+                "toTokenIndex": "1"
+              }
+            ],
+            "approveTarget": "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5",
+            "isBest": true,
+            "feeAmount": null,
+            "feeToken": null,
+            "actualSwapAmount": null
+          }
+        ],
+        "source": "Binance Web3 API aggregator/quote",
+        "asOf": "2026-10-17T13:42:21.661Z",
+        "status": "ok"
+      },
+      {
+        "name": "underlying ticker",
+        "value": "NVDA",
+        "source": "Binance Web3 API rwa/underlying-profile",
+        "asOf": "2026-10-17T13:42:21.551Z",
+        "status": "ok"
+      },
+      {
+        "name": "independent price",
+        "value": {
+          "pricePerShare": "214.13",
+          "currency": "USD",
+          "priceTime": "2026-10-16T20:00:00.000Z",
+          "sourceName": "Yahoo Finance chart API (regularMarketPrice) (fallback; earlier source failed: Pyth Pro (Equity.US regular-hours feed): latest_price HTTP 403: Not entitled: feed 1314 (no grant accepts this feed (asset type 'equity', instrument type 'spot', exchange 1)))"
+        },
+        "source": "Yahoo Finance chart API (regularMarketPrice) (fallback; earlier source failed: Pyth Pro (Equity.US regular-hours feed): latest_price HTTP 403: Not entitled: feed 1314 (no grant accepts this feed (asset type 'equity', instrument type 'spot', exchange 1)))",
+        "asOf": "2026-10-16T20:00:00.000Z",
+        "status": "ok"
+      },
+      {
+        "name": "pay-token allowance",
+        "value": {
+          "spender": "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5",
+          "allowance": "0",
+          "needed": "1000000000000000000"
+        },
+        "source": "BSC eth_call allowance",
+        "asOf": "2026-10-17T13:42:22.122Z",
+        "status": "ok"
+      },
+      {
+        "name": "swap transaction",
+        "value": {
+          "from": "0x000000000000000000000000000000000000dEaD",
+          "to": "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5",
+          "value": "0",
+          "dataBytes": 1956
+        },
+        "source": "Binance Web3 API aggregator/swap",
+        "asOf": "2026-10-17T13:42:22.225Z",
+        "status": "ok"
+      },
+      {
+        "name": "simulation",
+        "value": {
+          "status": "FAILED",
+          "failReason": "execution reverted: BEP20: transfer amount exceeds allowance",
+          "balanceChanges": [],
+          "allowanceChanges": []
+        },
+        "source": "Binance Web3 API pre-transaction/simulate",
+        "asOf": "2026-10-17T13:42:22.374Z",
+        "status": "ok"
+      }
+    ],
+    "checks": [
+      {
+        "id": "session",
+        "name": "Stock market",
+        "source": "Binance Web3 API rwa/underlying-market",
+        "asOf": "2026-10-17T13:42:21.551Z",
+        "threshold": null,
+        "result": "pass",
+        "rawValue": "openState=true, reasonCode=TRADING, marketStatus=null, reasonMsg=null",
+        "reason": "Binance shows this stock as open for trading."
+      },
+      {
+        "id": "multiplier",
+        "name": "Shares per token",
+        "source": "BSC eth_call uiMultiplier/newUIMultiplier/effectiveAt",
+        "asOf": "2026-10-17T13:42:21.791Z",
+        "threshold": "change within 24 h warns",
+        "result": "pass",
+        "rawValue": "uiMultiplier=1.000778223752807865, newUIMultiplier=1.000778223752807865, effectiveAt=0",
+        "reason": "Each token stands for 1.000778 shares, and no change is planned."
+      },
+      {
+        "id": "reference",
+        "name": "Price vs the real stock",
+        "source": "Yahoo Finance chart API (regularMarketPrice) (fallback; earlier source failed: Pyth Pro (Equity.US regular-hours feed): latest_price HTTP 403: Not entitled: feed 1314 (no grant accepts this feed (asset type 'equity', instrument type 'spot', exchange 1)))",
+        "asOf": "2026-10-16T20:00:00.000Z",
+        "result": "warn",
+        "rawValue": "buy price per share 214.4761 USD vs 214.1300 USD, gap 0.161%",
+        "threshold": "last close: never a pass, fail > 10.0%",
+        "reason": "The stock's own price is not live right now; its latest price is from 2026-10-16T20:00:00.000Z. You would pay +0.16% compared with it, and the stock can move before normal trading."
+      },
+      {
+        "id": "execution",
+        "name": "Price impact",
+        "source": "Binance Web3 API aggregator/quote",
+        "asOf": "2026-10-17T13:42:21.661Z",
+        "threshold": "warn > 0.3%, fail > 1.0%",
+        "result": "pass",
+        "rawValue": "LiquidMesh SWAP, priceImpactPercent 0.0008144973, output 4652368763608909",
+        "reason": "Your buy would move the price by less than 0.01%."
+      },
+      {
+        "id": "simulation",
+        "name": "Test run",
+        "source": "Binance Web3 API pre-transaction/simulate",
+        "asOf": "2026-10-17T13:42:22.374Z",
+        "threshold": "SUCCESS and the stock arrives",
+        "result": "fail",
+        "rawValue": "status=FAILED, failReason=execution reverted: BEP20: transfer amount exceeds allowance",
+        "reason": "The test run failed because your wallet has not yet allowed this trade to use your USDT. Approve USDT in your wallet first, then check again."
+      }
+    ],
+    "outcome": "BLOCK",
+    "reason": "The test run failed because your wallet has not yet allowed this trade to use your USDT. Approve USDT in your wallet first, then check again.",
+    "limits": null,
+    "recheckAt": null,
+    "txHash": null,
+    "receipt": null
+  },
+  "approval": {
+    "needed": true,
+    "spender": "0xB44446b0c8E56988c34f7Ff73Ae904982b5FdDA5",
+    "amount": "1000000000000000000",
+    "current": "0",
+    "tx": {
+      "from": "0x000000000000000000000000000000000000dEaD",
+      "to": "0x55d398326f99059fF775485246999027B3197955",
+      "value": "0",
+      "data": "0x095ea7b3000000000000000000000000b44446b0c8e56988c34f7ff73ae904982b5fdda50000000000000000000000000000000000000000000000000de0b6b3a7640000",
+      "gas": "58220",
+      "gasPrice": "50000000",
+      "chainId": 56
+    },
+    "expiresAt": 1792244634835
+  }
+}
