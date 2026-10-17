@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, fromLine, type AgentConfig, humanize, RESULT_LABEL, units18, when, type Decision } from "@/lib/api";
+import { api, fromLine, type AgentConfig, type Approval, humanize, needsApproval, RESULT_LABEL, units18, when, type Decision } from "@/lib/api";
 import { short, useWallet, walletMessage } from "@/lib/wallet";
 import { DisconnectButton } from "./DisconnectButton";
 import { StockPicker, useSelectedSymbol, useTokens } from "./Stocks";
@@ -33,6 +33,9 @@ export function BuyFlow() {
   const [buyMsg, setBuyMsg] = useState<string | null>(null);
   const [hash, setHash] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [approval, setApproval] = useState<"idle" | "preparing" | "signing" | "waiting" | "failed">("idle");
+  const [approvalMsg, setApprovalMsg] = useState<string | null>(null);
+  const [approvalHash, setApprovalHash] = useState<string | null>(null);
 
   // A different wallet, or none, means any earlier check and buy no longer apply.
   useEffect(() => {
@@ -41,6 +44,9 @@ export function BuyFlow() {
     setHash(null);
     setBuyMsg(null);
     setCheckErr(null);
+    setApproval("idle");
+    setApprovalMsg(null);
+    setApprovalHash(null);
   }, [w.account]);
 
   useEffect(() => {
@@ -56,6 +62,7 @@ export function BuyFlow() {
     }
     setChecking(true);
     setCheckErr(null);
+    setApprovalMsg(null);
     setD(null);
     setPhase("idle");
     setHash(null);
@@ -67,6 +74,52 @@ export function BuyFlow() {
       setCheckErr(e instanceof Error ? e.message : "The check could not run. Try again in a moment.");
     } finally {
       setChecking(false);
+    }
+  };
+
+  // The approval is on chain once the agent reads an allowance that covers the amount; then the buy is checked again.
+  const waitForApproval = async (tries: number) => {
+    if (!w.account || !token) return;
+    try {
+      const a = await api<Approval>("/approvals", { method: "POST", body: JSON.stringify({ token: token.address, amountUsd: amount, wallet: w.account }) });
+      if (!a.needed) {
+        setApproval("idle");
+        setApprovalHash(null);
+        return void check();
+      }
+    } catch {
+      /* keep waiting */
+    }
+    if (tries > 0) setTimeout(() => void waitForApproval(tries - 1), 4000);
+    else {
+      setApproval("failed");
+      setApprovalMsg("Your approval is taking longer than usual to confirm. Look it up on BscScan with the link above, then check this buy again.");
+    }
+  };
+
+  const approve = async () => {
+    if (!w.account || !token) return;
+    setApproval("preparing");
+    setApprovalMsg(null);
+    try {
+      const a = await api<Approval>("/approvals", { method: "POST", body: JSON.stringify({ token: token.address, amountUsd: amount, wallet: w.account }) });
+      if (!a.needed || !a.tx) {
+        setApproval("idle");
+        return void check();
+      }
+      if (a.tx.from.toLowerCase() !== w.account.toLowerCase() || (a.expiresAt !== null && Date.now() > a.expiresAt)) {
+        setApproval("failed");
+        setApprovalMsg("The approval no longer matches your wallet. Check this buy again.");
+        return;
+      }
+      setApproval("signing");
+      const h = await w.send({ from: a.tx.from, to: a.tx.to, data: a.tx.data, value: "0x0", gas: "0x" + BigInt(a.tx.gas).toString(16), gasPrice: "0x" + BigInt(a.tx.gasPrice).toString(16) });
+      setApprovalHash(h);
+      setApproval("waiting");
+      void waitForApproval(30);
+    } catch (e) {
+      setApproval("failed");
+      setApprovalMsg(e instanceof Error && !("code" in e) ? e.message : walletMessage(e, "Your wallet did not send the approval. Nothing was approved."));
     }
   };
 
@@ -171,6 +224,19 @@ export function BuyFlow() {
             ))}
           </ol>
           <p className="source">Checked {when(d.at)} · saved so you can look it up later (reference {d.id.slice(0, 8)})</p>
+
+          {needsApproval(d) ? (
+            <>
+              <hr className="divider" />
+              <h3>First, allow this buy to use your USDT</h3>
+              <p className="small">Your wallet has not yet allowed Binance&apos;s swap contract to use your USDT, so the test run could not finish. Approve exactly ${amount} of USDT, the amount of this buy and no more. Your wallet shows a small network fee. Bitstock checks the buy again as soon as the approval is confirmed.</p>
+              <button className="btn btn-primary" type="button" onClick={() => void approve()} disabled={approval === "preparing" || approval === "signing" || approval === "waiting"}>
+                {approval === "preparing" ? "Preparing and testing the approval…" : approval === "signing" ? "Confirm in your wallet…" : approval === "waiting" ? "Waiting for the approval to confirm…" : `Approve $${amount} of USDT`}
+              </button>
+              {approvalHash ? <p className="msg info"><a href={`https://bscscan.com/tx/${approvalHash}`} target="_blank" rel="noopener noreferrer">See your approval on BscScan</a></p> : null}
+              {approvalMsg ? <p className="msg error" role="alert">{approvalMsg}</p> : null}
+            </>
+          ) : null}
 
           {p && (d.outcome === "GO" || d.outcome === "LIMIT") ? (
             <>

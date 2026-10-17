@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fromLine, friendlySource, humanize, sessionWord, trimDecimal, units18 } from "../lib/api.ts";
+import { fromLine, friendlySource, humanize, needsApproval, sessionWord, trimDecimal, units18, type Check } from "../lib/api.ts";
 
 describe("web display helpers", () => {
   it("names data sources in plain words", () => {
@@ -29,5 +29,13 @@ describe("web display helpers", () => {
     expect(trimDecimal("abc", 2)).toBeNull();
     expect(units18("4333697515150079")).toBe("0.004333");
     expect(units18(null)).toBeNull();
+  });
+  it("offers an approval only when a missing allowance is the one thing that failed", () => {
+    const c = (id: string, result: Check["result"], rawValue: string | null = null): Check => ({ id, name: id, result, rawValue, threshold: null, source: "t", asOf: null, reason: "r" });
+    const allowance = c("simulation", "fail", "status=FAILED, failReason=execution reverted: BEP20: transfer amount exceeds allowance");
+    expect(needsApproval({ outcome: "BLOCK", checks: [c("session", "pass"), allowance] })).toBe(true);
+    expect(needsApproval({ outcome: "BLOCK", checks: [c("session", "fail"), allowance] })).toBe(false);
+    expect(needsApproval({ outcome: "BLOCK", checks: [c("simulation", "fail", "status=FAILED, failReason=execution reverted: paused")] })).toBe(false);
+    expect(needsApproval({ outcome: "LIMIT", checks: [c("simulation", "warn", "status=FAILED, failReason=... allowance")] })).toBe(false);
   });
 });

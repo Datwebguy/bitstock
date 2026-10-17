@@ -31,6 +31,23 @@ export interface Decision {
   prepared?: { from: string; to: string; value: string; data: string; gas: string; gasPrice: string; slippagePercent: string; minReceiveAmount: string | null; simulation: { status: string; stockArriving: string | null }; expiresAt: number } | null;
 }
 
+/** A USDT approval for exactly one buy's amount, prepared and tested by the agent; the user signs it. */
+export interface Approval {
+  needed: boolean;
+  spender: string;
+  amount: string;
+  current: string;
+  tx: { from: string; to: string; value: string; data: string; gas: string; gasPrice: string; chainId: number } | null;
+  expiresAt: number | null;
+}
+
+/** True when the only thing stopping this buy is that the wallet has not approved USDT for it yet. */
+export function needsApproval(d: Pick<Decision, "outcome" | "checks">): boolean {
+  if (d.outcome !== "BLOCK") return false;
+  const failed = d.checks.filter((c) => c.result === "fail");
+  return failed.length === 1 && failed[0]!.id === "simulation" && /allowance/i.test(failed[0]!.rawValue ?? "");
+}
+
 export interface Position {
   token: { address: string; symbol: string; name: string | null; logo: string | null; ticker: string | null; company: string };
   balance: { raw: string; tokens: string; source: string; asOf: string };

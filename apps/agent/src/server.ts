@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { ApprovalError, prepareApproval } from "./approve.ts";
 import { isAdmin } from "./auth.ts";
 import { variableStatus } from "./config.ts";
 import { buildContext } from "./context.ts";
@@ -8,7 +9,7 @@ import { runLiveGuard } from "./guard.ts";
 import { health } from "./health.ts";
 import { holdingsView, marketView } from "./market.ts";
 import { clearKill, engageKill, killState } from "./killswitch.ts";
-import { PROBE_NAMES, runProbe } from "./probes.ts";
+import { PROBE_NAMES, runProbe, USDT } from "./probes.ts";
 import { RateLimiter } from "./ratelimit.ts";
 import { attachUserTx, reconcileSubmitted } from "./reconcile.ts";
 import { sentryStatus, startSentry } from "./sentry.ts";
@@ -142,6 +143,19 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     const record = await makeDecision(ctx, request, key);
     log({ level: "info", msg: "decision", id: record.id, outcome: record.outcome, rulesVersion: record.rulesVersion });
     return send(res, 200, record);
+  }
+
+  if (path === "/v1/approvals" && method === "POST") {
+    if (!decisionLimiter.allow(clientKey(req))) return send(res, 429, { error: "Too many checks from this address. Wait a minute and try again." });
+    const request = validateRequest(await readJson(req), ctx.caps.maxBuyUsd);
+    if (!(await findToken(ctx, request.token))) return send(res, 400, { error: "That stock is not listed right now." });
+    if (killState(ctx.env, ctx.repo).on) return send(res, 503, { error: "Bitstock is paused by its operator, so nothing can be prepared right now." });
+    try {
+      return send(res, 200, await prepareApproval(ctx.api, ctx.rpcUrl, USDT, 18, request));
+    } catch (e) {
+      if (e instanceof ApprovalError) return send(res, 409, { error: e.message.charAt(0).toUpperCase() + e.message.slice(1) + "." });
+      throw e;
+    }
   }
 
   const m = /^\/v1\/decisions\/([0-9a-f-]{36})(\/tx)?$/.exec(path);
